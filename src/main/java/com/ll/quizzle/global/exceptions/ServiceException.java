@@ -1,21 +1,23 @@
 package com.ll.quizzle.global.exceptions;
 
-import com.ll.quizzle.global.rsData.RsData;
-import com.ll.quizzle.standard.base.Empty;
 import lombok.Getter;
+import org.springframework.http.HttpStatus;
 
 @Getter
 public class ServiceException extends RuntimeException {
-    private final String resultCode;
+
+    private final HttpStatus resultCode;
     private final String msg;
 
-    public ServiceException(String resultCode, String msg) {
+    public ServiceException(HttpStatus resultCode, String msg) {
         super(resultCode + " : " + msg);
         this.resultCode = resultCode;
         this.msg = msg;
     }
 
-    public RsData<Empty> getRsData() {
-        return new RsData<>(resultCode, msg);
+    public ServiceException(HttpStatus resultCode, String msg, Throwable cause) {
+        super(resultCode + " : " + msg, cause);
+        this.resultCode = resultCode;
+        this.msg = msg;
     }
 }
