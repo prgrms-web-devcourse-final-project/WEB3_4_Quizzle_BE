@@ -1,8 +1,16 @@
 spring:
+  application:
+    name: Quizzle
   profiles:
     active: dev
     include:
       - secret
+
+openai:
+  model: ${OPENAI_MODEL:gpt-4o}
+  api:
+    key: ${OPENAI_API_KEY}
+    url: ${OPENAI_API_URL:https://api.openai.com/v1/chat/completions}
 
 quizzle:
   messaging:

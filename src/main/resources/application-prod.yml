@@ -19,4 +19,10 @@ server:
     include-stacktrace: never
     include-message: never
     whitelabel:
-      enabled: false 
+      enabled: false
+
+openai:
+  model: ${OPENAI_MODEL:gpt-4o}
+  api:
+    key: ${OPENAI_API_KEY}
+    url: ${OPENAI_API_URL:https://api.openai.com/v1/chat/completions}
