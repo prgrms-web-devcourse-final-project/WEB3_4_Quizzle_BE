@@ -1,0 +1,36 @@
+spring:
+  websocket:
+    endpoint: /ws
+    allowed-origins: 
+      - http://localhost:3000
+      - http://localhost:5173 # 프론트 개발 포트 고려
+      - http://127.0.0.1:3000
+      - http://127.0.0.1:5173
+      - chrome-extension://* # 확장 프로그램으로 WebSocket 테스트를 하려고 추가
+  jpa:
+    show-sql: true
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        format_sql: true
+  devtools:
+    livereload:
+      enabled: true
+    restart:
+      enabled: true
+
+logging:
+  level:
+    com.ll.quizzle: DEBUG
+    org.springframework.web.socket: DEBUG
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql: TRACE
+    
+server:
+  port: 8080
+  servlet:
+    context-path: /
+  error:
+    include-stacktrace: always
+    include-message: always 

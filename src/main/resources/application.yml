@@ -1,0 +1,13 @@
+spring:
+  profiles:
+    active: dev
+    include:
+      - secret
+
+quizzle:
+  messaging:
+    provider: stomp
+    room:
+      provider: stomp
+    chat:
+      provider: redis
