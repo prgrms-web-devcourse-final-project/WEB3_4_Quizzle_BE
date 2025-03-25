@@ -11,7 +11,7 @@ import lombok.*;
 @Entity
 @Table(name = "quiz")
 @Getter
-@NoArgsConstructor(access = AccessLevel.PROTECTED)  // JPA 스펙상 기본 생성자 필요
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Quiz {
 
     @Id
@@ -37,7 +37,6 @@ public class Quiz {
     @Column(name = "difficulty", nullable = false)
     private Difficulty difficulty;
 
-    // Lombok Builder 사용
     @Builder
     public Quiz(QuizCategory quizCategory,
                 SubCategory subCategory,
@@ -51,8 +50,5 @@ public class Quiz {
         this.difficulty = difficulty;
     }
 
-    // 필요하다면 setter나 비즈니스 메서드를 추가로 정의
-    public void updateProblemCount(int problemCount) {
-        this.problemCount = problemCount;
-    }
+
 }
