@@ -15,7 +15,7 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Redis PUB/SUB 기반 메시징 서비스 구현체 (현재는 채팅쪽만 사용할거라 채팅 토픽만 발행을 할 예정입니다.)
+ * Redis PUB/SUB 기반 메시징 서비스 구현체
  */
 @Slf4j
 @Service
