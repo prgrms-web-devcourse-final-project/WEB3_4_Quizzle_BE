@@ -58,4 +58,14 @@ public class PointService {
 		pointRepository.save(point);
 	}
 
+	public void applyPointPolicy(Member member, PointReason reason) {
+		int amount = reason.getDefaultAmount();
+
+		if (amount > 0) {
+			gainPoint(member, amount, reason);
+		} else {
+			usePoint(member, -amount, reason);
+		}
+	}
+
 }
