@@ -22,7 +22,7 @@ public class StompMessageService implements MessageService {
 
     private final SimpMessagingTemplate messagingTemplate;
     /**
-     * 공유자원 이라, 동시성을 고려하여 ConcurrentHashMap 을 사용했습니다.
+     * 공유자원 이라, 동시성 문제를 고려하여 ConcurrentHashMap 을 사용했습니다.
      */
     private final Map<String, MessageCallback> subscriptions = new ConcurrentHashMap<>();
     private boolean connected = false;
