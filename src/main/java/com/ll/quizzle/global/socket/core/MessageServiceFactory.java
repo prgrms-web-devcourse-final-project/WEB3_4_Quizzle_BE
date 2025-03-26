@@ -1,12 +1,10 @@
 package com.ll.quizzle.global.socket.core;
 
+import com.ll.quizzle.global.socket.provider.redis.RedisMessageService;
+import com.ll.quizzle.global.socket.provider.stomp.StompMessageService;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
-
-import com.ll.quizzle.global.socket.RedisMessageService;
-import com.ll.quizzle.global.socket.StompMessageService;
-
-import lombok.RequiredArgsConstructor;
 
 /**
  * 설정을 함에 따라 적절한 메시지들의 구현체를 갈아끼워 넣을 수 있습니다.
