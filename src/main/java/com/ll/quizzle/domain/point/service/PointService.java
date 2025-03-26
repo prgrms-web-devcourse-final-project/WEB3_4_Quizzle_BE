@@ -11,6 +11,7 @@ import com.ll.quizzle.domain.point.dto.PointHistoryRequestDto;
 import com.ll.quizzle.domain.point.dto.PointHistoryResponseDto;
 import com.ll.quizzle.domain.point.entity.Point;
 import com.ll.quizzle.domain.point.repository.PointRepository;
+import com.ll.quizzle.domain.point.type.PointReason;
 import com.ll.quizzle.domain.point.type.PointType;
 import com.ll.quizzle.standard.page.dto.PageDto;
 
@@ -41,6 +42,20 @@ public class PointService {
 		}
 
 		return new PageDto<>(page.map(PointHistoryResponseDto::from));
+	}
+
+	//포인트 사용
+	public void usePoint(Member member, int amount, PointReason reason) {
+		member.decreasePoint(amount);
+		Point point = Point.use(member, amount, reason);
+		pointRepository.save(point);
+	}
+
+	//포인트 획득
+	public void gainPoint(Member member, int amount, PointReason reason) {
+		member.increasePoint(amount);
+		Point point = Point.gain(member, amount, reason);
+		pointRepository.save(point);
 	}
 
 }
