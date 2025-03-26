@@ -1,7 +1,8 @@
 package com.ll.quizzle.global.socket.core;
 
-import com.ll.quizzle.global.socket.provider.redis.RedisMessageService;
-import com.ll.quizzle.global.socket.provider.stomp.StompMessageService;
+
+import com.ll.quizzle.global.socket.service.redis.RedisMessageService;
+import com.ll.quizzle.global.socket.service.stomp.StompMessageService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -49,13 +50,10 @@ public class MessageServiceFactory {
      * 핸들러 어댑터 기능 정도로 이해하시면 될 것 같습니다.
      */
     public MessageService getService(String provider) {
-        switch (provider.toLowerCase()) {
-            case "stomp":
-                return stompMessageService;
-            case "redis":
-                return redisMessageService;
-            default:
-                throw new IllegalArgumentException("지원하지 않는 메시징 프로바이더: " + provider);
-        }
+        return switch (provider.toLowerCase()) {
+            case "stomp" -> stompMessageService;
+            case "redis" -> redisMessageService;
+            default -> throw new IllegalArgumentException("지원하지 않는 메시징 프로바이더: " + provider);
+        };
     }
 } 
