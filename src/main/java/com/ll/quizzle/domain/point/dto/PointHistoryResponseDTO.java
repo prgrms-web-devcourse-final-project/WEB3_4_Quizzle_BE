@@ -4,14 +4,14 @@ import java.time.LocalDateTime;
 
 import com.ll.quizzle.domain.point.entity.Point;
 
-public record PointHistoryResponseDto(
+public record PointHistoryResponseDTO(
 	String type,
 	int amount,
 	String description,
 	LocalDateTime createdAt
 ) {
-	public static PointHistoryResponseDto from(Point point) {
-		return new PointHistoryResponseDto(
+	public static PointHistoryResponseDTO from(Point point) {
+		return new PointHistoryResponseDTO(
 			point.getType().name(),
 			point.getAmount(),
 			point.getReason().getDescription(),

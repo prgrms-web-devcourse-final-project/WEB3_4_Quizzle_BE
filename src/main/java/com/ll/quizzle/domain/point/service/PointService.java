@@ -7,8 +7,8 @@ import org.springframework.stereotype.Service;
 
 import com.ll.quizzle.domain.member.entity.Member;
 import com.ll.quizzle.domain.member.repository.MemberRepository;
-import com.ll.quizzle.domain.point.dto.PointHistoryRequestDto;
-import com.ll.quizzle.domain.point.dto.PointHistoryResponseDto;
+import com.ll.quizzle.domain.point.dto.PointHistoryRequestDTO;
+import com.ll.quizzle.domain.point.dto.PointHistoryResponseDTO;
 import com.ll.quizzle.domain.point.entity.Point;
 import com.ll.quizzle.domain.point.repository.PointRepository;
 import com.ll.quizzle.domain.point.type.PointReason;
@@ -24,8 +24,8 @@ public class PointService {
 	private final PointRepository pointRepository;
 	private final MemberRepository memberRepository;
 
-	public PageDto<PointHistoryResponseDto> getPointHistoriesWithPage(Long memberId,
-		PointHistoryRequestDto requestDto) {
+	public PageDto<PointHistoryResponseDTO> getPointHistoriesWithPage(Long memberId,
+		PointHistoryRequestDTO requestDto) {
 		Member member = memberRepository.findById(memberId)
 			.orElseThrow(() -> new IllegalArgumentException("해당 사용자가 존재하지 않습니다."));
 
@@ -41,7 +41,7 @@ public class PointService {
 			page = pointRepository.findPageByMemberOrderByCreateDateDesc(member, pageable);
 		}
 
-		return new PageDto<>(page.map(PointHistoryResponseDto::from));
+		return new PageDto<>(page.map(PointHistoryResponseDTO::from));
 	}
 
 	//포인트 사용

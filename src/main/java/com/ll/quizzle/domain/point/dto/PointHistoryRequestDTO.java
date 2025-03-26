@@ -2,12 +2,12 @@ package com.ll.quizzle.domain.point.dto;
 
 import com.ll.quizzle.domain.point.type.PointType;
 
-public record PointHistoryRequestDto(
+public record PointHistoryRequestDTO(
 	PointType type, // "REWARD" or "USE", nullable
 	int page,
 	int size
 ) {
-	public PointHistoryRequestDto {
+	public PointHistoryRequestDTO {
 		// 기본값 설정
 		if (page < 0)
 			page = 0;
