@@ -3,11 +3,13 @@ package com.ll.quizzle.global.security.oauth2.entity;
 import com.ll.quizzle.domain.member.entity.Member;
 import com.ll.quizzle.global.jpa.entity.BaseEntity;
 import jakarta.persistence.*;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 @Entity
 @Getter
-@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder

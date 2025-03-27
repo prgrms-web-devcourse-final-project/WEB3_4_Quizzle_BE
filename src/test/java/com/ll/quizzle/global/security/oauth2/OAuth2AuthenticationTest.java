@@ -148,8 +148,8 @@ public class OAuth2AuthenticationTest {
         Cookie accessTokenCookie = response.getCookie("access_token");
 
         // when & then
-        // todo : url 수정 필요
-        mockMvc.perform(delete("/api/v1/members/logout")
+        // todo : api 추가된 후 url 수정 필요
+        mockMvc.perform(delete("/api/v1/members")
                         .cookie(accessTokenCookie))
                 .andDo(print())
                 .andExpect(status().is(204));

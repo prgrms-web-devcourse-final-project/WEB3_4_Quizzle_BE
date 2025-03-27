@@ -13,6 +13,11 @@ public enum ErrorCode {
     UNAUTHORIZED(HttpStatus.UNAUTHORIZED, "로그인이 필요합니다."),
     INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "서버 내부 오류가 발생했습니다."),
 
+    // 포인트
+    POINT_INCREASE_AMOUNT_INVALID(HttpStatus.BAD_REQUEST, "증가 포인트는 0보다 커야 합니다."),
+    POINT_DECREASE_AMOUNT_INVALID(HttpStatus.BAD_REQUEST, "차감 포인트는 0보다 커야 합니다."),
+    POINT_NOT_ENOUGH(HttpStatus.BAD_REQUEST, "포인트가 부족합니다."),
+
     // jwt
     TOKEN_EXPIRED(HttpStatus.UNAUTHORIZED, "토큰이 만료되었습니다."),
     TOKEN_INVALID(HttpStatus.UNAUTHORIZED, "유효하지 않은 토큰입니다."),

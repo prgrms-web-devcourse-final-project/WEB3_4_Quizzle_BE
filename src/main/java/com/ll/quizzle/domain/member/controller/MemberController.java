@@ -17,7 +17,7 @@ import static com.ll.quizzle.global.exceptions.ErrorCode.REFRESH_TOKEN_NOT_FOUND
 public class MemberController {
     private final MemberService memberService;
 
-    @DeleteMapping("/logout")
+    @DeleteMapping
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void logout(HttpServletRequest request, HttpServletResponse response) {
         memberService.logout(request, response);

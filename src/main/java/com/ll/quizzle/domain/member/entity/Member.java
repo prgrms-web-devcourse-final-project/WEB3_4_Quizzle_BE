@@ -12,6 +12,8 @@ import lombok.NoArgsConstructor;
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.ll.quizzle.global.exceptions.ErrorCode.*;
+
 @Entity
 @Getter
 @Builder
@@ -68,7 +70,7 @@ public class Member extends BaseEntity {
      */
     public void increasePoint(int amount) {
         if (amount <= 0) {
-            throw new IllegalArgumentException("증가 포인트는 0보다 커야 합니다.");
+            POINT_INCREASE_AMOUNT_INVALID.throwServiceException();
         }
         this.pointBalance += amount;
     }
@@ -80,11 +82,11 @@ public class Member extends BaseEntity {
      */
     public void decreasePoint(int amount) {
         if (amount <= 0) {
-            throw new IllegalArgumentException("차감 포인트는 0보다 커야 합니다.");
+            POINT_DECREASE_AMOUNT_INVALID.throwServiceException();
         }
 
         if (this.pointBalance < amount) {
-            throw new IllegalStateException("포인트가 부족합니다.");
+            POINT_NOT_ENOUGH.throwServiceException();
         }
 
         this.pointBalance -= amount;
