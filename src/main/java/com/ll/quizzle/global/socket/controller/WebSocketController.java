@@ -1,5 +1,6 @@
 package com.ll.quizzle.global.socket.controller;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ll.quizzle.global.socket.core.MessageService;
 import com.ll.quizzle.global.socket.core.MessageServiceFactory;
 import lombok.extern.slf4j.Slf4j;
@@ -19,14 +20,14 @@ public class WebSocketController {
     private final MessageService chatService;
 
     @Autowired
-    public WebSocketController(MessageServiceFactory messageServiceFactory) {
+    public WebSocketController(MessageServiceFactory messageServiceFactory, ObjectMapper objectMapper) {
         this.roomService = messageServiceFactory.getRoomService();
         this.chatService = messageServiceFactory.getChatService();
     }
     
     // 채팅 관련
     @MessageMapping("/lobby/chat")
-    public void handleLobbyChatMessage(@Payload Object message, SimpMessageHeaderAccessor headerAccessor) {
+    public void handleLobbyChatMessage(@Payload String message, SimpMessageHeaderAccessor headerAccessor) {
         String username = Objects.requireNonNull(headerAccessor.getUser()).getName();
         log.debug("로비 채팅 메시지 수신: {}, 사용자: {}", message, username);
         chatService.send("/topic/lobby/chat", message);
@@ -35,7 +36,7 @@ public class WebSocketController {
     @MessageMapping("/room/chat/{roomId}")
     public void handleRoomChatMessage(
             @DestinationVariable String roomId,
-            @Payload Object message,
+            @Payload String message,
             SimpMessageHeaderAccessor headerAccessor
     ) {
         String username = Objects.requireNonNull(headerAccessor.getUser()).getName();
@@ -46,7 +47,7 @@ public class WebSocketController {
     @MessageMapping("/game/chat/{roomId}")
     public void handleGameChatMessage(
             @DestinationVariable String roomId,
-            @Payload Object message,
+            @Payload String message,
             SimpMessageHeaderAccessor headerAccessor
     ) {
         String username = Objects.requireNonNull(headerAccessor.getUser()).getName();
@@ -56,7 +57,7 @@ public class WebSocketController {
 
     // 2. 상태 관련
     @MessageMapping("/lobby")
-    public void handleLobbyMessage(@Payload Object message, SimpMessageHeaderAccessor headerAccessor) {
+    public void handleLobbyMessage(@Payload String message, SimpMessageHeaderAccessor headerAccessor) {
         String username = Objects.requireNonNull(headerAccessor.getUser()).getName();
         log.debug("로비 상태 메시지 수신: {}, 사용자: {}", message, username);
         roomService.send("/topic/lobby", message);
@@ -65,7 +66,7 @@ public class WebSocketController {
     @MessageMapping("/room/{roomId}")
     public void handleRoomMessage(
             @DestinationVariable String roomId,
-            @Payload Object message,
+            @Payload String message,
             SimpMessageHeaderAccessor headerAccessor
     ) {
         String username = Objects.requireNonNull(headerAccessor.getUser()).getName();
@@ -76,7 +77,7 @@ public class WebSocketController {
     @MessageMapping("/game/{roomId}")
     public void handleGameMessage(
             @DestinationVariable String roomId,
-            @Payload Object message,
+            @Payload String message,
             SimpMessageHeaderAccessor headerAccessor
     ) {
         String username = Objects.requireNonNull(headerAccessor.getUser()).getName();
@@ -88,7 +89,7 @@ public class WebSocketController {
     @MessageMapping("/game/start/{roomId}")
     public void handleGameStart(
             @DestinationVariable String roomId,
-            @Payload Object message,
+            @Payload String message,
             SimpMessageHeaderAccessor headerAccessor
     ) {
         String username = Objects.requireNonNull(headerAccessor.getUser()).getName();
