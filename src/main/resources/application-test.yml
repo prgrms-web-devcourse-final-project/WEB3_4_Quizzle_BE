@@ -1,7 +1,7 @@
 spring:
   websocket:
     endpoint: /ws
-    allowed-origins: 
+    allowed-origins:
       - http://localhost:*
       - http://127.0.0.1:*
   jpa:
@@ -31,3 +31,10 @@ quizzle:
     # 테스트 환경에서만 작동하는 타입을 하나 만드신 뒤 예로들면 @Profile("test") 을 클래스 단에 붙여주시면 됩니다.
     # SecurityContext에 테스트용 인증 객체를 자동으로 등록하는 필터를 추가하시면 됩니다.
     auto-login: true
+
+
+openai:
+  model: ${OPENAI_MODEL:gpt-4o}
+  api:
+    key: ${OPENAI_API_KEY:dummy-api-key}
+    url: ${OPENAI_API_URL:https://api.openai.com/v1/chat/completions}

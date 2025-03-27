@@ -1,11 +1,11 @@
 spring:
   websocket:
     endpoint: /ws
-    allowed-origins: 
+    allowed-origins:
       - https://quizzle.com
       - https://www.quizzle.com
       - https://api.quizzle.com
-  
+
 logging:
   level:
     com.ll.quizzle: INFO
@@ -19,4 +19,10 @@ server:
     include-stacktrace: never
     include-message: never
     whitelabel:
-      enabled: false 
+      enabled: false
+
+openai:
+  model: ${OPENAI_MODEL:gpt-4o}
+  api:
+    key: ${OPENAI_API_KEY:dummy-api-key}
+    url: ${OPENAI_API_URL:https://api.openai.com/v1/chat/completions}

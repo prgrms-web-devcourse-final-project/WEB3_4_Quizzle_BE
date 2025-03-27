@@ -1,19 +1,33 @@
 spring:
-  websocket:
-    endpoint: /ws
-    allowed-origins: 
-      - http://localhost:3000
-      - http://localhost:5173 # 프론트 개발 포트 고려
-      - http://127.0.0.1:3000
-      - http://127.0.0.1:5173
-      - chrome-extension://* # 확장 프로그램으로 WebSocket 테스트를 하려고 추가
+  datasource:
+    url: jdbc:mysql://localhost:3307/quizzle
+    username: user
+    password: 1234
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
   jpa:
     show-sql: true
     hibernate:
       ddl-auto: update
-    properties:
-      hibernate:
-        format_sql: true
+      properties:
+        hibernate:
+          format_sql: true
+    database-platform: org.hibernate.dialect.MySQL8Dialect
+
+  data:
+    redis:
+      host: localhost
+      port: 6379
+
+  websocket:
+    endpoint: /ws
+    allowed-origins:
+      - http://localhost:3000
+      - http://localhost:5173
+      - http://127.0.0.1:3000
+      - http://127.0.0.1:5173
+      - chrome-extension://*
+
   devtools:
     livereload:
       enabled: true
@@ -26,11 +40,18 @@ logging:
     org.springframework.web.socket: DEBUG
     org.hibernate.SQL: DEBUG
     org.hibernate.type.descriptor.sql: TRACE
-    
+
 server:
   port: 8080
   servlet:
     context-path: /
   error:
     include-stacktrace: always
-    include-message: always 
+    include-message: always
+
+
+openai:
+  model: ${OPENAI_MODEL:gpt-3.5-turbo}
+  api:
+    key: ${OPENAI_API_KEY}
+    url: ${OPENAI_API_URL:https://api.openai.com/v1/chat/completions}
