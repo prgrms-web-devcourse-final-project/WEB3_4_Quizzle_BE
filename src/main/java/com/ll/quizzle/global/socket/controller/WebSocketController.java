@@ -1,0 +1,112 @@
+package com.ll.quizzle.global.socket.controller;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.messaging.handler.annotation.DestinationVariable;
+import org.springframework.messaging.handler.annotation.MessageMapping;
+import org.springframework.messaging.handler.annotation.Payload;
+import org.springframework.messaging.simp.SimpMessageHeaderAccessor;
+import org.springframework.stereotype.Controller;
+
+import com.ll.quizzle.global.socket.core.MessageService;
+import com.ll.quizzle.global.socket.core.MessageServiceFactory;
+
+import lombok.extern.slf4j.Slf4j;
+
+import java.util.Objects;
+
+@Slf4j
+@Controller
+public class WebSocketController {
+
+    private final MessageService roomService;
+    private final MessageService chatService;
+    
+    @Autowired
+    public WebSocketController(MessageServiceFactory messageServiceFactory) {
+        this.roomService = messageServiceFactory.getRoomService(); // STOMP
+        this.chatService = messageServiceFactory.getChatService(); // Redis
+    }
+
+    @MessageMapping("/lobby")
+    public void handleLobbyMessage(@Payload Object message, SimpMessageHeaderAccessor headerAccessor) {
+        String username = Objects.requireNonNull(headerAccessor.getUser()).getName();
+        log.debug("로비 상태 메시지 수신: {}, 사용자: {}", message, username);
+        
+        roomService.send("/topic/lobby", message);
+    }
+    
+    @MessageMapping("/lobby/chat")
+    public void handleLobbyChatMessage(
+            @Payload Object message,
+            SimpMessageHeaderAccessor headerAccessor
+    ) {
+        String username = Objects.requireNonNull(headerAccessor.getUser()).getName();
+        log.debug("로비 채팅 메시지 수신: {}, 사용자: {}", message, username);
+        
+        chatService.send("/topic/lobby/chat", message);
+    }
+
+    @MessageMapping("/room/{roomId}")
+    public void handleRoomMessage(
+            @DestinationVariable String roomId,
+            @Payload Object message,
+            SimpMessageHeaderAccessor headerAccessor
+    ) {
+        String username = Objects.requireNonNull(headerAccessor.getUser()).getName();
+        log.debug("방 상태 메시지 수신: {}, 방: {}, 사용자: {}", message, roomId, username);
+        
+        roomService.send("/topic/room/" + roomId, message);
+    }
+
+    @MessageMapping("/chat/{roomId}")
+    public void handleChatMessage(
+            @DestinationVariable String roomId,
+            @Payload Object message,
+            SimpMessageHeaderAccessor headerAccessor
+    ) {
+        String username = Objects.requireNonNull(headerAccessor.getUser()).getName();
+        log.debug("방 채팅 메시지 수신: {}, 방: {}, 사용자: {}", message, roomId, username);
+        
+        chatService.send("/topic/chat/" + roomId, message);
+    }
+
+    @MessageMapping("/game/{roomId}")
+    public void handleGameMessage(
+            @DestinationVariable String roomId,
+            @Payload Object message,
+            SimpMessageHeaderAccessor headerAccessor
+    ) {
+        String username = Objects.requireNonNull(headerAccessor.getUser()).getName();
+        log.debug("게임 상태 메시지 수신: {}, 방: {}, 사용자: {}", message, roomId, username);
+        
+        roomService.send("/topic/game/" + roomId, message);
+    }
+
+    /**
+     * 게임 시작 설정할 때 사용
+     * 예로들면 "게임 시작" 버튼 눌렀을 때 문
+     */
+    @MessageMapping("/game/start/{roomId}")
+    public void handleGameStart(
+            @DestinationVariable String roomId,
+            @Payload Object message,
+            SimpMessageHeaderAccessor headerAccessor
+    ) {
+        String username = Objects.requireNonNull(headerAccessor.getUser()).getName();
+        log.debug("게임 시작 메시지 수신: {}, 방: {}, 사용자: {}", message, roomId, username);
+        
+        roomService.send("/topic/game/start/" + roomId, message);
+    }
+    
+    @MessageMapping("/game/chat/{roomId}")
+    public void handleGameChatMessage(
+            @DestinationVariable String roomId,
+            @Payload Object message,
+            SimpMessageHeaderAccessor headerAccessor
+    ) {
+        String username = Objects.requireNonNull(headerAccessor.getUser()).getName();
+        log.debug("게임 내부 채팅 메시지 수신: {}, 방: {}, 사용자: {}", message, roomId, username);
+        
+        chatService.send("/topic/game/chat/" + roomId, message);
+    }
+} 
