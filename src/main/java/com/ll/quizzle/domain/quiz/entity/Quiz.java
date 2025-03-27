@@ -4,6 +4,7 @@ import com.ll.quizzle.domain.quiz.enums.AnswerType;
 import com.ll.quizzle.domain.quiz.enums.Difficulty;
 import com.ll.quizzle.domain.quiz.enums.MainCategory;
 import com.ll.quizzle.domain.quiz.enums.SubCategory;
+import com.ll.quizzle.global.jpa.entity.BaseEntity;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Builder;
@@ -14,11 +15,7 @@ import lombok.NoArgsConstructor;
 @Table(name = "quiz")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class Quiz {
-
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;  // PK
+public class Quiz extends BaseEntity {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "main_category", nullable = false)
@@ -51,6 +48,4 @@ public class Quiz {
         this.problemCount = problemCount;
         this.difficulty = difficulty;
     }
-
-
 }

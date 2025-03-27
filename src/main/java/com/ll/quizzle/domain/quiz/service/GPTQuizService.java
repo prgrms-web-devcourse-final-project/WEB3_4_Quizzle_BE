@@ -1,13 +1,16 @@
 package com.ll.quizzle.domain.quiz.service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ll.quizzle.domain.quiz.dto.QuizDTO;
 import com.ll.quizzle.domain.quiz.dto.QuizGenerationResponseDTO;
 import com.ll.quizzle.domain.quiz.enums.AnswerType;
 import com.ll.quizzle.global.config.OpenAIConfig;
+import com.ll.quizzle.global.exceptions.ErrorCode;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -39,18 +42,14 @@ public class GPTQuizService {
         this.model = model;
     }
 
-
-    public QuizGenerationResponseDTO generateQuiz(QuizDTO quizDTO) throws Exception {
+    public QuizGenerationResponseDTO generateQuiz(QuizDTO quizDTO) {
         String optionText = (quizDTO.answerType() == AnswerType.MULTIPLE_CHOICE)
                 ? "a) 보기1\nb) 보기2\nc) 보기3\nd) 보기4"
                 : "O 또는 X";
 
         String systemPrompt = String.format(
-                "너는 한국어 전문 퀴즈 생성기야. **절대로 영어 사용 금지**. " +
-                        "인삿말이나 추가 설명 없이 오직 문제와 정답만 출력해.\n" +
-                        "대분류: %s\n소분류: %s\n문제 유형: %s\n문제 수: %d\n난이도: %s\n\n" +
-                        "각 문제 형식:\n" +
-                        "문제 번호. 문제 내용\n%s\n정답: <정답>",
+                "너는 한국어 전문 퀴즈 생성기야. **절대로 영어 사용 금지**. 인삿말이나 추가 설명 없이 오직 문제와 정답만 출력해.\n" +
+                        "대분류: %s\n소분류: %s\n문제 유형: %s\n문제 수: %d\n난이도: %s\n\n각 문제 형식:\n문제 번호. 문제 내용\n%s\n정답: <정답>",
                 quizDTO.mainCategory(), quizDTO.subCategory(),
                 quizDTO.answerType(), quizDTO.problemCount(), quizDTO.difficulty(),
                 optionText
@@ -65,43 +64,59 @@ public class GPTQuizService {
                 "temperature", 0.7
         );
 
+        String requestBody;
+        try {
+            requestBody = objectMapper.writeValueAsString(body);
+        } catch (JsonProcessingException e) {
+            ErrorCode.INTERNAL_SERVER_ERROR.throwServiceException(e);
+            return null;
+        }
+
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(apiUrl))
                 .header("Content-Type", "application/json")
                 .header("Authorization", "Bearer " + openAIConfig.getApiKey())
-                .POST(HttpRequest.BodyPublishers.ofString(objectMapper.writeValueAsString(body)))
+                .POST(HttpRequest.BodyPublishers.ofString(requestBody))
                 .build();
 
-        HttpResponse<String> response = HttpClient.newHttpClient()
-                .send(request, HttpResponse.BodyHandlers.ofString());
-        if (response.statusCode() != 200) {
-            throw new RuntimeException("API call failed: " + response.body());
-        }
+        try {
+            HttpResponse<String> response = HttpClient.newHttpClient()
+                    .send(request, HttpResponse.BodyHandlers.ofString());
 
-        String content = objectMapper.readTree(response.body())
-                .path("choices").get(0)
-                .path("message").path("content").asText();
-
-        StringBuilder quizText = new StringBuilder();
-        Map<Integer, String> answerMap = new LinkedHashMap<>();
-        int currentQuestion = 0;
-
-        for (String line : content.split("\\r?\\n")) {
-            Matcher qm = QUESTION_PATTERN.matcher(line.trim());
-            if (qm.find()) {
-                currentQuestion = Integer.parseInt(qm.group(1));
-                quizText.append(line).append("\n");
-                continue;
+            if (response.statusCode() != 200) {
+                ErrorCode.INTERNAL_SERVER_ERROR.throwServiceException(
+                        new RuntimeException("OpenAI API returned status " + response.statusCode()));
             }
-            Matcher am = ANSWER_PATTERN.matcher(line.trim());
-            if (am.find() && currentQuestion > 0) {
-                answerMap.put(currentQuestion, am.group(1).toLowerCase());
-                quizText.append(line).append("\n");
-                continue;
-            }
-            quizText.append(line).append("\n");
-        }
 
-        return new QuizGenerationResponseDTO(quizText.toString().trim(), answerMap);
+            String content = objectMapper.readTree(response.body())
+                    .path("choices").get(0)
+                    .path("message").path("content").asText();
+
+            StringBuilder quizText = new StringBuilder();
+            Map<Integer, String> answerMap = new LinkedHashMap<>();
+            int currentQuestion = 0;
+
+            for (String line : content.split("\\r?\\n")) {
+                Matcher qm = QUESTION_PATTERN.matcher(line.trim());
+                if (qm.find()) {
+                    currentQuestion = Integer.parseInt(qm.group(1));
+                    quizText.append(line).append("\n");
+                    continue;
+                }
+                Matcher am = ANSWER_PATTERN.matcher(line.trim());
+                if (am.find() && currentQuestion > 0) {
+                    answerMap.put(currentQuestion, am.group(1).toLowerCase());
+                    quizText.append(line).append("\n");
+                    continue;
+                }
+                quizText.append(line).append("\n");
+            }
+
+            return new QuizGenerationResponseDTO(quizText.toString().trim(), answerMap);
+
+        } catch (IOException | InterruptedException e) {
+            ErrorCode.INTERNAL_SERVER_ERROR.throwServiceException(e);
+            return null; // unreachable
+        }
     }
 }
