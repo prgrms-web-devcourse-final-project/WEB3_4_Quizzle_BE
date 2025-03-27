@@ -1,15 +1,15 @@
 package com.ll.quizzle.global.redis.config;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.listener.RedisMessageListenerContainer;
+import org.springframework.data.redis.serializer.GenericJackson2JsonRedisSerializer;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
-
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
 /**
  * Redis 설정 클래스
@@ -33,22 +33,26 @@ public class RedisConfig {
         return objectMapper;
     }
 
+
     /**
-     * 모든 직렬화 처리를 stringSerializer 로 통일했습니다.
+     * RedisTemplate 설정:
+     * - key 및 hash key: 문자열
+     * - value 및 hash value: GenericJackson2JsonRedisSerializer (타입정보 포함 직렬화)
      */
     @Bean
-    public RedisTemplate<String, String> redisTemplate(RedisConnectionFactory connectionFactory) {
-        RedisTemplate<String, String> template = new RedisTemplate<>();
+    public RedisTemplate<String, Object> redisTemplate(RedisConnectionFactory connectionFactory) {
+        RedisTemplate<String, Object> template = new RedisTemplate<>();
         template.setConnectionFactory(connectionFactory);
-        
-        // 문자열 직렬화
+
+        // 직렬화 설정
         StringRedisSerializer stringSerializer = new StringRedisSerializer();
+        GenericJackson2JsonRedisSerializer jsonSerializer = new GenericJackson2JsonRedisSerializer();
+
         template.setKeySerializer(stringSerializer);
-        template.setValueSerializer(stringSerializer);
+        template.setValueSerializer(jsonSerializer);
         template.setHashKeySerializer(stringSerializer);
-        template.setHashValueSerializer(stringSerializer);
-        template.setDefaultSerializer(stringSerializer);
-        
+        template.setHashValueSerializer(jsonSerializer);
+
         return template;
     }
 } 
