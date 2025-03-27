@@ -3,7 +3,6 @@ package com.ll.quizzle.global.security.oauth2;
 import com.ll.quizzle.domain.member.entity.Member;
 import com.ll.quizzle.domain.member.repository.MemberRepository;
 import com.ll.quizzle.domain.member.service.MemberService;
-import com.ll.quizzle.domain.member.type.Role;
 import com.ll.quizzle.global.security.oauth2.dto.SecurityUser;
 import com.ll.quizzle.global.security.oauth2.entity.OAuth;
 import com.ll.quizzle.global.security.oauth2.repository.OAuthRepository;
@@ -88,15 +87,10 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
             }
         } else {
             // 새로운 사용자 생성
-            member = Member.builder()
-                    .nickname("GUEST-" + UUID.randomUUID().toString().substring(0, 6))
-                    .email(email)
-                    .level(0)
-                    .role(Role.MEMBER)
-                    .exp(0)
-                    .profilePath("기본경로")
-                    .pointBalance(0)
-                    .build();
+            member = Member.create(
+                    "GUEST-" + UUID.randomUUID().toString().substring(0, 6),
+                    email
+            );
             memberRepository.save(member);
 
             oAuthRepository.save(OAuth.create(member, registrationId, oauthId));

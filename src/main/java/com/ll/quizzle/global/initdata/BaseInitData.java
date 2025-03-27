@@ -2,7 +2,6 @@ package com.ll.quizzle.global.initdata;
 
 import com.ll.quizzle.domain.member.entity.Member;
 import com.ll.quizzle.domain.member.repository.MemberRepository;
-import com.ll.quizzle.domain.member.type.Role;
 import com.ll.quizzle.global.security.oauth2.entity.OAuth;
 import com.ll.quizzle.global.security.oauth2.repository.OAuthRepository;
 import lombok.RequiredArgsConstructor;
@@ -43,21 +42,9 @@ public class BaseInitData {
             String email = String.format("%s%d@email.com", "test", i);
             String provider = (i % 2 == 0) ? "google" : "kakao";
 
-            Member member = Member.builder()
-                    .nickname(nickname)
-                    .level(0)
-                    .role(Role.MEMBER)
-                    .exp(0)
-                    .profilePath(String.format("%s", "test"))
-                    .pointBalance(0)
-                    .email(email)
-                    .build();
+            Member member = Member.create(nickname, email);
 
-            OAuth oauth = OAuth.builder()
-                    .provider(provider)
-                    .oauthId(String.valueOf(i))
-                    .member(member)
-                    .build();
+            OAuth oauth = OAuth.create(member, provider, String.valueOf(i));
 
             memberRepository.save(member);
             oAuthRepository.save(oauth);
