@@ -1,12 +1,14 @@
 package com.ll.quizzle.domain.quiz.entity;
 
-
-import com.ll.quizzle.domain.room.type.AnswerType;
-import com.ll.quizzle.domain.room.type.Difficulty;
-import com.ll.quizzle.domain.room.type.QuizCategory;
-import com.ll.quizzle.domain.room.type.SubCategory;
+import com.ll.quizzle.domain.quiz.enums.AnswerType;
+import com.ll.quizzle.domain.quiz.enums.Difficulty;
+import com.ll.quizzle.domain.quiz.enums.MainCategory;
+import com.ll.quizzle.domain.quiz.enums.SubCategory;
 import jakarta.persistence.*;
-import lombok.*;
+import lombok.AccessLevel;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 @Entity
 @Table(name = "quiz")
@@ -19,8 +21,8 @@ public class Quiz {
     private Long id;  // PK
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "quiz_category", nullable = false)
-    private QuizCategory quizCategory;
+    @Column(name = "main_category", nullable = false)
+    private MainCategory mainCategory;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "sub_category", nullable = false)
@@ -38,12 +40,12 @@ public class Quiz {
     private Difficulty difficulty;
 
     @Builder
-    public Quiz(QuizCategory quizCategory,
+    public Quiz(MainCategory mainCategory,
                 SubCategory subCategory,
                 AnswerType answerType,
                 int problemCount,
                 Difficulty difficulty) {
-        this.quizCategory = quizCategory;
+        this.mainCategory = mainCategory;
         this.subCategory = subCategory;
         this.answerType = answerType;
         this.problemCount = problemCount;

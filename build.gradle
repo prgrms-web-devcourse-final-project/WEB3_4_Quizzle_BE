@@ -31,6 +31,9 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-websocket'
     implementation 'org.springframework:spring-messaging'
     implementation 'org.springframework.boot:spring-boot-starter-data-redis'
+
+    implementation 'com.mysql:mysql-connector-j:8.0.33'  // ✅ 올바른 groupId
+
     compileOnly 'org.projectlombok:lombok'
     developmentOnly 'org.springframework.boot:spring-boot-devtools'
     runtimeOnly 'com.h2database:h2'

@@ -1,13 +1,13 @@
 package com.ll.quizzle.domain.quiz.dto;
 
-import com.ll.quizzle.domain.room.type.AnswerType;
-import com.ll.quizzle.domain.room.type.Difficulty;
-import com.ll.quizzle.domain.room.type.QuizCategory;
-import com.ll.quizzle.domain.room.type.SubCategory;
+import com.ll.quizzle.domain.quiz.enums.AnswerType;
+import com.ll.quizzle.domain.quiz.enums.Difficulty;
+import com.ll.quizzle.domain.quiz.enums.MainCategory;
+import com.ll.quizzle.domain.quiz.enums.SubCategory;
 
 public record QuizDTO(
         Long id,
-        QuizCategory quizCategory,
+        MainCategory mainCategory,
         SubCategory subCategory,
         AnswerType answerType,
         int problemCount,
