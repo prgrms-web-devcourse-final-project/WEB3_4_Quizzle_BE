@@ -2,9 +2,9 @@ package com.ll.quizzle.domain.member.service;
 
 import com.ll.quizzle.domain.member.entity.Member;
 import com.ll.quizzle.domain.member.repository.MemberRepository;
-import com.ll.quizzle.domain.point.repository.PointRepository;
 import com.ll.quizzle.global.jwt.dto.GeneratedToken;
 import com.ll.quizzle.global.jwt.dto.JwtProperties;
+import com.ll.quizzle.global.request.Rq;
 import com.ll.quizzle.global.response.RsData;
 import com.ll.quizzle.global.security.oauth2.repository.OAuthRepository;
 import com.ll.quizzle.standard.util.Ut;
@@ -33,7 +33,7 @@ public class MemberService {
     private final RedisTemplate<String, String> redisTemplate;
     private final AuthTokenService authTokenService;
     private final JwtProperties jwtProperties;
-    private final PointRepository pointRepository;
+    private final Rq rq;
 
     private static final String LOGOUT_PREFIX = "LOGOUT:";
 
