@@ -17,6 +17,7 @@ import org.springframework.web.socket.messaging.SessionDisconnectEvent;
 import com.ll.quizzle.domain.member.dto.MemberDto;
 import com.ll.quizzle.domain.member.service.MemberService;
 import com.ll.quizzle.global.socket.core.MessageService;
+import com.ll.quizzle.standard.page.dto.OnlineUsersPageDto;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -26,6 +27,8 @@ public class WebSocketEventListener {
 	private final MessageService messageService;
 	private final MemberService memberService;
 	private final Map<String, String> sessionUserMapping = new ConcurrentHashMap<>();
+	private static final int INITIAL_PAGE_SIZE = 30;
+	private static final int SCROLL_PAGE_SIZE = 10;
 
 	public WebSocketEventListener(
 		@Qualifier("stompMessageService") MessageService messageService,
@@ -71,6 +74,26 @@ public class WebSocketEventListener {
 	private void broadcastUserList() {
 		Set<String> uniqueEmails = new HashSet<>(sessionUserMapping.values());
 		List<MemberDto> onlineUsers = memberService.getOnlineUsers(uniqueEmails);
-		messageService.send("/topic/lobby/users", onlineUsers);
+
+		// 처음 접속했을 때는 30명만 보여주기
+		sendPagedUserList(onlineUsers, 0, INITIAL_PAGE_SIZE);
+	}
+
+	public void loadMoreUsers(int page) {
+		Set<String> uniqueEmails = new HashSet<>(sessionUserMapping.values());
+		List<MemberDto> onlineUsers = memberService.getOnlineUsers(uniqueEmails);
+		sendPagedUserList(onlineUsers, page, SCROLL_PAGE_SIZE);
+	}
+
+	private void sendPagedUserList(List<MemberDto> allMembers, int page, int pageSize) {
+		// OnlineUsersPageDto.from() 메서드를 사용하여 페이징 처리
+		OnlineUsersPageDto response = OnlineUsersPageDto.from(allMembers, page, pageSize);
+
+		messageService.send("/topic/lobby/users", response);
+
+		log.debug("온라인 사용자 목록 전송 - 페이지: {}, 크기: {}, 전체: {}",
+			response.getCurrentPageNumber(),
+			response.getPageSize(),
+			response.getTotalItems());
 	}
 }
