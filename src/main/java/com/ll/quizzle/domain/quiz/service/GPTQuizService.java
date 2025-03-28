@@ -2,8 +2,8 @@ package com.ll.quizzle.domain.quiz.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.ll.quizzle.domain.quiz.dto.QuizDTO;
-import com.ll.quizzle.domain.quiz.dto.QuizGenerationResponseDTO;
+import com.ll.quizzle.domain.quiz.dto.generation.QuizDTO;
+import com.ll.quizzle.domain.quiz.dto.generation.QuizGenerationResponseDTO;
 import com.ll.quizzle.domain.quiz.enums.AnswerType;
 import com.ll.quizzle.global.config.OpenAIConfig;
 import com.ll.quizzle.global.exceptions.ErrorCode;

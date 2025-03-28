@@ -1,4 +1,4 @@
-package com.ll.quizzle.domain.quiz.dto;
+package com.ll.quizzle.domain.quiz.dto.generation;
 
 import java.util.Map;
 
