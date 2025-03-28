@@ -1,5 +1,21 @@
 package com.ll.quizzle.domain.member.service;
 
+import static com.ll.quizzle.global.exceptions.ErrorCode.*;
+
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
+
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.ll.quizzle.domain.member.dto.MemberDto;
 import com.ll.quizzle.domain.member.entity.Member;
 import com.ll.quizzle.domain.member.repository.MemberRepository;
 import com.ll.quizzle.global.jwt.dto.GeneratedToken;
@@ -8,167 +24,164 @@ import com.ll.quizzle.global.request.Rq;
 import com.ll.quizzle.global.response.RsData;
 import com.ll.quizzle.global.security.oauth2.repository.OAuthRepository;
 import com.ll.quizzle.standard.util.Ut;
+
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.concurrent.TimeUnit;
-
-import static com.ll.quizzle.global.exceptions.ErrorCode.*;
 
 @Service
 @RequiredArgsConstructor
 public class MemberService {
-    private final MemberRepository memberRepository;
-    private final OAuthRepository oAuthRepository;
-    private final RefreshTokenService refreshTokenService;
-    private final RedisTemplate<String, String> redisTemplate;
-    private final AuthTokenService authTokenService;
-    private final JwtProperties jwtProperties;
-    private final Rq rq;
+	private final MemberRepository memberRepository;
+	private final OAuthRepository oAuthRepository;
+	private final RefreshTokenService refreshTokenService;
+	private final RedisTemplate<String, String> redisTemplate;
+	private final AuthTokenService authTokenService;
+	private final JwtProperties jwtProperties;
+	private final Rq rq;
 
-    private static final String LOGOUT_PREFIX = "LOGOUT:";
+	private static final String LOGOUT_PREFIX = "LOGOUT:";
 
-    @Transactional(readOnly = true)
-    public Member findByProviderAndOauthId(String provider, String oauthId) {
-        return oAuthRepository.findByProviderAndOauthIdWithMember(provider, oauthId)
-                .orElseThrow(OAUTH_NOT_FOUND::throwServiceException)
-                .getMember();
-    }
+	@Transactional(readOnly = true)
+	public List<MemberDto> getOnlineUsers(Collection<String> onlineEmails) {
+		return memberRepository.findAllByEmailIn(onlineEmails).stream()
+			.map(member -> MemberDto.from(member, true))
+			.collect(Collectors.toList());
+	}
 
-    public String generateRefreshToken(String email) {
-        return refreshTokenService.generateRefreshToken(email);
-    }
+	@Transactional(readOnly = true)
+	public Member findByProviderAndOauthId(String provider, String oauthId) {
+		return oAuthRepository.findByProviderAndOauthIdWithMember(provider, oauthId)
+			.orElseThrow(OAUTH_NOT_FOUND::throwServiceException)
+			.getMember();
+	}
 
-    public String extractEmailIfValid(String token) {
-        if (isLoggedOut(token)) {
-            TOKEN_LOGGED_OUT.throwServiceException();
-        }
-        if (!verifyToken(token)) {
-            TOKEN_INVALID.throwServiceException();
-        }
-        return getEmailFromToken(token);
-    }
+	public String generateRefreshToken(String email) {
+		return refreshTokenService.generateRefreshToken(email);
+	}
 
-    public boolean isLoggedOut(String token) {
-        return Boolean.TRUE.equals(redisTemplate.hasKey(LOGOUT_PREFIX + token));
-    }
+	public String extractEmailIfValid(String token) {
+		if (isLoggedOut(token)) {
+			TOKEN_LOGGED_OUT.throwServiceException();
+		}
+		if (!verifyToken(token)) {
+			TOKEN_INVALID.throwServiceException();
+		}
+		return getEmailFromToken(token);
+	}
 
-    public boolean verifyToken(String accessToken) {
-        return authTokenService.verifyToken(accessToken);
-    }
+	public boolean isLoggedOut(String token) {
+		return Boolean.TRUE.equals(redisTemplate.hasKey(LOGOUT_PREFIX + token));
+	}
 
-    public String getEmailFromToken(String token) {
-        return authTokenService.getEmail(token);
-    }
+	public boolean verifyToken(String accessToken) {
+		return authTokenService.verifyToken(accessToken);
+	}
 
-    public RsData<String> refreshAccessToken(String refreshToken) {
-        return refreshTokenService.refreshAccessToken(refreshToken);
-    }
+	public String getEmailFromToken(String token) {
+		return authTokenService.getEmail(token);
+	}
 
-    @Transactional
-    public void oAuth2Login(Member member, HttpServletResponse response) {
-        GeneratedToken tokens = authTokenService.generateToken(
-                member.getEmail(),
-                member.getUserRole()
-        );
+	public RsData<String> refreshAccessToken(String refreshToken) {
+		return refreshTokenService.refreshAccessToken(refreshToken);
+	}
 
-        addAuthCookies(response, tokens, member);
-    }
+	@Transactional
+	public void oAuth2Login(Member member, HttpServletResponse response) {
+		GeneratedToken tokens = authTokenService.generateToken(
+			member.getEmail(),
+			member.getUserRole()
+		);
 
-    private void addAuthCookies(HttpServletResponse response, GeneratedToken tokens, Member member) {
-        // Access Token 쿠키
-        Cookie accessTokenCookie = new Cookie("access_token", tokens.accessToken());
-        accessTokenCookie.setPath("/");
-        accessTokenCookie.setHttpOnly(true);
-        response.addCookie(accessTokenCookie);
+		addAuthCookies(response, tokens, member);
+	}
 
-        // Refresh Token 쿠키
-        Cookie refreshTokenCookie = new Cookie("refresh_token", tokens.refreshToken());
-        refreshTokenCookie.setPath("/");
-        refreshTokenCookie.setHttpOnly(true);
-        response.addCookie(refreshTokenCookie);
+	private void addAuthCookies(HttpServletResponse response, GeneratedToken tokens, Member member) {
+		// Access Token 쿠키
+		Cookie accessTokenCookie = new Cookie("access_token", tokens.accessToken());
+		accessTokenCookie.setPath("/");
+		accessTokenCookie.setHttpOnly(true);
+		response.addCookie(accessTokenCookie);
 
-        // Role 쿠키
-        Map<String, Object> roleData = new HashMap<>();
-        roleData.put("role", member.getUserRole());
+		// Refresh Token 쿠키
+		Cookie refreshTokenCookie = new Cookie("refresh_token", tokens.refreshToken());
+		refreshTokenCookie.setPath("/");
+		refreshTokenCookie.setHttpOnly(true);
+		response.addCookie(refreshTokenCookie);
 
-        Cookie roleCookie = new Cookie("role", URLEncoder.encode(Ut.json.toString(roleData), StandardCharsets.UTF_8));
-        roleCookie.setPath("/");
-        response.addCookie(roleCookie);
-    }
+		// Role 쿠키
+		Map<String, Object> roleData = new HashMap<>();
+		roleData.put("role", member.getUserRole());
 
-    public void logout(HttpServletRequest request, HttpServletResponse response) {
-        Cookie[] cookies = request.getCookies();
-        String accessToken = null;
-        String refreshToken = null;
+		Cookie roleCookie = new Cookie("role", URLEncoder.encode(Ut.json.toString(roleData), StandardCharsets.UTF_8));
+		roleCookie.setPath("/");
+		response.addCookie(roleCookie);
+	}
 
-        if (cookies != null) {
-            for (Cookie cookie : cookies) {
-                if ("access_token".equals(cookie.getName())) {
-                    accessToken = cookie.getValue();
-                } else if ("refresh_token".equals(cookie.getName())) {
-                    refreshToken = cookie.getValue();
-                }
-            }
-        }
+	public void logout(HttpServletRequest request, HttpServletResponse response) {
+		Cookie[] cookies = request.getCookies();
+		String accessToken = null;
+		String refreshToken = null;
 
-        // 액세스 토큰이 만료되었다면 리프레시 토큰으로 처리
-        if (accessToken == null && refreshToken != null) {
-            RsData<String> refreshResult = refreshAccessToken(refreshToken);
-            if (refreshResult.isSuccess()) {
-                accessToken = refreshResult.getData();
-            }
-        }
+		if (cookies != null) {
+			for (Cookie cookie : cookies) {
+				if ("access_token".equals(cookie.getName())) {
+					accessToken = cookie.getValue();
+				} else if ("refresh_token".equals(cookie.getName())) {
+					refreshToken = cookie.getValue();
+				}
+			}
+		}
 
-        if (accessToken == null) {
-            UNAUTHORIZED.throwServiceException();
-        }
+		// 액세스 토큰이 만료되었다면 리프레시 토큰으로 처리
+		if (accessToken == null && refreshToken != null) {
+			RsData<String> refreshResult = refreshAccessToken(refreshToken);
+			if (refreshResult.isSuccess()) {
+				accessToken = refreshResult.getData();
+			}
+		}
 
-        String email = authTokenService.getEmail(accessToken);
+		if (accessToken == null) {
+			UNAUTHORIZED.throwServiceException();
+		}
 
-        // Redis에서 토큰 무효화
-        redisTemplate.opsForValue().set(
-                LOGOUT_PREFIX + accessToken,
-                email,
-                jwtProperties.getAccessTokenExpiration(),
-                TimeUnit.MILLISECONDS
-        );
+		String email = authTokenService.getEmail(accessToken);
 
-        // Refresh 토큰 삭제
-        refreshTokenService.removeRefreshToken(email);
+		// Redis에서 토큰 무효화
+		redisTemplate.opsForValue().set(
+			LOGOUT_PREFIX + accessToken,
+			email,
+			jwtProperties.getAccessTokenExpiration(),
+			TimeUnit.MILLISECONDS
+		);
 
-        deleteCookie(response);
-    }
+		// Refresh 토큰 삭제
+		refreshTokenService.removeRefreshToken(email);
 
-    private static void deleteCookie(HttpServletResponse response) {
-        Cookie accessTokenCookie = new Cookie("access_token", null);
-        accessTokenCookie.setMaxAge(0);
-        accessTokenCookie.setPath("/");
+		deleteCookie(response);
+	}
 
-        Cookie roleCookie = new Cookie("role", null);
-        roleCookie.setMaxAge(0);
-        roleCookie.setPath("/");
+	private static void deleteCookie(HttpServletResponse response) {
+		Cookie accessTokenCookie = new Cookie("access_token", null);
+		accessTokenCookie.setMaxAge(0);
+		accessTokenCookie.setPath("/");
 
-        Cookie refreshTokenCookie = new Cookie("refresh_token", null);
-        refreshTokenCookie.setMaxAge(0);
-        refreshTokenCookie.setPath("/");
+		Cookie roleCookie = new Cookie("role", null);
+		roleCookie.setMaxAge(0);
+		roleCookie.setPath("/");
 
-        Cookie oauth2AuthRequestCookie = new Cookie("oauth2_auth_request", null);
-        oauth2AuthRequestCookie.setMaxAge(0);
-        oauth2AuthRequestCookie.setPath("/");
+		Cookie refreshTokenCookie = new Cookie("refresh_token", null);
+		refreshTokenCookie.setMaxAge(0);
+		refreshTokenCookie.setPath("/");
 
-        response.addCookie(accessTokenCookie);
-        response.addCookie(roleCookie);
-        response.addCookie(refreshTokenCookie);
-        response.addCookie(oauth2AuthRequestCookie);
-    }
+		Cookie oauth2AuthRequestCookie = new Cookie("oauth2_auth_request", null);
+		oauth2AuthRequestCookie.setMaxAge(0);
+		oauth2AuthRequestCookie.setPath("/");
+
+		response.addCookie(accessTokenCookie);
+		response.addCookie(roleCookie);
+		response.addCookie(refreshTokenCookie);
+		response.addCookie(oauth2AuthRequestCookie);
+	}
 }

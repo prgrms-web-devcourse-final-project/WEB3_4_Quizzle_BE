@@ -1,4 +1,6 @@
 package com.ll.quizzle.domain.room.entity;
 
-public class Room {
+import com.ll.quizzle.global.jpa.entity.BaseTime;
+
+public class Room extends BaseTime {
 }
