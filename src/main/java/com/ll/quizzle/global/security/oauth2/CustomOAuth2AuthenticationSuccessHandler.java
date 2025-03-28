@@ -40,54 +40,43 @@ public class CustomOAuth2AuthenticationSuccessHandler implements AuthenticationS
         log.debug("OAuth2 login success - provider: {}, oauthId: {}, email: {}",
                 securityUser.getProvider(), securityUser.getOauthId(), securityUser.getEmail());
 
-        if (securityUser.isNewUser()) {
-            String redirectUrl = UriComponentsBuilder.fromUriString(authorizedRedirectUri)
-                    .queryParam("provider", URLEncoder.encode(securityUser.getProvider(), StandardCharsets.UTF_8))
-                    .queryParam("oauthId", URLEncoder.encode(securityUser.getOauthId(), StandardCharsets.UTF_8))
-                    .queryParam("status", "REGISTER")
-                    .build()
-                    .encode()
-                    .toUriString();
+        Member member = memberService.findByProviderAndOauthId(
+                securityUser.getProvider(),
+                securityUser.getOauthId()
+        );
 
-            response.sendRedirect(redirectUrl);
-        } else {
-            Member member = memberService.findByProviderAndOauthId(
-                    securityUser.getProvider(),
-                    securityUser.getOauthId()
-            );
-            String accessToken = authTokenService.generateToken(member.getEmail(), member.getUserRole()).accessToken();
-            String refreshToken = memberService.generateRefreshToken(member.getEmail());
-            log.debug("Generated JWT access token: {}", accessToken);
-            log.debug("Generated JWT refresh token: {}", refreshToken);
+        String accessToken = authTokenService.generateToken(member.getEmail(), member.getUserRole()).accessToken();
+        String refreshToken = memberService.generateRefreshToken(member.getEmail());
+        log.debug("Generated JWT access token: {}", accessToken);
+        log.debug("Generated JWT refresh token: {}", refreshToken);
 
-            Map<String, Object> roleData = new HashMap<>();
-            roleData.put("role", member.getUserRole());
 
-            String encodedRoleData = URLEncoder.encode(Ut.json.toString(roleData), StandardCharsets.UTF_8);
+        Map<String, Object> roleData = new HashMap<>();
+        roleData.put("role", member.getUserRole());
+        String encodedRoleData = URLEncoder.encode(Ut.json.toString(roleData), StandardCharsets.UTF_8);
+        Cookie roleCookie = new Cookie("role", encodedRoleData);
+        roleCookie.setSecure(true);
+        roleCookie.setPath("/");
+        response.addCookie(roleCookie);
 
-            Cookie roleCookie = new Cookie("role", encodedRoleData);
-            roleCookie.setSecure(true);
-            roleCookie.setPath("/");
-            response.addCookie(roleCookie);
+        Cookie accessTokenCookie = new Cookie("access_token", accessToken);
+        accessTokenCookie.setHttpOnly(true);
+        accessTokenCookie.setSecure(true);
+        accessTokenCookie.setPath("/");
+        response.addCookie(accessTokenCookie);
 
-            Cookie accessTokenCookie = new Cookie("access_token", accessToken);
-            accessTokenCookie.setHttpOnly(true);
-            accessTokenCookie.setSecure(true);
-            accessTokenCookie.setPath("/");
-            response.addCookie(accessTokenCookie);
+        Cookie refreshTokenCookie = new Cookie("refresh_token", refreshToken);
+        refreshTokenCookie.setHttpOnly(true);
+        refreshTokenCookie.setSecure(true);
+        refreshTokenCookie.setPath("/");
+        response.addCookie(refreshTokenCookie);
 
-            String redirectUrl = UriComponentsBuilder.fromUriString(authorizedRedirectUri)
-                    .queryParam("status", "SUCCESS")
-                    .build()
-                    .toUriString();
+        String status = securityUser.isNewUser() ? "REGISTER" : "SUCCESS";
+        String redirectUrl = UriComponentsBuilder.fromUriString(authorizedRedirectUri)
+                .queryParam("status", status)
+                .build()
+                .toUriString();
 
-            Cookie refreshTokenCookie = new Cookie("refresh_token", refreshToken);
-            refreshTokenCookie.setHttpOnly(true);
-            refreshTokenCookie.setSecure(true);
-            refreshTokenCookie.setPath("/");
-            response.addCookie(refreshTokenCookie);
-
-            response.sendRedirect(redirectUrl);
-        }
+        response.sendRedirect(redirectUrl);
     }
 }
