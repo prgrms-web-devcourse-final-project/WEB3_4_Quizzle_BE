@@ -1,8 +1,8 @@
 package com.ll.quizzle.domain.quiz.controller;
 
-import com.ll.quizzle.domain.quiz.dto.QuizSubmissionResultDTO;
-import com.ll.quizzle.domain.quiz.dto.QuizSubmitRequestDTO;
-import com.ll.quizzle.domain.quiz.dto.QuizSubmitResponseDTO;
+import com.ll.quizzle.domain.quiz.dto.submission.QuizSubmissionResultDTO;
+import com.ll.quizzle.domain.quiz.dto.submission.QuizSubmitRequestDTO;
+import com.ll.quizzle.domain.quiz.dto.submission.QuizSubmitResponseDTO;
 import com.ll.quizzle.domain.quiz.service.RedisQuizSubmissionService;
 import com.ll.quizzle.global.exceptions.ErrorCode;
 import com.ll.quizzle.global.response.RsData;
@@ -41,9 +41,8 @@ public class QuizSubmitController {
             );
             return RsData.success(HttpStatus.OK, response);
         } catch (Exception e) {
-            // 예외 처리: 실제 운영 환경에서는 적절한 에러 응답 또는 로깅을 추가하세요.
             ErrorCode.INTERNAL_SERVER_ERROR.throwServiceException(e);
-            return null; // 도달하지 않음
+            return null;
         }
     }
 }

@@ -1,8 +1,8 @@
 package com.ll.quizzle.domain.quiz.controller;
 
-import com.ll.quizzle.domain.quiz.dto.QuizDTO;
-import com.ll.quizzle.domain.quiz.dto.QuizGenerationResponseDTO;
-import com.ll.quizzle.domain.quiz.dto.QuizResponseDTO;
+import com.ll.quizzle.domain.quiz.dto.generation.QuizDTO;
+import com.ll.quizzle.domain.quiz.dto.generation.QuizGenerationResponseDTO;
+import com.ll.quizzle.domain.quiz.dto.generation.QuizResponseDTO;
 import com.ll.quizzle.domain.quiz.service.GPTQuizService;
 import com.ll.quizzle.domain.quiz.service.RedisQuizAnswerService;
 import com.ll.quizzle.global.exceptions.ErrorCode;
@@ -32,7 +32,6 @@ public class QuizGenerateController {
             String providedQuizId = (quizDTO.id() != null) ? quizDTO.id().toString() : null;
             String quizId = redisQuizAnswerService.saveQuiz(providedQuizId, result.quizText(), result.answerMap());
 
-            // 모든 필드를 생성자에 전달하여 record 인스턴스 생성
             QuizResponseDTO response = new QuizResponseDTO(quizId, result.quizText(), result.answerMap());
 
 

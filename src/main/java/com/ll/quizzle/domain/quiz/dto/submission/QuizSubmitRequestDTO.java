@@ -1,4 +1,4 @@
-package com.ll.quizzle.domain.quiz.dto;
+package com.ll.quizzle.domain.quiz.dto.submission;
 
 public record QuizSubmitRequestDTO(
         int questionNumber,         // 사용자가 제출한 문제 번호
