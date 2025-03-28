@@ -7,6 +7,8 @@ import com.ll.quizzle.domain.member.service.MemberService;
 import com.ll.quizzle.global.exceptions.ServiceException;
 import com.ll.quizzle.global.response.RsData;
 import com.ll.quizzle.global.security.oauth2.dto.SecurityUser;
+import com.ll.quizzle.global.security.oauth2.entity.OAuth;
+import com.ll.quizzle.global.security.oauth2.repository.OAuthRepository;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.Cookie;
@@ -25,8 +27,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 
-import static com.ll.quizzle.global.exceptions.ErrorCode.MEMBER_NOT_FOUND;
-import static com.ll.quizzle.global.exceptions.ErrorCode.TOKEN_EXPIRED;
+import static com.ll.quizzle.global.exceptions.ErrorCode.*;
 import static com.ll.quizzle.global.security.oauth2.dto.SecurityUser.of;
 
 @RequiredArgsConstructor
@@ -36,6 +37,7 @@ public class JwtAuthFilter extends OncePerRequestFilter implements Ordered {
 
     private final MemberService memberService;
     private final MemberRepository memberRepository;
+    private final OAuthRepository oAuthRepository;
 
     @Override
     public int getOrder() {
@@ -66,18 +68,32 @@ public class JwtAuthFilter extends OncePerRequestFilter implements Ordered {
 
         if (StringUtils.hasText(accessToken)) {
             try {
-                String email = memberService.extractEmailIfValid(accessToken);
-                log.debug("Access Token 유효함. Email: {}", email);
+                String providerAndOauthIdIfValid = memberService.extractProviderAndOauthIdIfValid(accessToken);
+                log.debug("Access Token 유효함. providerAndOauthId: {}", providerAndOauthIdIfValid);
 
-                Member member = memberRepository.findByEmail(email)
-                        .orElseThrow(MEMBER_NOT_FOUND::throwServiceException);
+                String[] parts = providerAndOauthIdIfValid.split(":");
+                if (parts.length != 2) {
+                    throw TOKEN_INVALID.throwServiceException();
+                }
+                String provider = parts[0];
+                String oauthId = parts[1];
+
+                OAuth oauth = oAuthRepository.findByProviderAndOauthIdWithMember(provider, oauthId)
+                        .orElseThrow(OAUTH_LOGIN_FAILED::throwServiceException);
+                Member member = oauth.getMember();
+                if (member == null) {
+                    throw MEMBER_NOT_FOUND.throwServiceException();
+                }
+
                 log.debug("Found member: {}", member.getEmail());
 
                 SecurityUser userDto = of(
                         member.getId(),
                         member.getNickname(),
                         member.getEmail(),
-                        "ROLE_" + member.getRole()
+                        "ROLE_" + member.getRole(),
+                        provider,  // provider 추가
+                        oauthId    // oauthId 추가
                 );
 
                 Authentication auth = new UsernamePasswordAuthenticationToken(
@@ -103,15 +119,28 @@ public class JwtAuthFilter extends OncePerRequestFilter implements Ordered {
                             newAccessTokenCookie.setHttpOnly(true);
                             response.addCookie(newAccessTokenCookie);
 
-                            String email = memberService.extractEmailIfValid(refreshResult.getData());
-                            Member member = memberRepository.findByEmail(email)
-                                    .orElseThrow(MEMBER_NOT_FOUND::throwServiceException);
+                            String providerAndOauthId = memberService.extractProviderAndOauthIdIfValid(refreshResult.getData());
+                            String[] parts = providerAndOauthId.split(":");
+                            if (parts.length != 2) {
+                                throw TOKEN_INVALID.throwServiceException();
+                            }
+                            String provider = parts[0];
+                            String oauthId = parts[1];
+
+                            OAuth oauth = oAuthRepository.findByProviderAndOauthIdWithMember(provider, oauthId)
+                                    .orElseThrow(OAUTH_LOGIN_FAILED::throwServiceException);
+                            Member member = oauth.getMember();
+                            if (member == null) {
+                                throw MEMBER_NOT_FOUND.throwServiceException();
+                            }
 
                             SecurityUser userDto = of(
                                     member.getId(),
                                     member.getNickname(),
                                     member.getEmail(),
-                                    "ROLE_" + member.getRole()
+                                    "ROLE_" + member.getRole(),
+                                    provider,  // provider 추가
+                                    oauthId    // oauthId 추가
                             );
 
                             Authentication auth = new UsernamePasswordAuthenticationToken(

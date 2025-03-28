@@ -44,18 +44,18 @@ public class MemberService {
                 .getMember();
     }
 
-    public String generateRefreshToken(String email) {
-        return refreshTokenService.generateRefreshToken(email);
+    public String generateRefreshToken(String provider, String oauthId) {
+        return refreshTokenService.generateRefreshToken(provider, oauthId);
     }
 
-    public String extractEmailIfValid(String token) {
+    public String extractProviderAndOauthIdIfValid(String token) {
         if (isLoggedOut(token)) {
             TOKEN_LOGGED_OUT.throwServiceException();
         }
         if (!verifyToken(token)) {
             TOKEN_INVALID.throwServiceException();
         }
-        return getEmailFromToken(token);
+        return getProviderAndOauthIdFromToken(token);
     }
 
     public boolean isLoggedOut(String token) {
@@ -66,8 +66,8 @@ public class MemberService {
         return authTokenService.verifyToken(accessToken);
     }
 
-    public String getEmailFromToken(String token) {
-        return authTokenService.getEmail(token);
+    public String getProviderAndOauthIdFromToken(String token) {
+        return authTokenService.getProviderAndOauthId(token);
     }
 
     public RsData<String> refreshAccessToken(String refreshToken) {
@@ -75,9 +75,10 @@ public class MemberService {
     }
 
     @Transactional
-    public void oAuth2Login(Member member, HttpServletResponse response) {
+    public void oAuth2Login(Member member, String provider, String oauthId, HttpServletResponse response) {
         GeneratedToken tokens = authTokenService.generateToken(
-                member.getEmail(),
+                provider,
+                oauthId,
                 member.getUserRole()
         );
 
@@ -133,18 +134,25 @@ public class MemberService {
             UNAUTHORIZED.throwServiceException();
         }
 
-        String email = authTokenService.getEmail(accessToken);
+        String providerAndOauthId = authTokenService.getProviderAndOauthId(accessToken);
+
+        String[] parts = providerAndOauthId.split(":");
+        if (parts.length != 2) {
+            throw TOKEN_INVALID.throwServiceException();
+        }
+        String provider = parts[0];
+        String oauthId = parts[1];
 
         // Redis에서 토큰 무효화
         redisTemplate.opsForValue().set(
                 LOGOUT_PREFIX + accessToken,
-                email,
+                providerAndOauthId,
                 jwtProperties.getAccessTokenExpiration(),
                 TimeUnit.MILLISECONDS
         );
 
         // Refresh 토큰 삭제
-        refreshTokenService.removeRefreshToken(email);
+        refreshTokenService.removeRefreshToken(provider, oauthId);
 
         deleteCookie(response);
     }

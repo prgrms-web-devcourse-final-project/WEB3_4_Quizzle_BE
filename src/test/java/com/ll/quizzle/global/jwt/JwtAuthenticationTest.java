@@ -10,6 +10,8 @@ import com.ll.quizzle.global.jwt.dto.GeneratedToken;
 import com.ll.quizzle.global.jwt.dto.JwtProperties;
 import com.ll.quizzle.global.request.Rq;
 import com.ll.quizzle.global.response.RsData;
+import com.ll.quizzle.global.security.oauth2.entity.OAuth;
+import com.ll.quizzle.global.security.oauth2.repository.OAuthRepository;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import jakarta.servlet.http.Cookie;
@@ -30,7 +32,6 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.context.WebApplicationContext;
 
-import java.util.ArrayList;
 import java.util.Date;
 
 import static com.ll.quizzle.global.exceptions.ErrorCode.UNAUTHORIZED;
@@ -58,6 +59,9 @@ public class JwtAuthenticationTest {
     private MemberRepository memberRepository;
 
     @Autowired
+    private OAuthRepository oAuthRepository;
+
+    @Autowired
     private AuthTokenService authTokenService;
 
     @Autowired
@@ -73,7 +77,10 @@ public class JwtAuthenticationTest {
     private Rq rq;
 
     private Member testMember;
+    private OAuth testOAuth;
     private GeneratedToken generatedTokens;
+    private final String testProvider = "google";
+    private final String testOauthId = "12345";
 
     @BeforeEach
     void setUp() {
@@ -96,14 +103,22 @@ public class JwtAuthenticationTest {
                 .exp(0)
                 .profilePath("test")
                 .pointBalance(0)
-                .oauths(new ArrayList<>())
+                .build();
+
+        // 테스트용 OAuth 정보 생성
+        testOAuth = OAuth.builder()
+                .provider(testProvider)
+                .oauthId(testOauthId)
+                .member(testMember)
                 .build();
 
         memberRepository.save(testMember);
+        oAuthRepository.save(testOAuth);
 
         // 토큰 생성
         generatedTokens = authTokenService.generateToken(
-                testMember.getEmail(),
+                testProvider,
+                testOauthId,
                 testMember.getRole().toString()
         );
 
@@ -136,8 +151,7 @@ public class JwtAuthenticationTest {
         when(rq.getActor()).thenThrow(new ServiceException(UNAUTHORIZED.getHttpStatus(), "로그인이 필요합니다."));
 
         // when & then
-        // todo : api 추가된 후 url 수정 필요
-        mockMvc.perform(get("/api/v1/members"))
+        mockMvc.perform(get("/api/v1/members/1/points"))
                 .andExpect(status().isUnauthorized());
     }
 
@@ -155,9 +169,9 @@ public class JwtAuthenticationTest {
         assertThat(result.getResultCode()).isEqualTo(HttpStatus.OK);
         assertThat(result.getData()).isNotEmpty();
 
-        // 새 토큰으로 이메일 추출 테스트
-        String email = memberService.getEmailFromToken(result.getData());
-        assertThat(email).isEqualTo(testMember.getEmail());
+        // 새 토큰으로 사용자 식별자 추출 테스트
+        String providerAndOauthId = memberService.getProviderAndOauthIdFromToken(result.getData());
+        assertThat(providerAndOauthId).isEqualTo(testProvider + ":" + testOauthId);
     }
 
     @Test
@@ -166,8 +180,10 @@ public class JwtAuthenticationTest {
         // given
         String expiredToken = generateExpiredToken();
 
-        // when & then
+        // when
         boolean isValid = memberService.verifyToken(expiredToken);
+
+        // then
         assertThat(isValid).isFalse();
     }
 
@@ -185,16 +201,16 @@ public class JwtAuthenticationTest {
     }
 
     @Test
-    @DisplayName("토큰에서 이메일 추출 테스트")
+    @DisplayName("토큰에서 사용자 식별자 추출 테스트")
     void extractEmailFromToken() {
         // given
         String token = generatedTokens.accessToken();
 
         // when
-        String email = memberService.getEmailFromToken(token);
+        String providerAndOauthId = memberService.getProviderAndOauthIdFromToken(token);
 
         // then
-        assertThat(email).isEqualTo(testMember.getEmail());
+        assertThat(providerAndOauthId).isEqualTo(testProvider + ":" + testOauthId);
     }
 
     // 만료된 토큰 생성 도우미 메서드

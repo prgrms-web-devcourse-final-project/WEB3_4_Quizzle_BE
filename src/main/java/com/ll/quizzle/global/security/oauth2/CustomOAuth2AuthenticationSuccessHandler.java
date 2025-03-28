@@ -45,8 +45,15 @@ public class CustomOAuth2AuthenticationSuccessHandler implements AuthenticationS
                 securityUser.getOauthId()
         );
 
-        String accessToken = authTokenService.generateToken(member.getEmail(), member.getUserRole()).accessToken();
-        String refreshToken = memberService.generateRefreshToken(member.getEmail());
+        String accessToken = authTokenService.generateToken(
+                securityUser.getProvider(),
+                securityUser.getOauthId(),
+                member.getUserRole()
+        ).accessToken();
+        String refreshToken = memberService.generateRefreshToken(
+                securityUser.getProvider(),
+                securityUser.getOauthId()
+        );
         log.debug("Generated JWT access token: {}", accessToken);
         log.debug("Generated JWT refresh token: {}", refreshToken);
 
