@@ -26,10 +26,12 @@ public class QuizSubmitController {
      */
     @PostMapping("/{roomId}/submit")
     public RsData<QuizSubmitResponseDTO> submitAnswer(@PathVariable("roomId") String roomId,
-                                                      @RequestBody QuizSubmitRequestDTO submitRequest) {
+                                                      @RequestBody QuizSubmitRequestDTO submitRequest,
+                                                      @RequestParam String userId) { // 혹은 다른 방식으로 userId 획득
         try {
             QuizSubmissionResultDTO result = redisQuizSubmissionService.submitAnswer(
                     roomId,
+                    userId, // 사용자 ID 추가
                     submitRequest.questionNumber(),
                     submitRequest.submittedAnswer()
             );

@@ -23,8 +23,8 @@ public class RedisQuizSubmissionService {
      * @param submittedAnswer 사용자가 제출한 답안
      * @return QuizSubmissionResultDTO (문제 번호, 채점 결과, 정답, 메시지 포함)
      */
-    public QuizSubmissionResultDTO submitAnswer(String quizId, int questionNumber, String submittedAnswer) {
-        // 정답 리스트가 저장된 Redis 키 생성
+    public QuizSubmissionResultDTO submitAnswer(String quizId, String userId, int questionNumber, String submittedAnswer) {
+        // 정답 리스트가 저장된 Redis 키 생성 (문제의 경우는 그대로)
         String answerListKey = "quiz:" + quizId + ":answers";
 
         Long size = redisTemplate.opsForList().size(answerListKey);
@@ -46,10 +46,11 @@ public class RedisQuizSubmissionService {
         String correctAnswer = parts[1].trim().toLowerCase();
         boolean isCorrect = correctAnswer.equals(submittedAnswer.trim().toLowerCase());
 
-        String submissionKey = "quiz:" + quizId + ":submissions";
+        // 사용자별 제출 정보를 저장하기 위한 Redis 키 생성
+        String submissionKey = "quiz:" + quizId.trim() + ":user:" + userId.trim() + ":submissions";
         String resultStr = isCorrect ? "correct" : "incorrect";
         String submissionEntry = questionNumber + ":" + submittedAnswer.trim().toLowerCase() + ":" + resultStr;
-        
+
         redisTemplate.opsForList().rightPush(submissionKey, submissionEntry);
         redisTemplate.expire(submissionKey, QUIZ_TTL);
 
@@ -57,4 +58,5 @@ public class RedisQuizSubmissionService {
 
         return new QuizSubmissionResultDTO(questionNumber, isCorrect, correctAnswer, message);
     }
+
 }
