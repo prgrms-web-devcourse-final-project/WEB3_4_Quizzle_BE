@@ -53,9 +53,6 @@ class WebSocketConfigTest {
     void setUp() {
         webSocketConfig = new WebSocketConfig(handshakeInterceptor, channelInterceptor);
         
-        // 실제 테스트 환경에서는 MessageBrokerRegistry 등을 설정할 수 없으므로
-        // 주요 이벤트 처리 로직만 테스트하는 방식으로 변경
-
         // 테스트 멤버 생성
         testMember = Member.builder()
                 .nickname("WebSocket 테스트")
@@ -72,21 +69,16 @@ class WebSocketConfigTest {
     @Test
     @DisplayName("웹소켓 STOMP 엔드포인트 설정 테스트")
     void testStompEndpointConfiguration() {
-        // WebSocketConfig.registerStompEndpoints 메서드는 직접 테스트하기 어려움
-        // 대신 올바른 엔드포인트와 허용된 오리진이 설정되는지 검증하는 로직 구현
         
         // given
         String testEndpoint = "/ws-stomp";
         String[] testAllowedOrigins = new String[]{"http://localhost:3000"};
         
         // when
-        // ReflectionTestUtils를 사용하여 private 필드에 값 설정
         ReflectionTestUtils.setField(webSocketConfig, "endpoint", testEndpoint);
         ReflectionTestUtils.setField(webSocketConfig, "allowedOrigins", testAllowedOrigins);
         
         // then
-        // registerStompEndpoints 메서드가 올바른 값으로 호출되는지 확인하는 로직 구현
-        // 직접적인 검증은 어렵지만, 내부 값이 올바르게 설정되었는지 검증 가능
         Object endpoint = ReflectionTestUtils.getField(webSocketConfig, "endpoint");
         Object allowedOrigins = ReflectionTestUtils.getField(webSocketConfig, "allowedOrigins");
         
@@ -127,7 +119,6 @@ class WebSocketConfigTest {
         assertThat(mockRegistration.getInterceptorCount()).isEqualTo(1);
     }
     
-    // 테스트용 MockChannelRegistration 클래스
     private static class MockChannelRegistration extends ChannelRegistration {
         private int interceptorCount = 0;
         
@@ -140,7 +131,5 @@ class WebSocketConfigTest {
         public int getInterceptorCount() {
             return interceptorCount;
         }
-        
-        // 나머지 메서드 구현 (여기서는 테스트에 필요한 메서드만 구현)
     }
 } 
