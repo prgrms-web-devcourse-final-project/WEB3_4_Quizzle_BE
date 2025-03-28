@@ -52,7 +52,7 @@ public class PointService {
 
 	// 포인트 사용
 	public void usePoint(Member member, int amount, PointReason reason) {
-		member.decreasePoint(amount); // ↓ 여기서 POINT_NOT_ENOUGH 예외 처리되어야 함
+		member.decreasePoint(amount);
 		Point point = Point.use(member, amount, reason);
 		pointRepository.save(point);
 	}

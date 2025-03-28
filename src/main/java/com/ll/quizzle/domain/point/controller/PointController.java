@@ -25,7 +25,7 @@ public class PointController {
 
 	@GetMapping("/{memberId}/points")
 	public RsData<PageDto<PointHistoryResponseDTO>> getPointHistories(
-		@PathVariable Long memberId,
+		@PathVariable("memberId") Long memberId,
 		@RequestParam(defaultValue = "ALL") PointType type,
 		@RequestParam(defaultValue = "0") int page,
 		@RequestParam(defaultValue = "10") int size
