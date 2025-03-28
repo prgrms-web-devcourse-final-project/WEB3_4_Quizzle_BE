@@ -38,7 +38,7 @@ public class RedisMessageListener implements MessageListener {
             subscribeToChannel(topic);
         }
         
-        log.info("Redis 메시지 리스너 초기화 완료, 고정 채널 {} 개 구독됨", FIXED_TOPICS.size());
+        log.debug("Redis 메시지 리스너 초기화 완료, 고정 채널 {} 개 구독됨", FIXED_TOPICS.size());
     }
 
 
@@ -47,7 +47,7 @@ public class RedisMessageListener implements MessageListener {
             ChannelTopic topic = new ChannelTopic(channel);
             redisMessageListenerContainer.addMessageListener(this, topic);
             activeChannels.put(channel, topic);
-            log.info("Redis 채널 구독 완료: {}", channel);
+            log.debug("Redis 채널 구독 완료: {}", channel);
         } else {
             log.debug("이미 구독 중인 채널: {}", channel);
         }
@@ -58,7 +58,7 @@ public class RedisMessageListener implements MessageListener {
         ChannelTopic topic = activeChannels.remove(channel);
         if (topic != null) {
             redisMessageListenerContainer.removeMessageListener(this, topic);
-            log.info("Redis 채널 구독 해제 완료: {}", channel);
+            log.debug("Redis 채널 구독 해제 완료: {}", channel);
         } else {
             log.debug("구독되지 않은 채널 해제 시도: {}", channel);
         }
@@ -69,7 +69,7 @@ public class RedisMessageListener implements MessageListener {
         String chatChannel = "/topic/room/chat/" + roomId;
         subscribeToChannel(chatChannel);
         
-        log.info("방 {} 채팅 채널 구독 완료", roomId);
+        log.debug("방 {} 채팅 채널 구독 완료", roomId);
     }
     
 
@@ -91,10 +91,10 @@ public class RedisMessageListener implements MessageListener {
             String channel = new String(message.getChannel(), StandardCharsets.UTF_8);
             String messageBody = new String(message.getBody(), StandardCharsets.UTF_8);
             
-            log.info("Redis 메시지 수신: 채널={}, 원본 메시지={}", channel, messageBody);
+            log.debug("Redis 메시지 수신: 채널={}, 원본 메시지={}", channel, messageBody);
             
             messagingTemplate.convertAndSend(channel, messageBody);
-            log.info("STOMP 클라이언트로 메시지 전달 완료: {}", channel);
+            log.debug("STOMP 클라이언트로 메시지 전달 완료: {}", channel);
         } catch (Exception e) {
             log.error("Redis 메시지 처리 중 오류: {}", e.getMessage(), e);
         }
