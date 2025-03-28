@@ -9,9 +9,6 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import static com.ll.quizzle.global.exceptions.ErrorCode.*;
 
 @Entity
@@ -42,22 +39,16 @@ public class Member extends BaseEntity {
     @Column(nullable = false)
     private int pointBalance;
 
-    @OneToMany(mappedBy = "member", cascade = CascadeType.ALL)
-    @Builder.Default
-    private List<OAuth> oauths = new ArrayList<>();
+    @OneToOne(mappedBy = "member", cascade = CascadeType.ALL)
+    private OAuth oauth;
 
     public String getUserRole() {
         return this.role.name();
     }
 
-    public OAuth getFirstOAuth() {
-        return this.oauths.isEmpty() ? null : this.oauths.get(0);
-    }
-
     public boolean isAdmin() {
         return this.role == Role.ADMIN;
     }
-
 
     public boolean isMember() {
         return this.role == Role.MEMBER;
