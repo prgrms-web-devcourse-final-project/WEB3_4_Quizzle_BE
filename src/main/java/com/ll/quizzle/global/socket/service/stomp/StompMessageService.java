@@ -79,4 +79,9 @@ public class StompMessageService implements MessageService {
             callback.onMessage(message);
         }
     }
+
+    public void sendToTopic(String destination, Map<String, Object> message) {
+        log.debug("토픽 메시지 전송 to : {}", destination);
+        messagingTemplate.convertAndSend(destination, message);
+    }
 } 
