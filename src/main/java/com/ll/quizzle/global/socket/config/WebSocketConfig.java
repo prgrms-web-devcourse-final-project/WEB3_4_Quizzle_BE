@@ -20,10 +20,10 @@ import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerCo
 @RequiredArgsConstructor
 public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
-    @Value("${spring.websocket.endpoint}")
+    @Value("${spring.websocket.endpoint:/ws}")
     private String endpoint;
     
-    @Value("${spring.websocket.allowed-origins}")
+    @Value("${spring.websocket.allowed-origins:*}")
     private String[] allowedOrigins;
     
     private final WebSocketHandshakeInterceptor handshakeInterceptor;
