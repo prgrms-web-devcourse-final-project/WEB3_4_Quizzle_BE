@@ -8,16 +8,6 @@ spring:
   config:
     import: optional:file:.env[.properties]
 
-  h2:
-    console:
-      enabled: true
-      path: /h2-console
-  datasource:
-    url: jdbc:h2:./db_dev;MODE=MySQL
-    driverClassName: org.h2.Driver
-    username: sa
-    password: ""
-
   security:
     oauth2:
       client:
@@ -45,12 +35,6 @@ spring:
             user-info-uri: https://kapi.kakao.com/v2/user/me
             user-name-attribute: id
 
-openai:
-  model: ${OPENAI_MODEL:gpt-3.5-turbo}
-  api:
-    key: ${OPENAI_API_KEY:dummy-api-key}
-    url: ${OPENAI_API_URL:https://api.openai.com/v1/chat/completions}
-
 quizzle:
   messaging:
     provider: stomp
@@ -61,23 +45,8 @@ quizzle:
 
 app:
   oauth2:
-    authorizedRedirectUris: http://localhost:3000/oauth/callback
+    authorizedRedirectUris: "${custom.site.frontUrl}/oauth/callback"
 
 custom:
-  dev:
-    cookieDomain: localhost
-    frontUrl: "http://${custom.dev.cookieDomain}:3000"
-    backUrl: "http://${custom.dev.cookieDomain}:8080"
-  prod:
-    cookieDomain: NEED_TO_INPUT
-    frontUrl: "https://www.${custom.prod.cookieDomain}"
-    backUrl: "https://api.${custom.prod.cookieDomain}"
   site:
-    cookieDomain: "${custom.dev.cookieDomain}"
-    frontUrl: "${custom.dev.frontUrl}"
-    backUrl: "${custom.dev.backUrl}"
     name: Quizzle
-  cors:
-    allowed-origins:
-      - http://localhost:3000
-      - http://localhost:8080
