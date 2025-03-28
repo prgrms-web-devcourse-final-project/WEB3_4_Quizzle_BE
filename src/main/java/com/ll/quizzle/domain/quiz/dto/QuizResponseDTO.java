@@ -6,8 +6,8 @@ import java.util.Map;
  * Controller에서 클라이언트에게 반환할 최종 응답 DTO
  */
 public record QuizResponseDTO(
+        String quizId,
         String quizText,
-        Map<Integer, String> answerKey,
-        String quizId
+        Map<Integer, String> answerKey
 ) {
 }
