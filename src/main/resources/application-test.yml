@@ -1,13 +1,23 @@
 spring:
+  h2:
+    console:
+      enabled: true
+  datasource:
+    url: jdbc:h2:mem:testdb;MODE=MySQL
+    driverClassName: org.h2.Driver
+    username: sa
+    password: ""
+
+  jpa:
+    show-sql: true
+    hibernate:
+      ddl-auto: create
+
   websocket:
     endpoint: /ws
     allowed-origins:
       - http://localhost:*
       - http://127.0.0.1:*
-  jpa:
-    show-sql: true
-    hibernate:
-      ddl-auto: create
 
 logging:
   level:
@@ -16,25 +26,19 @@ logging:
     org.hibernate.SQL: DEBUG
     org.hibernate.type.descriptor.sql: TRACE
 
-
 server:
   port: 0
   error:
     include-stacktrace: always
     include-message: always
 
-
-quizzle:
-  test:
-    # 성현님이 테스트 부분 추가를 해주실 때 사용하시라고 추가했습니다.
-    # 간략한 플로우를 설명드리겠습니다.
-    # 테스트 환경에서만 작동하는 타입을 하나 만드신 뒤 예로들면 @Profile("test") 을 클래스 단에 붙여주시면 됩니다.
-    # SecurityContext에 테스트용 인증 객체를 자동으로 등록하는 필터를 추가하시면 됩니다.
-    auto-login: true
-
-
-openai:
-  model: ${OPENAI_MODEL:gpt-4o}
-  api:
-    key: ${OPENAI_API_KEY:dummy-api-key}
-    url: ${OPENAI_API_URL:https://api.openai.com/v1/chat/completions}
+custom:
+  site:
+    cookieDomain: localhost
+    frontUrl: "http://localhost:3000"
+    backUrl: "http://localhost:0"
+    name: Quizzle
+  cors:
+    allowed-origins:
+      - http://localhost:*
+      - http://127.0.0.1:*
