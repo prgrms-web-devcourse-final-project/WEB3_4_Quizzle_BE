@@ -20,7 +20,7 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
 	@Value("${spring.websocket.allowed-origins:*}")
 	private String[] allowedOrigins;
-
+	
 	@Override
 	public void configureMessageBroker(MessageBrokerRegistry registry) {
 		ThreadPoolTaskScheduler taskScheduler = new ThreadPoolTaskScheduler();
@@ -51,6 +51,7 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 	public void registerStompEndpoints(StompEndpointRegistry registry) {
 		registry.addEndpoint(endpoint)
 			.setAllowedOriginPatterns(allowedOrigins)
-			.withSockJS(); // WebSocket 을 지원하지 않는 브라우저를 위해 추가
+			.withSockJS() // WebSocket 을 지원하지 않는 브라우저를 위해 추가
+			.setHeartbeatTime(25000); // 하트비트 간격 설정
 	}
 }

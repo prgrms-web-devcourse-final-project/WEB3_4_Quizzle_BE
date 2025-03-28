@@ -1,15 +1,19 @@
 package com.ll.quizzle.global.socket.controller;
 
+import java.util.List;
 import java.util.Objects;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.handler.annotation.DestinationVariable;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.messaging.simp.SimpMessageHeaderAccessor;
 import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.GetMapping;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.ll.quizzle.domain.member.dto.MemberDto;
 import com.ll.quizzle.global.socket.core.MessageService;
 import com.ll.quizzle.global.socket.core.MessageServiceFactory;
 import com.ll.quizzle.global.socket.listener.WebSocketEventListener;
@@ -73,7 +77,7 @@ public class WebSocketController {
 	public void handleLoadMoreUsers(@Payload int page, SimpMessageHeaderAccessor headerAccessor) {
 		String username = Objects.requireNonNull(headerAccessor.getUser()).getName();
 		log.debug("추가 사용자 목록 요청: 페이지 {}, 요청자: {}", page, username);
-		webSocketEventListener.loadMoreUsers(page);  // 메서드 이름 변경
+		webSocketEventListener.loadMoreUsers(page);
 	}
 
 	@MessageMapping("/room/{roomId}")
@@ -108,5 +112,11 @@ public class WebSocketController {
 		String username = Objects.requireNonNull(headerAccessor.getUser()).getName();
 		log.debug("게임 시작 메시지 수신: {}, 방: {}, 사용자: {}", message, roomId, username);
 		roomService.send("/topic/game/start/" + roomId, message);
+	}
+
+	@GetMapping("/api/auth/test/data")
+	public ResponseEntity<List<MemberDto>> getTestDataJson() {
+		List<MemberDto> onlineUsers = webSocketEventListener.getAllOnlineUsers();
+		return ResponseEntity.ok(onlineUsers);
 	}
 }
