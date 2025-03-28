@@ -14,26 +14,19 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class RoomMessageDTO {
-
     private MessageType type;
-
     private String content;
-
     /**
      * JSON 형식의 추가 데이터를 전달하기 위해 추가했습니다.
      * 폴링 없이 실시간으로 데이터를 전달하기 위해 추가했습니다.
      */
     private String data;
-
     private String senderId;
-
     private String senderName;
-
     /**
      * Room 쪽 timestamp 역시 히스토리 관리 및 확장성을 위해 추가했습니다.
      */
     private long timestamp;
-
     private String roomId;
 
     public enum MessageType {
@@ -49,4 +42,4 @@ public class RoomMessageDTO {
         ROUND_END,      // 라운드 종료
         SYSTEM          // 시스템 메시지
     }
-} 
+}
