@@ -79,12 +79,7 @@ public class MemberService {
         return authTokenService.getEmail(token);
     }
     
-    /**
-     * JWT 토큰에서 만료 시간을 추출합니다.
-     * 
-     * @param token JWT 토큰
-     * @return 토큰 만료 시간 (밀리초 단위 timestamp)
-     */
+
     public Long getTokenExpiryTime(String token) {
         return authTokenService.getTokenExpiryTime(token);
     }
