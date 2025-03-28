@@ -30,12 +30,11 @@ public class QuizGenerateController {
             QuizGenerationResponseDTO result = gptQuizService.generateQuiz(quizDTO);
 
             String providedQuizId = (quizDTO.id() != null) ? quizDTO.id().toString() : null;
-            String quizId = redisQuizAnswerService.saveQuiz(providedQuizId, result.getQuizText(), result.getAnswerMap());
+            String quizId = redisQuizAnswerService.saveQuiz(providedQuizId, result.quizText(), result.answerMap());
 
-            QuizResponseDTO response = new QuizResponseDTO();
-            response.setQuizId(quizId);
-            response.setQuizText(result.getQuizText());
-            response.setAnswerKey(result.getAnswerMap());
+            // 모든 필드를 생성자에 전달하여 record 인스턴스 생성
+            QuizResponseDTO response = new QuizResponseDTO(quizId, result.quizText(), result.answerMap());
+
 
             return RsData.success(HttpStatus.OK, response);
         } catch (Exception e) {
@@ -43,6 +42,5 @@ public class QuizGenerateController {
             return null; // unreachable
         }
     }
-
 
 }

@@ -1,18 +1,20 @@
 package com.ll.quizzle.global.socket.service.redis;
 
-import com.ll.quizzle.global.socket.core.MessageCallback;
-import com.ll.quizzle.global.socket.core.MessageService;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+
 import org.springframework.data.redis.connection.MessageListener;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.listener.ChannelTopic;
 import org.springframework.data.redis.listener.RedisMessageListenerContainer;
 import org.springframework.stereotype.Service;
 
-import java.util.Map;
-import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
+import com.ll.quizzle.global.socket.core.MessageCallback;
+import com.ll.quizzle.global.socket.core.MessageService;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * Redis PUB/SUB 기반 메시징 서비스 구현체
@@ -22,7 +24,7 @@ import java.util.concurrent.ConcurrentHashMap;
 @RequiredArgsConstructor
 public class RedisMessageService implements MessageService {
 
-    private final RedisTemplate<String, Object> redisTemplate;
+    private final RedisTemplate<String, String> redisTemplate;
     private final RedisMessageListenerContainer listenerContainer;
     /**
      * 여기서도 공유자원 관리를 위해 ConcurrentHashMap 을 사용합니다.
@@ -30,19 +32,24 @@ public class RedisMessageService implements MessageService {
      */
     private final Map<String, MessageListener> listeners = new ConcurrentHashMap<>();
     private final Map<String, ChannelTopic> topics = new ConcurrentHashMap<>();
-    private final Map<String, MessageCallback> callbacks = new ConcurrentHashMap<>();
     private boolean connected = false;
 
     @Override
     public void send(String destination, Object message) {
-        log.debug("Redis 채널로 메시지 전송: {}", destination);
-        redisTemplate.convertAndSend(destination, message);
+        try {
+            String messageStr = (message instanceof String) ? (String) message : message.toString();
+            log.debug("Redis 채널로 메시지 전송: {}", destination);
+            redisTemplate.convertAndSend(destination, messageStr);
+        } catch (Exception e) {
+            log.error("Redis 메시지 전송 실패: {}", e.getMessage(), e);
+        }
     }
 
     @Override
     public void sendToUser(String userId, Object message) {
+        String messageStr = (message instanceof String) ? (String) message : message.toString();
         log.debug("사용자 채널로 메시지 전송: {}", userId);
-        redisTemplate.convertAndSend("user:" + userId, message);
+        redisTemplate.convertAndSend("user:" + userId, messageStr);
     }
 
     @Override
@@ -51,15 +58,14 @@ public class RedisMessageService implements MessageService {
         
         ChannelTopic topic = new ChannelTopic(destination);
         MessageListener listener = (message, pattern) -> {
-            Object deserializedMessage = redisTemplate.getValueSerializer().deserialize(message.getBody());
-            callback.onMessage(deserializedMessage);
+            String messageStr = new String(message.getBody());
+            callback.onMessage(messageStr);
         };
         
         listenerContainer.addMessageListener(listener, topic);
         
         listeners.put(subscriptionId, listener);
         topics.put(subscriptionId, topic);
-        callbacks.put(subscriptionId, callback);
         
         log.debug("Redis 채널 구독 완료: {} (구독 ID: {})", destination, subscriptionId);
         return subscriptionId;
@@ -74,7 +80,6 @@ public class RedisMessageService implements MessageService {
             listenerContainer.removeMessageListener(listener, topic);
             listeners.remove(subscriptionId);
             topics.remove(subscriptionId);
-            callbacks.remove(subscriptionId);
             log.debug("Redis 구독 취소 완료 (구독 ID: {})", subscriptionId);
         }
     }
@@ -98,7 +103,6 @@ public class RedisMessageService implements MessageService {
         listeners.keySet().forEach(this::unsubscribe);
         listeners.clear();
         topics.clear();
-        callbacks.clear();
         
         log.debug("Redis 메시지 서비스 연결 해제됨");
     }
