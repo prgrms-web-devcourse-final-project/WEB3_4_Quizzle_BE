@@ -4,6 +4,7 @@ import com.ll.quizzle.global.exceptions.ErrorCode;
 import com.ll.quizzle.global.exceptions.ServiceException;
 import com.ll.quizzle.global.response.RsData;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
@@ -11,6 +12,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 
+@Slf4j
 @ControllerAdvice
 @RequiredArgsConstructor
 public class GlobalExceptionHandler {
@@ -20,9 +22,11 @@ public class GlobalExceptionHandler {
         HttpStatus status = ex.getResultCode() != null ? ex.getResultCode() : ErrorCode.INTERNAL_SERVER_ERROR.getHttpStatus();
         String message = ex.getMsg() != null ? ex.getMsg() : ErrorCode.INTERNAL_SERVER_ERROR.getMessage();
 
+        log.error("ServiceException occurred: {}", message, ex);
+
         return ResponseEntity
-                .status(ex.getResultCode())
-                .body(new RsData<>(ex.getResultCode(), ex.getMsg(), null));
+                .status(status)
+                .body(new RsData<>(status, message, null));
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
@@ -35,6 +39,8 @@ public class GlobalExceptionHandler {
                     .append("\n");
         }
 
+        log.error("Validation failed: {}", errorMessages.toString());
+
         return ResponseEntity
                 .status(HttpStatus.BAD_REQUEST)
                 .body(new RsData<>(HttpStatus.BAD_REQUEST, errorMessages.toString(), null));
@@ -42,6 +48,8 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<RsData<?>> handleGenericException(Exception ex) {
+        log.error("Unexpected exception occurred: {}", ex.getMessage(), ex);
+
         return ResponseEntity
                 .status(ErrorCode.INTERNAL_SERVER_ERROR.getHttpStatus())
                 .body(new RsData<>(
