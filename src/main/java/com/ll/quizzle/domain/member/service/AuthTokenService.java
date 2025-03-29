@@ -22,17 +22,18 @@ public class AuthTokenService {
     private final JwtProperties jwtProperties;
     private final RefreshTokenService refreshTokenService;
 
-    public GeneratedToken generateToken(String email, String role) {
-        String accessToken = genAccessToken(email, role);
-        String refreshToken = refreshTokenService.generateRefreshToken(email);
+    public GeneratedToken generateToken(String provider, String oauthId, String role) {
+        String accessToken = genAccessToken(provider, oauthId, role);
+        String refreshToken = refreshTokenService.generateRefreshToken(provider, oauthId);
 
-        refreshTokenService.saveTokenInfo(email, refreshToken, accessToken);
+        refreshTokenService.saveTokenInfo(provider, oauthId, refreshToken, accessToken);
         return new GeneratedToken(accessToken, refreshToken);
     }
 
-    String genAccessToken(String email, String role) {
+    String genAccessToken(String provider, String oauthId, String role) {
+        String providerAndOauthId = provider + ":" + oauthId;
         Map<String, Object> claims = new HashMap<>();
-        claims.put("sub", email);
+        claims.put("sub", providerAndOauthId);
         claims.put("role", role);
         claims.put("type", "access");
 
@@ -55,7 +56,7 @@ public class AuthTokenService {
         return false;
     }
 
-    String getEmail(String token) {
+    String getProviderAndOauthId(String token) {
         return Ut.jwt.getClaims(jwtProperties, token).getSubject();
     }
 

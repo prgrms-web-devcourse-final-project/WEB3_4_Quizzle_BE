@@ -1,5 +1,21 @@
 package com.ll.quizzle.domain.member.service;
 
+import static com.ll.quizzle.global.exceptions.ErrorCode.*;
+
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
+
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.ll.quizzle.domain.member.dto.MemberDto;
 import com.ll.quizzle.domain.member.entity.Member;
 import com.ll.quizzle.domain.member.repository.MemberRepository;
 import com.ll.quizzle.global.jwt.dto.GeneratedToken;
@@ -7,7 +23,9 @@ import com.ll.quizzle.global.jwt.dto.JwtProperties;
 import com.ll.quizzle.global.request.Rq;
 import com.ll.quizzle.global.response.RsData;
 import com.ll.quizzle.global.security.oauth2.repository.OAuthRepository;
+import com.ll.quizzle.standard.util.CookieUtil;
 import com.ll.quizzle.standard.util.Ut;
+
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -39,6 +57,13 @@ public class MemberService {
     private static final String LOGOUT_PREFIX = "LOGOUT:";
 
     @Transactional(readOnly = true)
+    public List<MemberDto> getOnlineUsers(Collection<String> onlineEmails) {
+      return memberRepository.findAllByEmailIn(onlineEmails).stream()
+        .map(member -> MemberDto.from(member, true))
+        .collect(Collectors.toList());
+    }
+  
+    @Transactional(readOnly = true)
     public Member findByProviderAndOauthId(String provider, String oauthId) {
         return oAuthRepository.findByProviderAndOauthIdWithMember(provider, oauthId)
                 .orElseThrow(OAUTH_NOT_FOUND::throwServiceException)
@@ -53,18 +78,18 @@ public class MemberService {
         return memberRepository.findByEmail(email);
     }
 
-    public String generateRefreshToken(String email) {
-        return refreshTokenService.generateRefreshToken(email);
+    public String generateRefreshToken(String provider, String oauthId) {
+        return refreshTokenService.generateRefreshToken(provider, oauthId);
     }
 
-    public String extractEmailIfValid(String token) {
+    public String extractProviderAndOauthIdIfValid(String token) {
         if (isLoggedOut(token)) {
             TOKEN_LOGGED_OUT.throwServiceException();
         }
         if (!verifyToken(token)) {
             TOKEN_INVALID.throwServiceException();
         }
-        return getEmailFromToken(token);
+        return getProviderAndOauthIdFromToken(token);
     }
 
     public boolean isLoggedOut(String token) {
@@ -75,8 +100,8 @@ public class MemberService {
         return authTokenService.verifyToken(accessToken);
     }
 
-    public String getEmailFromToken(String token) {
-        return authTokenService.getEmail(token);
+    public String getProviderAndOauthIdFromToken(String token) {
+        return authTokenService.getProviderAndOauthId(token);
     }
     
 
@@ -89,9 +114,10 @@ public class MemberService {
     }
 
     @Transactional
-    public void oAuth2Login(Member member, HttpServletResponse response) {
+    public void oAuth2Login(Member member, String provider, String oauthId, HttpServletResponse response) {
         GeneratedToken tokens = authTokenService.generateToken(
-                member.getEmail(),
+                provider,
+                oauthId,
                 member.getUserRole()
         );
 
@@ -100,24 +126,37 @@ public class MemberService {
 
     private void addAuthCookies(HttpServletResponse response, GeneratedToken tokens, Member member) {
         // Access Token 쿠키
-        Cookie accessTokenCookie = new Cookie("access_token", tokens.accessToken());
-        accessTokenCookie.setPath("/");
-        accessTokenCookie.setHttpOnly(true);
-        response.addCookie(accessTokenCookie);
+        CookieUtil.addCookie(
+                response,
+                "access_token",
+                tokens.accessToken(),
+                (int) jwtProperties.getAccessTokenExpiration(),
+                true,
+                true
+        );
 
         // Refresh Token 쿠키
-        Cookie refreshTokenCookie = new Cookie("refresh_token", tokens.refreshToken());
-        refreshTokenCookie.setPath("/");
-        refreshTokenCookie.setHttpOnly(true);
-        response.addCookie(refreshTokenCookie);
+        CookieUtil.addCookie(
+                response,
+                "refresh_token",
+                tokens.refreshToken(),
+                (int) jwtProperties.getRefreshTokenExpiration(),
+                true,
+                true
+        );
 
         // Role 쿠키
         Map<String, Object> roleData = new HashMap<>();
         roleData.put("role", member.getUserRole());
 
-        Cookie roleCookie = new Cookie("role", URLEncoder.encode(Ut.json.toString(roleData), StandardCharsets.UTF_8));
-        roleCookie.setPath("/");
-        response.addCookie(roleCookie);
+        CookieUtil.addCookie(
+                response,
+                "role",
+                URLEncoder.encode(Ut.json.toString(roleData), StandardCharsets.UTF_8),
+                (int) jwtProperties.getAccessTokenExpiration(),
+                false,
+                true
+        );
     }
 
     public void logout(HttpServletRequest request, HttpServletResponse response) {
@@ -147,18 +186,25 @@ public class MemberService {
             UNAUTHORIZED.throwServiceException();
         }
 
-        String email = authTokenService.getEmail(accessToken);
+        String providerAndOauthId = authTokenService.getProviderAndOauthId(accessToken);
+
+        String[] parts = providerAndOauthId.split(":");
+        if (parts.length != 2) {
+            throw TOKEN_INVALID.throwServiceException();
+        }
+        String provider = parts[0];
+        String oauthId = parts[1];
 
         // Redis에서 토큰 무효화
         redisTemplate.opsForValue().set(
                 LOGOUT_PREFIX + accessToken,
-                email,
+                providerAndOauthId,
                 jwtProperties.getAccessTokenExpiration(),
                 TimeUnit.MILLISECONDS
         );
 
         // Refresh 토큰 삭제
-        refreshTokenService.removeRefreshToken(email);
+        refreshTokenService.removeRefreshToken(provider, oauthId);
 
         deleteCookie(response);
     }

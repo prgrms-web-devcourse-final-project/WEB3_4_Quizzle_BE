@@ -1,9 +1,9 @@
 package com.ll.quizzle.global.socket.service.redis;
 
-import jakarta.annotation.PostConstruct;
-import lombok.NonNull;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
+import java.util.List;
+
 import org.springframework.data.redis.connection.Message;
 import org.springframework.data.redis.connection.MessageListener;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -16,6 +16,13 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.ll.quizzle.standard.page.dto.OnlineUsersPageDto;
+
+import jakarta.annotation.PostConstruct;
+import lombok.NonNull;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Component
@@ -84,8 +91,8 @@ public class RedisMessageListener implements MessageListener {
     public List<String> getActiveChannels() {
         return activeChannels.keySet().stream().toList();
     }
-
-    @Override
+  
+      @Override
     public void onMessage(@NonNull Message message, byte[] pattern) {
         try {
             String channel = new String(message.getChannel(), StandardCharsets.UTF_8);
@@ -99,4 +106,4 @@ public class RedisMessageListener implements MessageListener {
             log.error("Redis 메시지 처리 중 오류: {}", e.getMessage(), e);
         }
     }
-} 
+}

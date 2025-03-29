@@ -18,8 +18,8 @@ import lombok.NoArgsConstructor;
 })
 public class OAuth extends BaseEntity {
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "member_id")
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "member_id", unique = true)
     private Member member;
 
     @Column(nullable = false)

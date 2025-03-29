@@ -1,18 +1,25 @@
 package com.ll.quizzle.domain.member.entity;
 
+import static com.ll.quizzle.global.exceptions.ErrorCode.*;
+
+import java.util.ArrayList;
+import java.util.List;
+
 import com.ll.quizzle.domain.member.type.Role;
 import com.ll.quizzle.global.jpa.entity.BaseEntity;
 import com.ll.quizzle.global.security.oauth2.entity.OAuth;
-import jakarta.persistence.*;
+
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.OneToMany;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-import java.util.ArrayList;
-import java.util.List;
-
-import static com.ll.quizzle.global.exceptions.ErrorCode.*;
 
 @Entity
 @Getter
@@ -42,22 +49,16 @@ public class Member extends BaseEntity {
     @Column(nullable = false)
     private int pointBalance;
 
-    @OneToMany(mappedBy = "member", cascade = CascadeType.ALL)
-    @Builder.Default
-    private List<OAuth> oauths = new ArrayList<>();
+    @OneToOne(mappedBy = "member", cascade = CascadeType.ALL)
+    private OAuth oauth;
 
     public String getUserRole() {
         return this.role.name();
     }
 
-    public OAuth getFirstOAuth() {
-        return this.oauths.isEmpty() ? null : this.oauths.get(0);
-    }
-
     public boolean isAdmin() {
         return this.role == Role.ADMIN;
     }
-
 
     public boolean isMember() {
         return this.role == Role.MEMBER;
