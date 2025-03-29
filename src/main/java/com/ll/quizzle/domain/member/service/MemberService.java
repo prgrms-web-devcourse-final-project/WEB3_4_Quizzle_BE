@@ -1,5 +1,21 @@
 package com.ll.quizzle.domain.member.service;
 
+import static com.ll.quizzle.global.exceptions.ErrorCode.*;
+
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
+
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.ll.quizzle.domain.member.dto.MemberDto;
 import com.ll.quizzle.domain.member.entity.Member;
 import com.ll.quizzle.domain.member.repository.MemberRepository;
 import com.ll.quizzle.global.jwt.dto.GeneratedToken;
@@ -9,21 +25,11 @@ import com.ll.quizzle.global.response.RsData;
 import com.ll.quizzle.global.security.oauth2.repository.OAuthRepository;
 import com.ll.quizzle.standard.util.CookieUtil;
 import com.ll.quizzle.standard.util.Ut;
+
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.concurrent.TimeUnit;
-
-import static com.ll.quizzle.global.exceptions.ErrorCode.*;
 
 @Service
 @RequiredArgsConstructor
@@ -38,6 +44,13 @@ public class MemberService {
 
     private static final String LOGOUT_PREFIX = "LOGOUT:";
 
+    @Transactional(readOnly = true)
+    public List<MemberDto> getOnlineUsers(Collection<String> onlineEmails) {
+      return memberRepository.findAllByEmailIn(onlineEmails).stream()
+        .map(member -> MemberDto.from(member, true))
+        .collect(Collectors.toList());
+    }
+  
     @Transactional(readOnly = true)
     public Member findByProviderAndOauthId(String provider, String oauthId) {
         return oAuthRepository.findByProviderAndOauthIdWithMember(provider, oauthId)

@@ -1,15 +1,25 @@
 package com.ll.quizzle.domain.member.entity;
 
+import static com.ll.quizzle.global.exceptions.ErrorCode.*;
+
+import java.util.ArrayList;
+import java.util.List;
+
 import com.ll.quizzle.domain.member.type.Role;
 import com.ll.quizzle.global.jpa.entity.BaseEntity;
 import com.ll.quizzle.global.security.oauth2.entity.OAuth;
-import jakarta.persistence.*;
+
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.OneToMany;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-import static com.ll.quizzle.global.exceptions.ErrorCode.*;
 
 @Entity
 @Getter
