@@ -21,6 +21,7 @@ import java.util.Map;
 public class AuthTokenService {
     private final JwtProperties jwtProperties;
     private final RefreshTokenService refreshTokenService;
+    private static final int EXPIRATION_TIME = 5 * 60 * 1000;
 
     public GeneratedToken generateToken(String email, String role) {
         String accessToken = genAccessToken(email, role);
@@ -62,7 +63,7 @@ public class AuthTokenService {
 
     public Long getTokenExpiryTime(String token) {
         if (token == null || token.isEmpty()) {
-            return System.currentTimeMillis() + (5 * 60 * 1000);
+            return System.currentTimeMillis() + EXPIRATION_TIME;
         }
 
         try {
@@ -82,6 +83,6 @@ public class AuthTokenService {
             log.error("토큰에서 만료 시간 추출 중 오류: {}", e.getMessage());
         }
 
-        return System.currentTimeMillis() + (5 * 60 * 1000);
+        return System.currentTimeMillis() + EXPIRATION_TIME;
     }
 }
