@@ -10,6 +10,7 @@ import com.ll.quizzle.global.security.oauth2.CustomOAuth2AuthenticationSuccessHa
 import com.ll.quizzle.global.security.oauth2.CustomOAuth2AuthorizationRequestRepository;
 import com.ll.quizzle.global.security.oauth2.CustomOAuth2FailureHandler;
 import com.ll.quizzle.global.security.oauth2.CustomOAuth2UserService;
+import com.ll.quizzle.global.security.oauth2.repository.OAuthRepository;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
@@ -34,6 +35,7 @@ public class SecurityConfig {
     private final CustomOAuth2FailureHandler oAuth2AuthenticationFailureHandler;
     private final MemberService memberService;
     private final MemberRepository memberRepository;
+    private final OAuthRepository oAuthRepository;
     private final CustomOAuth2AuthorizationRequestRepository customOAuth2AuthorizationRequestRepository;
     private final CorsProperties corsProperties;
 
@@ -51,10 +53,6 @@ public class SecurityConfig {
                         .requestMatchers(
                                 "/",
                                 "/h2-console/**",
-                                "/api/v1/members/**",
-                                "/api/v1/rooms/**",
-                                "/api/v1/quiz/**",
-                                "/api/v1/**",
                                 "/oauth2/authorization/**",
                                 "/login/oauth2/code/**",
                                 "/api/*/oauth2/callback",
@@ -66,7 +64,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
 
                         // 애플리케이션에만 나머지 인증 요구
-                        .requestMatchers("/api/**").authenticated()
+                        .requestMatchers("/api/v1/**").authenticated()
                         .anyRequest().permitAll()
                 )
                 .exceptionHandling(exceptionHandling -> exceptionHandling
@@ -102,7 +100,7 @@ public class SecurityConfig {
                         .failureHandler(oAuth2AuthenticationFailureHandler)
                 )
                 .addFilterBefore(new JwtExceptionFilter(), UsernamePasswordAuthenticationFilter.class)
-                .addFilterBefore(new JwtAuthFilter(memberService, memberRepository), UsernamePasswordAuthenticationFilter.class);
+                .addFilterBefore(new JwtAuthFilter(memberService, memberRepository, oAuthRepository), UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
