@@ -30,6 +30,18 @@ import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.TimeUnit;
+
+import static com.ll.quizzle.global.exceptions.ErrorCode.*;
 
 @Service
 @RequiredArgsConstructor
@@ -58,6 +70,14 @@ public class MemberService {
                 .getMember();
     }
 
+    public Optional<Member> findById(Long id) {
+        return memberRepository.findById(id);
+    }
+
+    public Optional<Member> findByEmail(String email) {
+        return memberRepository.findByEmail(email);
+    }
+
     public String generateRefreshToken(String provider, String oauthId) {
         return refreshTokenService.generateRefreshToken(provider, oauthId);
     }
@@ -82,6 +102,11 @@ public class MemberService {
 
     public String getProviderAndOauthIdFromToken(String token) {
         return authTokenService.getProviderAndOauthId(token);
+    }
+    
+
+    public Long getTokenExpiryTime(String token) {
+        return authTokenService.getTokenExpiryTime(token);
     }
 
     public RsData<String> refreshAccessToken(String refreshToken) {

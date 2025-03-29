@@ -1,6 +1,5 @@
 package com.ll.quizzle.domain.member.service;
 
-
 import com.ll.quizzle.global.jwt.dto.GeneratedToken;
 import com.ll.quizzle.global.jwt.dto.JwtProperties;
 import com.ll.quizzle.standard.util.Ut;
@@ -59,5 +58,31 @@ public class AuthTokenService {
 
     String getProviderAndOauthId(String token) {
         return Ut.jwt.getClaims(jwtProperties, token).getSubject();
+    }
+
+
+    public Long getTokenExpiryTime(String token) {
+        if (token == null || token.isEmpty()) {
+            return System.currentTimeMillis() + (5 * 60 * 1000);
+        }
+
+        try {
+            Claims claims = Ut.jwt.getClaims(jwtProperties, token);
+            if (claims.getExpiration() != null) {
+                long expiryTime = claims.getExpiration().getTime();
+                log.debug("토큰 만료 시간 추출 (밀리초): {}, Date: {}", expiryTime, claims.getExpiration());
+                return expiryTime;
+            }
+        } catch (ExpiredJwtException e) {
+            long expiryTime = e.getClaims().getExpiration().getTime();
+            log.debug("만료된 토큰의 만료 시간 추출 (밀리초): {}, Date: {}", expiryTime, e.getClaims().getExpiration());
+            return expiryTime;
+        } catch (SignatureException | MalformedJwtException e) {
+            log.error("잘못된 JWT 토큰: {}", e.getMessage());
+        } catch (Exception e) {
+            log.error("토큰에서 만료 시간 추출 중 오류: {}", e.getMessage());
+        }
+
+        return System.currentTimeMillis() + (5 * 60 * 1000);
     }
 }

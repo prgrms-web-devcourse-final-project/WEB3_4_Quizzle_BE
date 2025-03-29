@@ -1,9 +1,10 @@
 package com.ll.quizzle.global.exceptions;
 
+import org.springframework.http.HttpStatus;
+
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpStatus;
 
 @Getter
 @AllArgsConstructor
@@ -29,7 +30,13 @@ public enum ErrorCode {
     MEMBER_NOT_FOUND(HttpStatus.NOT_FOUND, "해당 회원이 존재하지 않습니다."),
     EMAIL_ALREADY_EXISTS(HttpStatus.BAD_REQUEST, "이미 가입된 이메일입니다."),
     OAUTH_NOT_FOUND(HttpStatus.NOT_FOUND, "해당 OAuth 정보를 찾을 수 없습니다."),
-    OAUTH_LOGIN_FAILED(HttpStatus.UNAUTHORIZED, "OAuth 로그인에 실패했습니다.");
+    OAUTH_LOGIN_FAILED(HttpStatus.UNAUTHORIZED, "OAuth 로그인에 실패했습니다."),
+
+    // WebSocket
+    WEBSOCKET_COOKIE_NOT_FOUND(HttpStatus.UNAUTHORIZED, "WebSocket 연결을 위한 쿠키가 없습니다."),
+    WEBSOCKET_ACCESS_TOKEN_NOT_FOUND(HttpStatus.UNAUTHORIZED, "WebSocket 연결을 위한 액세스 토큰이 없습니다."),
+    WEBSOCKET_TOKEN_VALIDATION_FAILED(HttpStatus.UNAUTHORIZED, "WebSocket 토큰 검증에 실패했습니다."),
+    WEBSOCKET_INVALID_REQUEST_TYPE(HttpStatus.BAD_REQUEST, "잘못된 WebSocket 요청 타입입니다.");
 
 
     private final HttpStatus httpStatus;
