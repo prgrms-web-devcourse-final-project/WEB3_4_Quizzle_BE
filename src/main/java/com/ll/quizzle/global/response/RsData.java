@@ -11,9 +11,9 @@ import org.springframework.http.HttpStatus;
 @AllArgsConstructor
 @Getter
 public class RsData<T> {
-    @lombok.NonNull
+    @NonNull
     private final HttpStatus resultCode;
-    @lombok.NonNull
+    @NonNull
     private final String msg;
     @NonNull
     private final T data;
