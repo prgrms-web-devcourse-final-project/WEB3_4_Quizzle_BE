@@ -4,6 +4,7 @@ import com.ll.quizzle.domain.member.entity.Member;
 import com.ll.quizzle.domain.member.service.MemberService;
 import com.ll.quizzle.global.exceptions.ErrorCode;
 import com.ll.quizzle.global.socket.security.WebSocketSecurityService;
+import com.ll.quizzle.standard.util.CookieUtil;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.NonNull;
@@ -17,13 +18,11 @@ import org.springframework.web.socket.WebSocketHandler;
 import org.springframework.web.socket.server.HandshakeInterceptor;
 
 import java.util.Map;
+import java.util.Optional;
 
 import static com.ll.quizzle.global.exceptions.ErrorCode.*;
 
-/**
- * WebSocket 핸드셰이크 인터셉터
- * WebSocket 연결 전 인증 처리 및 세션 속성 설정
- */
+
 @Slf4j
 @Component
 @RequiredArgsConstructor
@@ -42,28 +41,22 @@ public class WebSocketHandshakeInterceptor implements HandshakeInterceptor {
         }
 
         HttpServletRequest httpServletRequest = servletRequest.getServletRequest();
-        Cookie[] cookies = httpServletRequest.getCookies();
         
-        if (cookies == null) {
+        if (httpServletRequest.getCookies() == null) {
             log.debug("WebSocket 연결 시도 - 쿠키 없음");
             setErrorResponse(response, WEBSOCKET_COOKIE_NOT_FOUND);
             return false;
         }
-
-        String accessToken = null;
-        for (Cookie cookie : cookies) {
-            if ("access_token".equals(cookie.getName())) {
-                accessToken = cookie.getValue();
-                log.debug("WebSocket 연결 시도 - 액세스 토큰 발견");
-                break;
-            }
-        }
-
-        if (accessToken == null) {
+        
+        Optional<Cookie> accessTokenCookie = CookieUtil.getCookie(httpServletRequest, "access_token");
+        if (accessTokenCookie.isEmpty()) {
             log.debug("WebSocket 연결 시도 - 액세스 토큰 없음");
             setErrorResponse(response, WEBSOCKET_ACCESS_TOKEN_NOT_FOUND);
             return false;
         }
+        
+        String accessToken = accessTokenCookie.get().getValue();
+        log.debug("WebSocket 연결 시도 - 액세스 토큰 발견");
 
         try {
             String email = memberService.extractEmailIfValid(accessToken);
