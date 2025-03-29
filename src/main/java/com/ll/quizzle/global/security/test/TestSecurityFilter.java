@@ -38,7 +38,9 @@ public class TestSecurityFilter extends OncePerRequestFilter {
                     999L,
                     "TestUser",
                     "test@example.com",
-                    "ROLE_MEMBER"
+                    "ROLE_MEMBER",
+                    "testProvider",
+                    "testOauthId"
             );
 
             UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(

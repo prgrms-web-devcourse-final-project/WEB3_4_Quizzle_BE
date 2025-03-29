@@ -35,13 +35,10 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
         log.debug("Access Token: {}", userRequest.getAccessToken().getTokenValue());
         log.debug("Additional Parameters: {}", userRequest.getAdditionalParameters());
 
-        try {
-            OAuth2User oauth2User = super.loadUser(userRequest);
-            log.debug("OAuth2User Attributes: {}", oauth2User.getAttributes());
-            return processOAuth2User(userRequest, oauth2User);
-        } catch (Exception e) {
-            throw new OAuth2AuthenticationException("OAuth2 로그인 처리 중 오류가 발생했습니다.");
-        }
+        OAuth2User oauth2User = super.loadUser(userRequest);
+        log.debug("OAuth2User Attributes: {}", oauth2User.getAttributes());
+
+        return processOAuth2User(userRequest, oauth2User);
     }
 
     private OAuth2User processOAuth2User(OAuth2UserRequest userRequest, OAuth2User oauth2User) {
@@ -75,16 +72,13 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
 
         boolean isNewUser = !oAuthRepository.existsByProviderAndOauthId(registrationId, oauthId);
 
-        Optional<Member> existingMember = memberRepository.findByEmail(email);
+        Optional<OAuth> existingOauth = oAuthRepository.findByProviderAndOauthIdWithMember(registrationId, oauthId);
+
         Member member;
 
-        if (existingMember.isPresent()) {
-            member = existingMember.get();
+        if (existingOauth.isPresent()) {
+            member = existingOauth.get().getMember();
 
-            if (isNewUser) {
-                oAuthRepository.save(OAuth.create(member, registrationId, oauthId));
-                log.debug("기존 이메일 사용자에 OAuth 정보 추가 연결");
-            }
         } else {
             // 새로운 사용자 생성
             member = Member.create(
@@ -96,18 +90,19 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
             oAuthRepository.save(OAuth.create(member, registrationId, oauthId));
         }
 
-        memberService.oAuth2Login(member, ((ServletRequestAttributes) RequestContextHolder
+        memberService.oAuth2Login(member, registrationId, oauthId, ((ServletRequestAttributes) RequestContextHolder
                 .currentRequestAttributes())
                 .getResponse());
 
         return new SecurityUser(
-                email,
+                member.getId(),
                 name,
+                email,
+                "ROLE_" + member.getRole(),
                 registrationId,
-                isNewUser,
+                oauthId,
                 oauth2User.getAttributes(),
-                oauth2User.getAuthorities(),
-                oauthId
+                isNewUser
         );
     }
 }

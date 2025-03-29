@@ -17,7 +17,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/auth")
+@RequestMapping("/api/v1/auth")
 @Slf4j
 public class OAuth2Controller {
 	private final Rq rq;
@@ -52,15 +52,15 @@ public class OAuth2Controller {
 			));
 		}
 
-		OAuth oAuth = actor.getFirstOAuth();
-		if (oAuth == null) {
-			return RsData.success(HttpStatus.BAD_REQUEST, new OAuth2Response(
-				actor.getEmail(), actor.getNickname(), status,
-				actor.getUserRole(), null, null,
-				actor.isMember(), actor.isAdmin(),
-				accessToken, refreshToken
-			));
-		}
+        OAuth oAuth = actor.getOauth();
+        if (oAuth == null) {
+            return RsData.success(HttpStatus.BAD_REQUEST, new OAuth2Response(
+                    actor.getEmail(), actor.getNickname(), status,
+                    actor.getUserRole(), null, null,
+                    actor.isMember(), actor.isAdmin(),
+                    accessToken, refreshToken
+            ));
+        }
 
 		OAuth2Response response = new OAuth2Response(
 			actor.getEmail(),
