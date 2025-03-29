@@ -1,11 +1,14 @@
 package com.ll.quizzle.global.socket.core;
 
+import com.ll.quizzle.global.exceptions.ErrorCode;
 import com.ll.quizzle.global.socket.config.MessageServiceProperties;
 import com.ll.quizzle.global.socket.service.redis.RedisMessageService;
 import com.ll.quizzle.global.socket.service.stomp.StompMessageService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
+
+import static com.ll.quizzle.global.exceptions.ErrorCode.WEBSOCKET_UNSUPPORTED_PROVIDER;
 
 @Slf4j
 @Component
@@ -36,7 +39,7 @@ public class MessageServiceFactory {
         return switch (provider.toLowerCase()) {
             case MessageServiceConstants.PROVIDER_STOMP -> stompMessageService;
             case MessageServiceConstants.PROVIDER_REDIS -> redisMessageService;
-            default -> throw new IllegalArgumentException("지원하지 않는 메시징 프로바이더: " + provider);
+            default -> throw WEBSOCKET_UNSUPPORTED_PROVIDER.throwServiceException();
         };
     }
 } 
