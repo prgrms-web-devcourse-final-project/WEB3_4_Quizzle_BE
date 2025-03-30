@@ -47,7 +47,7 @@ public class RefreshTokenService {
     String generateRefreshToken(String email) {
         Map<String, Object> claims = new HashMap<>();
         claims.put("sub", email);
-        claims.put("role", "ROLE_USER");
+        claims.put("role", "ROLE_MEMBER");
         claims.put("type", "refresh");
         return Ut.jwt.toString(jwtProperties, claims);
     }
