@@ -7,6 +7,7 @@ import com.ll.quizzle.global.jwt.dto.JwtProperties;
 import com.ll.quizzle.global.request.Rq;
 import com.ll.quizzle.global.response.RsData;
 import com.ll.quizzle.global.security.oauth2.repository.OAuthRepository;
+import com.ll.quizzle.standard.util.CookieUtil;
 import com.ll.quizzle.standard.util.Ut;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
@@ -100,24 +101,37 @@ public class MemberService {
 
     private void addAuthCookies(HttpServletResponse response, GeneratedToken tokens, Member member) {
         // Access Token 쿠키
-        Cookie accessTokenCookie = new Cookie("access_token", tokens.accessToken());
-        accessTokenCookie.setPath("/");
-        accessTokenCookie.setHttpOnly(true);
-        response.addCookie(accessTokenCookie);
+        CookieUtil.addCookie(
+                response,
+                "access_token",
+                tokens.accessToken(),
+                (int) jwtProperties.getAccessTokenExpiration(),
+                true,
+                true
+        );
 
         // Refresh Token 쿠키
-        Cookie refreshTokenCookie = new Cookie("refresh_token", tokens.refreshToken());
-        refreshTokenCookie.setPath("/");
-        refreshTokenCookie.setHttpOnly(true);
-        response.addCookie(refreshTokenCookie);
+        CookieUtil.addCookie(
+                response,
+                "refresh_token",
+                tokens.refreshToken(),
+                (int) jwtProperties.getRefreshTokenExpiration(),
+                true,
+                true
+        );
 
         // Role 쿠키
         Map<String, Object> roleData = new HashMap<>();
         roleData.put("role", member.getUserRole());
 
-        Cookie roleCookie = new Cookie("role", URLEncoder.encode(Ut.json.toString(roleData), StandardCharsets.UTF_8));
-        roleCookie.setPath("/");
-        response.addCookie(roleCookie);
+        CookieUtil.addCookie(
+                response,
+                "role",
+                URLEncoder.encode(Ut.json.toString(roleData), StandardCharsets.UTF_8),
+                (int) jwtProperties.getAccessTokenExpiration(),
+                false,
+                true
+        );
     }
 
     public void logout(HttpServletRequest request, HttpServletResponse response) {
@@ -160,29 +174,9 @@ public class MemberService {
         // Refresh 토큰 삭제
         refreshTokenService.removeRefreshToken(email);
 
-        deleteCookie(response);
-    }
-
-    private static void deleteCookie(HttpServletResponse response) {
-        Cookie accessTokenCookie = new Cookie("access_token", null);
-        accessTokenCookie.setMaxAge(0);
-        accessTokenCookie.setPath("/");
-
-        Cookie roleCookie = new Cookie("role", null);
-        roleCookie.setMaxAge(0);
-        roleCookie.setPath("/");
-
-        Cookie refreshTokenCookie = new Cookie("refresh_token", null);
-        refreshTokenCookie.setMaxAge(0);
-        refreshTokenCookie.setPath("/");
-
-        Cookie oauth2AuthRequestCookie = new Cookie("oauth2_auth_request", null);
-        oauth2AuthRequestCookie.setMaxAge(0);
-        oauth2AuthRequestCookie.setPath("/");
-
-        response.addCookie(accessTokenCookie);
-        response.addCookie(roleCookie);
-        response.addCookie(refreshTokenCookie);
-        response.addCookie(oauth2AuthRequestCookie);
+        CookieUtil.deleteCookie(request, response, "access_token");
+        CookieUtil.deleteCookie(request, response, "refresh_token");
+        CookieUtil.deleteCookie(request, response, "role");
+        CookieUtil.deleteCookie(request, response, "oauth2_auth_request");
     }
 }

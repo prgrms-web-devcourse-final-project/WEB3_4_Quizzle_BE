@@ -123,7 +123,7 @@ public class OAuth2AuthenticationTest {
         mockMvc.perform(delete("/api/v1/members")
                         .cookie(accessTokenCookie))
                 .andDo(print())
-                .andExpect(status().isOk());
+                .andExpect(status().is(204));
     }
 
     @Test
