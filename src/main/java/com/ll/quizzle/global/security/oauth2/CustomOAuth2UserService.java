@@ -80,11 +80,6 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
 
         if (existingMember.isPresent()) {
             member = existingMember.get();
-
-            if (isNewUser) {
-                oAuthRepository.save(OAuth.create(member, registrationId, oauthId));
-                log.debug("기존 이메일 사용자에 OAuth 정보 추가 연결");
-            }
         } else {
             // 새로운 사용자 생성
             member = Member.create(

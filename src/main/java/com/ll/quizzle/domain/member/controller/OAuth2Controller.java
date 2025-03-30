@@ -50,7 +50,7 @@ public class OAuth2Controller {
             ));
         }
 
-        OAuth oAuth = actor.getFirstOAuth();
+        OAuth oAuth = actor.getOauth();
         if (oAuth == null) {
             return RsData.success(HttpStatus.BAD_REQUEST, new OAuth2Response(
                     actor.getEmail(), actor.getNickname(), status,

@@ -20,7 +20,6 @@ import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.web.socket.WebSocketSession;
 
 import java.security.Principal;
-import java.util.ArrayList;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -62,7 +61,6 @@ class WebSocketConfigTest {
                 .exp(0)
                 .profilePath("test")
                 .pointBalance(0)
-                .oauths(new ArrayList<>())
                 .build();
     }
 
