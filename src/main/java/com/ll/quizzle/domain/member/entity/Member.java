@@ -9,6 +9,9 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import static com.ll.quizzle.global.exceptions.ErrorCode.*;
 
 @Entity
@@ -103,4 +106,9 @@ public class Member extends BaseEntity {
                 .pointBalance(0)
                 .build();
     }
+
+	public void changeNickname(String nickname) {
+		// Todo:닉네임 유효성 검사 또는 중복 검사 필요 시 여기에 추가
+		this.nickname = nickname;
+	}
 }

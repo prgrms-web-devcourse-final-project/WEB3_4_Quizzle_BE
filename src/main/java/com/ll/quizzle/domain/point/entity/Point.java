@@ -12,14 +12,13 @@ import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 @Entity
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class Point extends BaseTime {
 
 	@ManyToOne(fetch = FetchType.LAZY)
@@ -34,15 +33,15 @@ public class Point extends BaseTime {
 	@Enumerated(EnumType.STRING)
 	private PointReason reason;
 
+	@Builder
+	public Point(Member member, int amount, PointType type, PointReason reason) {
+		this.member = member;
+		this.amount = amount;
+		this.type = type;
+		this.reason = reason;
+	}
+
 	public String getDescription() {
 		return reason.getDescription();
-	}
-
-	public static Point use(Member member, int amount, PointReason reason) {
-		return new Point(member, -amount, PointType.USE, reason);
-	}
-
-	public static Point gain(Member member, int amount, PointReason reason) {
-		return new Point(member, amount, PointType.REWARD, reason);
 	}
 }
