@@ -1,14 +1,7 @@
 package com.ll.quizzle.global.socket.interceptor;
 
-import com.ll.quizzle.domain.member.entity.Member;
-import com.ll.quizzle.domain.member.service.MemberService;
-import com.ll.quizzle.global.security.oauth2.dto.SecurityUser;
-import com.ll.quizzle.global.socket.security.WebSocketSecurityService;
-import com.ll.quizzle.global.socket.service.WebSocketNotificationService;
-import com.ll.quizzle.global.socket.session.WebSocketSessionManager;
-import lombok.NonNull;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import java.util.Map;
+
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.simp.stomp.StompCommand;
@@ -18,11 +11,21 @@ import org.springframework.messaging.support.MessageHeaderAccessor;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Component;
+import org.springframework.util.StringUtils;
 
-import java.util.Map;
-
+import com.ll.quizzle.domain.member.entity.Member;
+import com.ll.quizzle.domain.member.service.MemberService;
+import com.ll.quizzle.global.security.oauth2.dto.SecurityUser;
 import static com.ll.quizzle.global.security.oauth2.dto.SecurityUser.of;
+import com.ll.quizzle.global.socket.security.WebSocketSecurityService;
+import com.ll.quizzle.global.socket.service.WebSocketNotificationService;
+import com.ll.quizzle.global.socket.session.WebSocketSessionManager;
 
+import lombok.NonNull;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+
+import java.security.Principal;
 
 @Slf4j
 @Component
@@ -52,7 +55,7 @@ public class StompChannelInterceptor implements ChannelInterceptor {
                 Long tokenExpiryTime = (Long) sessionAttributes.get("tokenExpiryTime");
                 String sessionSignature = (String) sessionAttributes.get("sessionSignature");
                 
-                log.debug("STOMP 연결 - 사용자 정보 복원: {}", email);
+                log.debug("STOMP 연결 - 세션 속성에서 사용자 정보 복원: {}", email);
                 
                 String sessionData = email + ":" + memberId + ":" + tokenExpiryTime;
                 boolean isSignatureValid = securityService.validateSignature(sessionData, sessionSignature);
@@ -80,7 +83,10 @@ public class StompChannelInterceptor implements ChannelInterceptor {
                 
                 accessor.setUser(auth);
                 
-                sessionManager.registerSession(email, sessionId, accessToken, tokenExpiryTime);
+                String stompSessionId = accessor.getSessionId();
+                log.debug("STOMP 세션 ID: {}, WebSocket 세션 ID: {}", stompSessionId, sessionId);
+                
+                sessionManager.registerSession(email, stompSessionId, accessToken, tokenExpiryTime);
                 
                 log.debug("STOMP 연결 성공 - 사용자: {}", member.getEmail());
             } else {
@@ -95,20 +101,51 @@ public class StompChannelInterceptor implements ChannelInterceptor {
             }
         }
         else if (StompCommand.SEND.equals(accessor.getCommand())) {
-            if (accessor.getUser() != null) {
-                String email = accessor.getUser().getName();
-                String sessionId = accessor.getSessionId();
+            Principal principal = accessor.getUser();
+            String sessionId = accessor.getSessionId();
+            
+            if (principal != null) {
+                String principalName = principal.getName();
                 
-                if (!sessionManager.isSessionValid(email, sessionId)) {
-                    log.debug("유효하지 않은 세션으로부터의 메시지: {}, {}", email, sessionId);
+                Map<String, Object> sessionAttributes = accessor.getSessionAttributes();
+                if (sessionAttributes != null && sessionAttributes.containsKey("email")) {
+                    String email = (String) sessionAttributes.get("email");
                     
-                    notificationService.sendTokenExpiredNotification(email);
+                    if (!sessionManager.isSessionValid(email, sessionId)) {
+                        log.debug("유효하지 않은 세션으로부터의 메시지: 닉네임={}, 이메일={}, 세션={}", 
+                                  principalName, email, sessionId);
+                        notificationService.sendTokenExpiredNotification(principalName);
+                        return null;
+                    }
                     
+                    log.debug("메시지 전송 허용: 닉네임={}, 이메일={}, 세션={}", 
+                              principalName, email, sessionId);
+                    return message;
+                } else {
+                    log.debug("세션 속성에 이메일 정보 없음: 닉네임={}, 세션={}", principalName, sessionId);
+                    notificationService.sendTokenExpiredNotification(principalName);
                     return null;
                 }
+            } else {
+                log.debug("인증되지 않은 메시지 요청 감지");
+                return null;
             }
         }
         
         return message;
     }
-} 
+    
+    private String extractAuthToken(StompHeaderAccessor accessor) {
+        String authorization = accessor.getFirstNativeHeader("Authorization");
+        if (StringUtils.hasText(authorization) && authorization.startsWith("Bearer ")) {
+            return authorization.substring(7);
+        }
+        
+        String xAuthorization = accessor.getFirstNativeHeader("X-Authorization");
+        if (StringUtils.hasText(xAuthorization)) {
+            return xAuthorization;
+        }
+        
+        return null;
+    }
+}
