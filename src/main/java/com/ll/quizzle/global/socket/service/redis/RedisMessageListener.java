@@ -6,14 +6,16 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.connection.Message;
 import org.springframework.data.redis.connection.MessageListener;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.listener.ChannelTopic;
 import org.springframework.data.redis.listener.RedisMessageListenerContainer;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Component;
 
 import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Slf4j
 @Component
@@ -22,33 +24,65 @@ public class RedisMessageListener implements MessageListener {
 
     private final RedisMessageListenerContainer redisMessageListenerContainer;
     private final SimpMessagingTemplate messagingTemplate;
-
-    private final List<String> TOPICS = List.of(
-            "/topic/lobby/chat"
-    );
+    private final RedisTemplate<String, String> redisTemplate;
     
-    private final List<String> PATTERN_TOPICS = Arrays.asList(
-            "/topic/room/chat/*",
-            "/topic/game/chat/*"
+    private final Map<String, ChannelTopic> activeChannels = new ConcurrentHashMap<>();
+
+    private final List<String> FIXED_TOPICS = List.of(
+            "/topic/lobby/chat"
     );
 
     @PostConstruct
     public void init() {
-        for (String topic : TOPICS) {
-            redisMessageListenerContainer.addMessageListener(
-                    this, 
-                    new ChannelTopic(topic)
-            );
-            log.debug("Redis 정확한 채널 구독: {}", topic);
+        for (String topic : FIXED_TOPICS) {
+            subscribeToChannel(topic);
         }
         
-        for (String pattern : PATTERN_TOPICS) {
-            redisMessageListenerContainer.addMessageListener(
-                    this, 
-                    new ChannelTopic(pattern)
-            );
-            log.debug("Redis 패턴 채널 구독: {}", pattern);
+        log.debug("Redis 메시지 리스너 초기화 완료, 고정 채널 {} 개 구독됨", FIXED_TOPICS.size());
+    }
+
+
+    public void subscribeToChannel(String channel) {
+        if (!activeChannels.containsKey(channel)) {
+            ChannelTopic topic = new ChannelTopic(channel);
+            redisMessageListenerContainer.addMessageListener(this, topic);
+            activeChannels.put(channel, topic);
+            log.debug("Redis 채널 구독 완료: {}", channel);
+        } else {
+            log.debug("이미 구독 중인 채널: {}", channel);
         }
+    }
+    
+
+    public void unsubscribeFromChannel(String channel) {
+        ChannelTopic topic = activeChannels.remove(channel);
+        if (topic != null) {
+            redisMessageListenerContainer.removeMessageListener(this, topic);
+            log.debug("Redis 채널 구독 해제 완료: {}", channel);
+        } else {
+            log.debug("구독되지 않은 채널 해제 시도: {}", channel);
+        }
+    }
+    
+
+    public void subscribeToRoomChannel(String roomId) {
+        String chatChannel = "/topic/room/chat/" + roomId;
+        subscribeToChannel(chatChannel);
+        
+        log.debug("방 {} 채팅 채널 구독 완료", roomId);
+    }
+    
+
+    public void unsubscribeFromRoomChannel(String roomId) {
+        String chatChannel = "/topic/room/chat/" + roomId;
+        unsubscribeFromChannel(chatChannel);
+        
+        log.debug("방 {} 채팅 채널 구독 해제 완료", roomId);
+    }
+
+
+    public List<String> getActiveChannels() {
+        return activeChannels.keySet().stream().toList();
     }
 
     @Override

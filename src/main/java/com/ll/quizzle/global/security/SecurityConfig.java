@@ -51,10 +51,6 @@ public class SecurityConfig {
                         .requestMatchers(
                                 "/",
                                 "/h2-console/**",
-                                "/api/v1/members/**",
-                                "/api/v1/rooms/**",
-                                "/api/v1/quiz/**",
-                                "/api/v1/**",
                                 "/oauth2/authorization/**",
                                 "/login/oauth2/code/**",
                                 "/api/*/oauth2/callback",
@@ -66,7 +62,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
 
                         // 애플리케이션에만 나머지 인증 요구
-                        .requestMatchers("/api/**").authenticated()
+                        .requestMatchers("/api/v1/**").authenticated()
                         .anyRequest().permitAll()
                 )
                 .exceptionHandling(exceptionHandling -> exceptionHandling

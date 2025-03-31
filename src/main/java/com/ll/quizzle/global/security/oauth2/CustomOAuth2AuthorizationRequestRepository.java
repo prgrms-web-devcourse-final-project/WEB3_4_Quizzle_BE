@@ -33,11 +33,11 @@ public class CustomOAuth2AuthorizationRequestRepository implements Authorization
         }
 
         CookieUtil.addCookie(response, OAUTH2_AUTHORIZATION_REQUEST_COOKIE_NAME,
-                serialize(authorizationRequest), COOKIE_EXPIRE_SECONDS);
+                serialize(authorizationRequest), COOKIE_EXPIRE_SECONDS, true, true);
         String redirectUriAfterLogin = request.getParameter(REDIRECT_URI_PARAM_COOKIE_NAME);
         if (redirectUriAfterLogin != null && !redirectUriAfterLogin.isEmpty()) {
             CookieUtil.addCookie(response, REDIRECT_URI_PARAM_COOKIE_NAME,
-                    redirectUriAfterLogin, COOKIE_EXPIRE_SECONDS);
+                    redirectUriAfterLogin, COOKIE_EXPIRE_SECONDS, true, true);
         }
     }
 

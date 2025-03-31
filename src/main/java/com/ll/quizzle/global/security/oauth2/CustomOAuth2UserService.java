@@ -13,8 +13,6 @@ import org.springframework.security.oauth2.client.userinfo.OAuth2UserRequest;
 import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
-import org.springframework.web.context.request.RequestContextHolder;
-import org.springframework.web.context.request.ServletRequestAttributes;
 
 import java.util.Map;
 import java.util.Optional;
@@ -80,11 +78,6 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
 
         if (existingMember.isPresent()) {
             member = existingMember.get();
-
-            if (isNewUser) {
-                oAuthRepository.save(OAuth.create(member, registrationId, oauthId));
-                log.debug("기존 이메일 사용자에 OAuth 정보 추가 연결");
-            }
         } else {
             // 새로운 사용자 생성
             member = Member.create(
@@ -95,10 +88,6 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
 
             oAuthRepository.save(OAuth.create(member, registrationId, oauthId));
         }
-
-        memberService.oAuth2Login(member, ((ServletRequestAttributes) RequestContextHolder
-                .currentRequestAttributes())
-                .getResponse());
 
         return new SecurityUser(
                 email,
