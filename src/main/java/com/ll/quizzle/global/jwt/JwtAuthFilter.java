@@ -136,8 +136,11 @@ public class JwtAuthFilter extends OncePerRequestFilter implements Ordered {
     @Override
     protected boolean shouldNotFilter(@NonNull HttpServletRequest request) {
         String requestURI = request.getRequestURI();
+        String method = request.getMethod();
+
         return requestURI.equals("/api/v1/members/refresh") ||
                 (requestURI.contains("/oauth2/callback") && request.getParameter("accessToken") == null) ||
-                requestURI.startsWith("/h2-console") || requestURI.matches("/api/v1/members/[^/]+");
+                requestURI.startsWith("/h2-console") ||
+                (requestURI.matches("/api/v1/members/[^/]+") && "GET".equalsIgnoreCase(method));
     }
 }
