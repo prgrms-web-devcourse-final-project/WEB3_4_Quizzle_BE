@@ -50,3 +50,8 @@ app:
 custom:
   site:
     name: Quizzle
+
+openai:
+  apiUrl: ${OPENAI_API_URL:https://api.openai.com/v1/chat/completions}
+  model: ${OPENAI_MODEL:gpt-3.5-turbo}
+  apiKey: ${OPENAI_API_KEY}

@@ -1,46 +1,39 @@
 package com.ll.quizzle.domain.quiz.controller;
 
-import com.ll.quizzle.domain.quiz.dto.QuizDTO;
-import com.ll.quizzle.domain.quiz.dto.QuizGenerationResponseDTO;
-import com.ll.quizzle.domain.quiz.dto.QuizResponseDTO;
+import com.ll.quizzle.domain.quiz.dto.request.QuizGenerationRequest;
+import com.ll.quizzle.domain.quiz.dto.response.QuizGenerationResponse;
+import com.ll.quizzle.domain.quiz.dto.response.QuizResponse;
 import com.ll.quizzle.domain.quiz.service.GPTQuizService;
 import com.ll.quizzle.domain.quiz.service.RedisQuizAnswerService;
-import com.ll.quizzle.global.exceptions.ErrorCode;
 import com.ll.quizzle.global.response.RsData;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1/quiz")
 public class QuizGenerateController {
 
-    @Autowired
-    private GPTQuizService gptQuizService;
+    private final GPTQuizService gptQuizService;
+    private final RedisQuizAnswerService redisQuizAnswerService;
 
-    @Autowired
-    private RedisQuizAnswerService redisQuizAnswerService;
-
-    @PostMapping("/generate")
-    public RsData<QuizResponseDTO> generateQuiz(@RequestBody QuizDTO quizDTO) {
-        try {
-            QuizGenerationResponseDTO result = gptQuizService.generateQuiz(quizDTO);
-
-            String providedQuizId = (quizDTO.id() != null) ? quizDTO.id().toString() : null;
-            String quizId = redisQuizAnswerService.saveQuiz(providedQuizId, result.quizText(), result.answerMap());
-
-            // 모든 필드를 생성자에 전달하여 record 인스턴스 생성
-            QuizResponseDTO response = new QuizResponseDTO(quizId, result.quizText(), result.answerMap());
-
-
-            return RsData.success(HttpStatus.OK, response);
-        } catch (Exception e) {
-            ErrorCode.INTERNAL_SERVER_ERROR.throwServiceException(e);
-            return null; // unreachable
-        }
+    public QuizGenerateController(GPTQuizService gptQuizService, RedisQuizAnswerService redisQuizAnswerService) {
+        this.gptQuizService = gptQuizService;
+        this.redisQuizAnswerService = redisQuizAnswerService;
     }
 
+    @PostMapping("/generate")
+    public RsData<QuizResponse> generateQuiz(@RequestBody QuizGenerationRequest request) {
+        String quizId = UUID.randomUUID().toString();
+
+        // GPTQuizService를 통해 퀴즈 생성 결과를 받아옴
+        QuizGenerationResponse generationResponse = gptQuizService.generateQuiz(request);
+
+        // 생성된 퀴즈 정보를 Redis에 저장
+        redisQuizAnswerService.saveQuiz(quizId, generationResponse.quizText(), generationResponse.answerMap());
+
+        QuizResponse response = new QuizResponse(quizId, generationResponse.quizText(), generationResponse.answerMap());
+        return RsData.success(HttpStatus.OK, response);
+    }
 }

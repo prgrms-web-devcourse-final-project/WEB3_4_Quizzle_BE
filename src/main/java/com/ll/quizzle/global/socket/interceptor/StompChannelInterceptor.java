@@ -19,10 +19,10 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Component;
 
+import java.security.Principal;
 import java.util.Map;
 
 import static com.ll.quizzle.global.security.oauth2.dto.SecurityUser.of;
-
 
 @Slf4j
 @Component
@@ -52,7 +52,7 @@ public class StompChannelInterceptor implements ChannelInterceptor {
                 Long tokenExpiryTime = (Long) sessionAttributes.get("tokenExpiryTime");
                 String sessionSignature = (String) sessionAttributes.get("sessionSignature");
                 
-                log.debug("STOMP 연결 - 사용자 정보 복원: {}", email);
+                log.debug("STOMP 연결 - 세션 속성에서 사용자 정보 복원: {}", email);
                 
                 String sessionData = email + ":" + memberId + ":" + tokenExpiryTime;
                 boolean isSignatureValid = securityService.validateSignature(sessionData, sessionSignature);
@@ -80,7 +80,10 @@ public class StompChannelInterceptor implements ChannelInterceptor {
                 
                 accessor.setUser(auth);
                 
-                sessionManager.registerSession(email, sessionId, accessToken, tokenExpiryTime);
+                String stompSessionId = accessor.getSessionId();
+                log.debug("STOMP 세션 ID: {}, WebSocket 세션 ID: {}", stompSessionId, sessionId);
+                
+                sessionManager.registerSession(email, stompSessionId, accessToken, tokenExpiryTime);
                 
                 log.debug("STOMP 연결 성공 - 사용자: {}", member.getEmail());
             } else {
@@ -95,20 +98,37 @@ public class StompChannelInterceptor implements ChannelInterceptor {
             }
         }
         else if (StompCommand.SEND.equals(accessor.getCommand())) {
-            if (accessor.getUser() != null) {
-                String email = accessor.getUser().getName();
-                String sessionId = accessor.getSessionId();
+            Principal principal = accessor.getUser();
+            String sessionId = accessor.getSessionId();
+            
+            if (principal != null) {
+                String principalName = principal.getName();
                 
-                if (!sessionManager.isSessionValid(email, sessionId)) {
-                    log.debug("유효하지 않은 세션으로부터의 메시지: {}, {}", email, sessionId);
+                Map<String, Object> sessionAttributes = accessor.getSessionAttributes();
+                if (sessionAttributes != null && sessionAttributes.containsKey("email")) {
+                    String email = (String) sessionAttributes.get("email");
                     
-                    notificationService.sendTokenExpiredNotification(email);
+                    if (!sessionManager.isSessionValid(email, sessionId)) {
+                        log.debug("유효하지 않은 세션으로부터의 메시지: 닉네임={}, 이메일={}, 세션={}", 
+                                  principalName, email, sessionId);
+                        notificationService.sendTokenExpiredNotification(principalName);
+                        return null;
+                    }
                     
+                    log.debug("메시지 전송 허용: 닉네임={}, 이메일={}, 세션={}", 
+                              principalName, email, sessionId);
+                    return message;
+                } else {
+                    log.debug("세션 속성에 이메일 정보 없음: 닉네임={}, 세션={}", principalName, sessionId);
+                    notificationService.sendTokenExpiredNotification(principalName);
                     return null;
                 }
+            } else {
+                log.debug("인증되지 않은 메시지 요청 감지");
+                return null;
             }
         }
         
         return message;
     }
-} 
+}
