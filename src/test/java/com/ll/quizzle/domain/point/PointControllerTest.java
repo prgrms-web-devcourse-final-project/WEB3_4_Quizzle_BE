@@ -111,11 +111,8 @@ class PointControllerTest {
 	@Test
 	@DisplayName("다른 유저의 포인트 내역 조회 시 → 403")
 	void getPoints_forbidden() throws Exception {
-		GeneratedToken otherToken = authTokenService.generateToken(other.getEmail(), other.getRole().name());
-		Cookie otherCookie = new Cookie("access_token", otherToken.accessToken());
-
-		mockMvc.perform(get("/api/v1/members/" + member.getId() + "/points")
-				.cookie(otherCookie))
+		mockMvc.perform(get("/api/v1/members/" + other.getId() + "/points")
+				.cookie(accessTokenCookie))
 			.andExpect(status().isForbidden());
 	}
 }
