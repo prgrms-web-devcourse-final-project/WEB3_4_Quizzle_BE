@@ -83,6 +83,15 @@ public class Member extends BaseEntity {
         this.pointBalance -= amount;
     }
 
+    /**
+     * EXP 업데이트 메서드 추가
+     *
+     * @param newExp 새로운 EXP 값
+     */
+    public void updateExp(int newExp) {
+        this.exp = newExp;
+    }
+
     public static Member create(String nickname, String email) {
         return Member.builder()
                 .nickname(nickname)
