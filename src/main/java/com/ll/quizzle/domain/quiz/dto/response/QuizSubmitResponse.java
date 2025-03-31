@@ -1,6 +1,6 @@
 package com.ll.quizzle.domain.quiz.dto.submission;
 
-public record QuizSubmitResponseDTO(
+public record QuizSubmitResponse(
         int questionNumber,         // 채점 대상 문제 번호
         boolean correct,            // 정답 여부
         String correctAnswer,       // 정답 (참고용)

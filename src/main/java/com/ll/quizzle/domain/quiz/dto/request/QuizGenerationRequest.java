@@ -5,7 +5,7 @@ import com.ll.quizzle.domain.quiz.enums.Difficulty;
 import com.ll.quizzle.domain.quiz.enums.MainCategory;
 import com.ll.quizzle.domain.quiz.enums.SubCategory;
 
-public record QuizDTO(
+public record QuizGenerationRequest(
         Long id,
         MainCategory mainCategory,
         SubCategory subCategory,
