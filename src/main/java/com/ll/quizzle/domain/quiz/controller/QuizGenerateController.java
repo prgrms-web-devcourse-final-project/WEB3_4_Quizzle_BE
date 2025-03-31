@@ -17,7 +17,6 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1/quiz")
-@Profile("gpt")
 public class QuizGenerateController {
 
     private final GPTQuizService gptQuizService;
@@ -30,10 +29,14 @@ public class QuizGenerateController {
 
     @PostMapping("/generate")
     public RsData<QuizResponseDTO> generateQuiz(@RequestBody QuizDTO quizDTO) {
-        // 예시: UUID를 quizId로 사용 (필요에 따라 redisQuizAnswerService 등에서 quizId를 생성할 수 있음)
         String quizId = UUID.randomUUID().toString();
 
+        // 먼저 GPTQuizService로부터 퀴즈 생성 결과를 받아옴
         QuizGenerationResponseDTO result = gptQuizService.generateQuiz(quizDTO);
+
+        // result를 사용해 Redis에 저장
+        redisQuizAnswerService.saveQuiz(quizId, result.quizText(), result.answerMap());
+
         QuizResponseDTO response = new QuizResponseDTO(quizId, result.quizText(), result.answerMap());
         return RsData.success(HttpStatus.OK, response);
     }
