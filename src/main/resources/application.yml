@@ -1,0 +1,57 @@
+spring:
+  application:
+    name: Quizzle
+  profiles:
+    active: dev
+    include:
+      - secret
+  config:
+    import: optional:file:.env[.properties]
+
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            client-id: ON_SECRET
+            client-secret: ON_SECRET
+            redirect-uri: "${custom.site.backUrl}/login/oauth2/code/google"
+            scope:
+              - email
+              - profile
+          kakao:
+            client-id: ON_SECRET
+            client-secret: ON_SECRET
+            redirect-uri: "${custom.site.backUrl}/login/oauth2/code/kakao"
+            client-authentication-method: client_secret_post
+            authorization-grant-type: authorization_code
+            scope:
+              - profile_nickname
+              - account_email
+        provider:
+          kakao:
+            authorization-uri: https://kauth.kakao.com/oauth/authorize
+            token-uri: https://kauth.kakao.com/oauth/token
+            user-info-uri: https://kapi.kakao.com/v2/user/me
+            user-name-attribute: id
+
+quizzle:
+  messaging:
+    provider: stomp
+    room:
+      provider: stomp
+    chat:
+      provider: redis
+
+app:
+  oauth2:
+    authorizedRedirectUris: "${custom.site.frontUrl}/oauth/callback"
+
+custom:
+  site:
+    name: Quizzle
+
+openai:
+  apiUrl: ${OPENAI_API_URL:https://api.openai.com/v1/chat/completions}
+  model: ${OPENAI_MODEL:gpt-3.5-turbo}
+  apiKey: ${OPENAI_API_KEY}
