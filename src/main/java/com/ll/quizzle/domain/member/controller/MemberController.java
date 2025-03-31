@@ -1,18 +1,27 @@
 package com.ll.quizzle.domain.member.controller;
 
-import com.ll.quizzle.domain.member.dto.MemberProfileEditRequestDTO;
-import com.ll.quizzle.domain.member.dto.MemberProfileEditResponseDTO;
+import static com.ll.quizzle.global.exceptions.ErrorCode.*;
+
+import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.ll.quizzle.domain.member.dto.request.MemberProfileEditRequest;
+import com.ll.quizzle.domain.member.dto.response.MemberProfileEditResponse;
 import com.ll.quizzle.domain.member.service.MemberService;
 import com.ll.quizzle.global.response.RsData;
+
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
-import org.springframework.web.bind.annotation.*;
-
-import static com.ll.quizzle.global.exceptions.ErrorCode.REFRESH_TOKEN_NOT_FOUND;
 
 @RestController
 @RequiredArgsConstructor
@@ -55,11 +64,11 @@ public class MemberController {
     }
 
 	@PatchMapping("/{memberId}")
-	public RsData<MemberProfileEditResponseDTO> updateProfile(
+	public RsData<MemberProfileEditResponse> updateProfile(
 		@PathVariable Long memberId,
-		@RequestBody @Valid MemberProfileEditRequestDTO request
+		@RequestBody @Valid MemberProfileEditRequest request
 	) {
-		MemberProfileEditResponseDTO response = memberService.updateProfile(memberId, request.nickname());
+		MemberProfileEditResponse response = memberService.updateProfile(memberId, request.nickname());
 		return RsData.success(HttpStatus.OK, response);
 	}
 }

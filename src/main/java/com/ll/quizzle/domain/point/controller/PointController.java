@@ -7,8 +7,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.ll.quizzle.domain.point.dto.PointHistoryRequestDTO;
-import com.ll.quizzle.domain.point.dto.PointHistoryResponseDTO;
+import com.ll.quizzle.domain.point.dto.request.PointHistoryRequest;
+import com.ll.quizzle.domain.point.dto.response.PointHistoryResponse;
 import com.ll.quizzle.domain.point.service.PointService;
 import com.ll.quizzle.domain.point.type.PointType;
 import com.ll.quizzle.global.response.RsData;
@@ -24,14 +24,14 @@ public class PointController {
 	private final PointService pointService;
 
 	@GetMapping("/{memberId}/points")
-	public RsData<PageDto<PointHistoryResponseDTO>> getPointHistories(
+	public RsData<PageDto<PointHistoryResponse>> getPointHistories(
 		@PathVariable("memberId") Long memberId,
 		@RequestParam(defaultValue = "ALL") PointType type,
 		@RequestParam(defaultValue = "0") int page,
 		@RequestParam(defaultValue = "10") int size
 	) {
-		PointHistoryRequestDTO requestDto = new PointHistoryRequestDTO(type, page, size);
-		PageDto<PointHistoryResponseDTO> result = pointService.getPointHistoriesWithPage(memberId, requestDto);
+		PointHistoryRequest requestDto = new PointHistoryRequest(type, page, size);
+		PageDto<PointHistoryResponse> result = pointService.getPointHistoriesWithPage(memberId, requestDto);
 		return RsData.success(HttpStatus.OK, result);
 	}
 
