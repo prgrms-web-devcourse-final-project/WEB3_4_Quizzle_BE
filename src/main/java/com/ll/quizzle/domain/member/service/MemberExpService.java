@@ -21,8 +21,7 @@ public class MemberExpService {
      * @param score  획득한 점수
      */
     public void updateMemberExp(String userId, int score) {
-        Long memberId = Long.parseLong(userId);
-        Member member = memberRepository.findById(memberId)
+        Member member = memberRepository.findByNickname(userId)
                 .orElseThrow(() -> new RuntimeException("멤버를 찾을 수 없습니다."));
         int newExp = member.getExp() + score;
         member.updateExp(newExp);
