@@ -49,4 +49,11 @@ class MemberControllerTest {
                 .andExpect(jsonPath("$.data.id").value(member.getId()))
                 .andExpect(jsonPath("$.data.nickname").value(member.getNickname()));
     }
+
+    @Test
+    @DisplayName("프로필 정보 조회 실패 - 없는 회원 (99999999)")
+    void testGetProfileWithNoMember() throws Exception {
+        mockMvc.perform(get("/api/v1/members/99999999"))
+                .andExpect(status().isNotFound());
+    }
 }
