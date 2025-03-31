@@ -26,7 +26,6 @@ import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
 import java.util.Collections;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -77,7 +76,6 @@ public class OAuth2AuthenticationTest {
                 .exp(0)
                 .profilePath("test")
                 .pointBalance(0)
-                .oauths(new ArrayList<>())
                 .build();
 
         memberRepository.save(testMember);
@@ -89,7 +87,6 @@ public class OAuth2AuthenticationTest {
                 .member(testMember)
                 .build();
 
-        testMember.getOauths().add(testOAuth);
         oAuthRepository.save(testOAuth);
         memberRepository.save(testMember);
 
@@ -112,32 +109,6 @@ public class OAuth2AuthenticationTest {
         assertThat(memberService.verifyToken(accessToken)).isTrue();
         // 리프레시 토큰 검증
         assertThat(memberService.verifyToken(refreshToken)).isTrue();
-    }
-
-    @Test
-    @DisplayName("다른 OAuth 제공자 계정 연결 성공")
-    void linkAnotherOAuthProvider_Success() {
-        // given
-        String provider = "kakao";
-        String oauthId = "kakao12345";
-
-        // when
-        OAuth linkedOAuth = OAuth.builder()
-                .provider(provider)
-                .oauthId(oauthId)
-                .member(testMember)
-                .build();
-
-        testMember.getOauths().add(linkedOAuth);
-        oAuthRepository.save(linkedOAuth);
-        memberRepository.save(testMember);
-
-        // then
-        Member updatedMember = memberRepository.findById(testMember.getId()).orElseThrow();
-        assertThat(updatedMember.getOauths()).hasSize(2);
-        assertThat(updatedMember.getOauths()).anyMatch(oauth ->
-                oauth.getProvider().equals(provider) && oauth.getOauthId().equals(oauthId)
-        );
     }
 
     @Test

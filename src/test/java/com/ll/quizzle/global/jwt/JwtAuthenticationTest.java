@@ -30,7 +30,6 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.context.WebApplicationContext;
 
-import java.util.ArrayList;
 import java.util.Date;
 
 import static com.ll.quizzle.global.exceptions.ErrorCode.UNAUTHORIZED;
@@ -96,7 +95,6 @@ public class JwtAuthenticationTest {
                 .exp(0)
                 .profilePath("test")
                 .pointBalance(0)
-                .oauths(new ArrayList<>())
                 .build();
 
         memberRepository.save(testMember);
@@ -136,8 +134,7 @@ public class JwtAuthenticationTest {
         when(rq.getActor()).thenThrow(new ServiceException(UNAUTHORIZED.getHttpStatus(), "로그인이 필요합니다."));
 
         // when & then
-        // todo : api 추가된 후 url 수정 필요
-        mockMvc.perform(get("/api/v1/members"))
+        mockMvc.perform(get("/api/v1/members/1/points"))
                 .andExpect(status().isUnauthorized());
     }
 

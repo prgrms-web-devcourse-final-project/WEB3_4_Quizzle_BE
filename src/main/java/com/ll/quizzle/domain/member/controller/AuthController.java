@@ -75,7 +75,7 @@ public class AuthController {
             String newAccessToken = refreshResult.getData();
             Long expiryTime = memberService.getTokenExpiryTime(newAccessToken);
             
-            CookieUtil.addCookie(response, "access_token", newAccessToken, 3600);
+            CookieUtil.addCookie(response, "access_token", newAccessToken, 3600, true, true);
             
             return new RsData<>(
                     HttpStatus.OK,
