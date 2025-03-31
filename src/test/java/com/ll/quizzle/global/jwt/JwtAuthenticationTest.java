@@ -113,7 +113,6 @@ public class JwtAuthenticationTest {
 
     @Test
     @DisplayName("쿠키에 액세스 토큰을 담아 API 호출")
-    @Transactional
     void accessAPI_WithCookieToken() throws Exception {
         // given
         Cookie accessTokenCookie = new Cookie("access_token", generatedTokens.accessToken());
