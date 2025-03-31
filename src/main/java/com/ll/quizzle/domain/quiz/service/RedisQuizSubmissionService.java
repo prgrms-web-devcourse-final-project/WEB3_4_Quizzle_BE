@@ -1,6 +1,6 @@
 package com.ll.quizzle.domain.quiz.service;
 
-import com.ll.quizzle.domain.quiz.dto.submission.QuizSubmissionResultDTO;
+import com.ll.quizzle.domain.quiz.dto.response.QuizSubmitResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
@@ -23,7 +23,7 @@ public class RedisQuizSubmissionService {
      * @param submittedAnswer 사용자가 제출한 답안
      * @return QuizSubmissionResultDTO (문제 번호, 채점 결과, 정답, 메시지 포함)
      */
-    public QuizSubmissionResultDTO submitAnswer(String quizId, String userId, int questionNumber, String submittedAnswer) {
+    public QuizSubmitResponse submitAnswer(String quizId, String userId, int questionNumber, String submittedAnswer) {
         // 정답 리스트가 저장된 Redis 키 생성 (문제의 경우는 그대로)
         String answerListKey = String.format("quiz:%s:answers", quizId);
 
@@ -60,7 +60,7 @@ public class RedisQuizSubmissionService {
 
         String message = isCorrect ? "정답입니다." : "오답입니다.";
 
-        return new QuizSubmissionResultDTO(questionNumber, isCorrect, correctAnswer, message);
+        return new QuizSubmitResponse(questionNumber, isCorrect, correctAnswer, message);
     }
 
 }

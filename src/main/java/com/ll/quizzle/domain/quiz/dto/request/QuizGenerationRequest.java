@@ -1,4 +1,4 @@
-package com.ll.quizzle.domain.quiz.dto.generation;
+package com.ll.quizzle.domain.quiz.dto.request;
 
 import com.ll.quizzle.domain.quiz.enums.AnswerType;
 import com.ll.quizzle.domain.quiz.enums.Difficulty;

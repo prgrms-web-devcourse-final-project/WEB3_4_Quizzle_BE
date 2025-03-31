@@ -2,7 +2,8 @@ package com.ll.quizzle.domain.quiz.parser;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.ll.quizzle.domain.quiz.dto.generation.QuizGenerationResponseDTO;
+import com.ll.quizzle.domain.quiz.dto.request.QuizGenerationRequest;
+import com.ll.quizzle.domain.quiz.dto.response.QuizGenerationResponse;
 import com.ll.quizzle.global.exceptions.ErrorCode;
 
 import java.io.IOException;
@@ -20,7 +21,7 @@ public class QuizResponseParser {
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
-    public QuizGenerationResponseDTO parse(String responseBody) {
+    public QuizGenerationResponse parse(String responseBody) {
         try {
             JsonNode root = objectMapper.readTree(responseBody);
             String content = root.path("choices").get(0).path("message").path("content").asText();
@@ -45,7 +46,7 @@ public class QuizResponseParser {
                 quizText.append(line).append("\n");
             }
 
-            return new QuizGenerationResponseDTO(quizText.toString().trim(), answerMap);
+            return new QuizGenerationResponse(quizText.toString().trim(), answerMap);
         } catch (IOException e) {
             ErrorCode.INTERNAL_SERVER_ERROR.throwServiceException(e);
             return null; // Unreachable

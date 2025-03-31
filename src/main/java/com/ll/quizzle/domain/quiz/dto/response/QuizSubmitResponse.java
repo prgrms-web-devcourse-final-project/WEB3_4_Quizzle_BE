@@ -1,4 +1,4 @@
-package com.ll.quizzle.domain.quiz.dto.submission;
+package com.ll.quizzle.domain.quiz.dto.response;
 
 public record QuizSubmitResponse(
         int questionNumber,         // 채점 대상 문제 번호

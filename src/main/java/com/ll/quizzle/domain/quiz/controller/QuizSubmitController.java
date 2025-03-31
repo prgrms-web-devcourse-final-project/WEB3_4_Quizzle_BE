@@ -1,8 +1,7 @@
 package com.ll.quizzle.domain.quiz.controller;
 
-import com.ll.quizzle.domain.quiz.dto.submission.QuizSubmissionResultDTO;
-import com.ll.quizzle.domain.quiz.dto.submission.QuizSubmitRequestDTO;
-import com.ll.quizzle.domain.quiz.dto.submission.QuizSubmitResponseDTO;
+import com.ll.quizzle.domain.quiz.dto.request.QuizSubmitRequest;
+import com.ll.quizzle.domain.quiz.dto.response.QuizSubmitResponse;
 import com.ll.quizzle.domain.quiz.service.RedisQuizSubmissionService;
 import com.ll.quizzle.global.response.RsData;
 import org.springframework.http.HttpStatus;
@@ -27,22 +26,17 @@ public class QuizSubmitController {
      * @return 채점 결과와 관련 정보를 담은 응답 DTO
      */
     @PostMapping("/{roomId}/submit")
-    public RsData<QuizSubmitResponseDTO> submitAnswer(@PathVariable("roomId") String roomId,
-                                                      @RequestBody QuizSubmitRequestDTO submitRequest,
-                                                      @RequestParam String userId) {
-        QuizSubmissionResultDTO result = redisQuizSubmissionService.submitAnswer(
+    public RsData<QuizSubmitResponse> submitAnswer(@PathVariable("roomId") String roomId,
+                                                   @RequestBody QuizSubmitRequest submitRequest,
+                                                   @RequestParam String userId) {
+        QuizSubmitResponse result = redisQuizSubmissionService.submitAnswer(
                 roomId,
                 userId,
                 submitRequest.questionNumber(),
                 submitRequest.submittedAnswer()
         );
-
-        QuizSubmitResponseDTO response = new QuizSubmitResponseDTO(
-                result.questionNumber(),
-                result.correct(),
-                result.correctAnswer(),
-                result.message()
-        );
-        return RsData.success(HttpStatus.OK, response);
+        return RsData.success(HttpStatus.OK, result);
     }
+
+
 }
