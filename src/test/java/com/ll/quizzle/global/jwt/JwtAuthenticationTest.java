@@ -36,7 +36,6 @@ import static com.ll.quizzle.global.exceptions.ErrorCode.UNAUTHORIZED;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -114,6 +113,7 @@ public class JwtAuthenticationTest {
 
     @Test
     @DisplayName("쿠키에 액세스 토큰을 담아 API 호출")
+    @Transactional
     void accessAPI_WithCookieToken() throws Exception {
         // given
         Cookie accessTokenCookie = new Cookie("access_token", generatedTokens.accessToken());
@@ -121,10 +121,9 @@ public class JwtAuthenticationTest {
         accessTokenCookie.setHttpOnly(true);
 
         // when & then
-        // todo : api 추가된 후 url 수정 필요
-        mockMvc.perform(delete("/api/v1/members")
+        mockMvc.perform(get("/api/v1/members/{memberId}/points", testMember.getId())
                         .cookie(accessTokenCookie))
-                .andExpect(status().is(204));
+                .andExpect(status().isOk());
     }
 
     @Test
@@ -134,7 +133,7 @@ public class JwtAuthenticationTest {
         when(rq.getActor()).thenThrow(new ServiceException(UNAUTHORIZED.getHttpStatus(), "로그인이 필요합니다."));
 
         // when & then
-        mockMvc.perform(get("/api/v1/members/1/points"))
+        mockMvc.perform(get("/api/v1/members/{memberId}/points", testMember.getId()))
                 .andExpect(status().isUnauthorized());
     }
 
