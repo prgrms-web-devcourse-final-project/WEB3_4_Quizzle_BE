@@ -55,7 +55,9 @@ public class SecurityConfig {
                                 "/login/oauth2/code/**",
                                 "/api/*/oauth2/callback",
                                 "/error",
-                                "/favicon.ico"
+                                "/favicon.ico",
+                                "/api/v1/quiz/**"    // 퀴즈 관련 API는 인증 없이 접근 허용
+
                         ).permitAll()
 
                         // 관리자 전용
