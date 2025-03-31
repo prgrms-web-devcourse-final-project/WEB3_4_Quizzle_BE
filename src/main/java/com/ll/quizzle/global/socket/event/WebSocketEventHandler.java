@@ -12,6 +12,7 @@ import org.springframework.web.socket.messaging.SessionConnectEvent;
 import org.springframework.web.socket.messaging.SessionDisconnectEvent;
 
 import java.util.Map;
+import java.security.Principal;
 
 
 @Slf4j
@@ -32,12 +33,12 @@ public class WebSocketEventHandler {
         if (sessionAttributes != null && sessionAttributes.containsKey("email")) {
             String email = (String) sessionAttributes.get("email");
             String accessToken = (String) sessionAttributes.get("accessToken");
-            String sessionId = (String) sessionAttributes.get("sessionId");
+            String stompSessionId = accessor.getSessionId();
             Long expiryTime = (Long) sessionAttributes.get("tokenExpiryTime");
             
-            log.debug("세션 연결 이벤트: 사용자={}, 세션={}", email, sessionId);
+            log.debug("세션 연결 이벤트: 사용자={}, STOMP 세션={}", email, stompSessionId);
             
-            sessionManager.registerSession(email, sessionId, accessToken, expiryTime);
+            sessionManager.registerSession(email, stompSessionId, accessToken, expiryTime);
             
             if (!memberService.verifyToken(accessToken)) {
                 log.debug("세션 연결 시 토큰 만료 감지: 사용자={}", email);
@@ -52,10 +53,19 @@ public class WebSocketEventHandler {
         StompHeaderAccessor accessor = StompHeaderAccessor.wrap(event.getMessage());
         String sessionId = accessor.getSessionId();
         
-        if (accessor.getUser() != null) {
-            String email = accessor.getUser().getName();
-            log.debug("세션 종료 이벤트: 사용자={}, 세션={}", email, sessionId);
+        Map<String, Object> sessionAttributes = accessor.getSessionAttributes();
+        if (sessionAttributes != null && sessionAttributes.containsKey("email")) {
+            String email = (String) sessionAttributes.get("email");
+            log.debug("세션 종료 이벤트: 이메일={}, 세션={}", email, sessionId);
             sessionManager.removeSession(email, sessionId);
+            return;
+        }
+        
+        Principal principal = accessor.getUser();
+        if (principal != null) {
+            String principalName = principal.getName();
+            log.debug("세션 종료 이벤트: 닉네임={}, 세션={}", principalName, sessionId);
+            log.debug("이메일 정보 없음 - 세션 정리 실패");
         }
     }
 } 
