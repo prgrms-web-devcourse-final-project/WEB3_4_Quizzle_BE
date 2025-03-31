@@ -1,7 +1,14 @@
 package com.ll.quizzle.global.socket.interceptor;
 
-import java.util.Map;
-
+import com.ll.quizzle.domain.member.entity.Member;
+import com.ll.quizzle.domain.member.service.MemberService;
+import com.ll.quizzle.global.security.oauth2.dto.SecurityUser;
+import com.ll.quizzle.global.socket.security.WebSocketSecurityService;
+import com.ll.quizzle.global.socket.service.WebSocketNotificationService;
+import com.ll.quizzle.global.socket.session.WebSocketSessionManager;
+import lombok.NonNull;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.simp.stomp.StompCommand;
@@ -11,21 +18,11 @@ import org.springframework.messaging.support.MessageHeaderAccessor;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Component;
-import org.springframework.util.StringUtils;
-
-import com.ll.quizzle.domain.member.entity.Member;
-import com.ll.quizzle.domain.member.service.MemberService;
-import com.ll.quizzle.global.security.oauth2.dto.SecurityUser;
-import static com.ll.quizzle.global.security.oauth2.dto.SecurityUser.of;
-import com.ll.quizzle.global.socket.security.WebSocketSecurityService;
-import com.ll.quizzle.global.socket.service.WebSocketNotificationService;
-import com.ll.quizzle.global.socket.session.WebSocketSessionManager;
-
-import lombok.NonNull;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 
 import java.security.Principal;
+import java.util.Map;
+
+import static com.ll.quizzle.global.security.oauth2.dto.SecurityUser.of;
 
 @Slf4j
 @Component
@@ -133,19 +130,5 @@ public class StompChannelInterceptor implements ChannelInterceptor {
         }
         
         return message;
-    }
-    
-    private String extractAuthToken(StompHeaderAccessor accessor) {
-        String authorization = accessor.getFirstNativeHeader("Authorization");
-        if (StringUtils.hasText(authorization) && authorization.startsWith("Bearer ")) {
-            return authorization.substring(7);
-        }
-        
-        String xAuthorization = accessor.getFirstNativeHeader("X-Authorization");
-        if (StringUtils.hasText(xAuthorization)) {
-            return xAuthorization;
-        }
-        
-        return null;
     }
 }
