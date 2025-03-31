@@ -9,13 +9,12 @@ import org.springframework.stereotype.Service;
 
 import com.ll.quizzle.domain.member.entity.Member;
 import com.ll.quizzle.domain.member.repository.MemberRepository;
-import com.ll.quizzle.domain.point.dto.PointHistoryRequestDTO;
-import com.ll.quizzle.domain.point.dto.PointHistoryResponseDTO;
+import com.ll.quizzle.domain.point.dto.request.PointHistoryRequest;
+import com.ll.quizzle.domain.point.dto.response.PointHistoryResponse;
 import com.ll.quizzle.domain.point.entity.Point;
 import com.ll.quizzle.domain.point.repository.PointRepository;
 import com.ll.quizzle.domain.point.type.PointReason;
 import com.ll.quizzle.domain.point.type.PointType;
-import com.ll.quizzle.global.exceptions.ErrorCode;
 import com.ll.quizzle.global.request.Rq;
 import com.ll.quizzle.standard.page.dto.PageDto;
 
@@ -29,13 +28,13 @@ public class PointService {
 	private final MemberRepository memberRepository;
 	private final Rq rq;
 
-	public PageDto<PointHistoryResponseDTO> getPointHistoriesWithPage(Long memberId,
-		PointHistoryRequestDTO requestDto) {
+	public PageDto<PointHistoryResponse> getPointHistoriesWithPage(Long memberId,
+		PointHistoryRequest requestDto) {
 
-		Member member = memberRepository.findById(memberId)
+		memberRepository.findById(memberId)
 			.orElseThrow(MEMBER_NOT_FOUND::throwServiceException);
 
-		rq.assertIsOwner(memberId);
+		Member member = rq.assertIsOwner(memberId);
 
 		Pageable pageable = PageRequest.of(requestDto.page(), requestDto.size());
 
@@ -47,20 +46,20 @@ public class PointService {
 			page = pointRepository.findPageByMemberOrderByCreateDateDesc(member, pageable);
 		}
 
-		return new PageDto<>(page.map(PointHistoryResponseDTO::from));
+		return new PageDto<>(page.map(PointHistoryResponse::from));
 	}
 
 	// 포인트 사용
 	public void usePoint(Member member, int amount, PointReason reason) {
 		member.decreasePoint(amount);
-		Point point = Point.use(member, amount, reason);
+		Point point = new Point(member, -amount, PointType.USE, reason);
 		pointRepository.save(point);
 	}
 
 	// 포인트 획득
 	public void gainPoint(Member member, int amount, PointReason reason) {
 		member.increasePoint(amount);
-		Point point = Point.gain(member, amount, reason);
+		Point point = new Point(member, amount, PointType.REWARD, reason);
 		pointRepository.save(point);
 	}
 
@@ -69,7 +68,7 @@ public class PointService {
 		int amount = reason.getDefaultAmount();
 
 		if (amount == 0) {
-			throw ErrorCode.POINT_POLICY_NOT_FOUND.throwServiceException();
+			throw POINT_POLICY_NOT_FOUND.throwServiceException();
 		}
 
 		if (amount > 0) {

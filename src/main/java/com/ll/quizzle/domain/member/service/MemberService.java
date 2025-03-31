@@ -1,6 +1,19 @@
 package com.ll.quizzle.domain.member.service;
 
-import com.ll.quizzle.domain.member.dto.MemberProfileEditResponseDTO;
+import static com.ll.quizzle.global.exceptions.ErrorCode.*;
+
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.TimeUnit;
+
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.ll.quizzle.domain.member.dto.response.MemberProfileEditResponse;
 import com.ll.quizzle.domain.member.entity.Member;
 import com.ll.quizzle.domain.member.repository.MemberRepository;
 import com.ll.quizzle.domain.point.service.PointService;
@@ -12,22 +25,11 @@ import com.ll.quizzle.global.response.RsData;
 import com.ll.quizzle.global.security.oauth2.repository.OAuthRepository;
 import com.ll.quizzle.standard.util.CookieUtil;
 import com.ll.quizzle.standard.util.Ut;
+
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
-import java.util.concurrent.TimeUnit;
-
-import static com.ll.quizzle.global.exceptions.ErrorCode.*;
 
 @Service
 @RequiredArgsConstructor
@@ -185,13 +187,14 @@ public class MemberService {
 	}
 
 	@Transactional
-	public MemberProfileEditResponseDTO updateProfile(Long targetMemberId, String newNickname) {
-		rq.assertIsOwner(targetMemberId);
+	public MemberProfileEditResponse updateProfile(Long memberId, String newNickname) {
 
-		Member actor = rq.getActor();
-		actor.changeNickname(newNickname);
-		pointService.applyPointPolicy(actor, PointReason.NICKNAME_CHANGE);
+		Member member = rq.assertIsOwner(memberId);
 
-		return MemberProfileEditResponseDTO.from(actor);
+		member.changeNickname(newNickname);
+		pointService.applyPointPolicy(member, PointReason.NICKNAME_CHANGE);
+
+		return MemberProfileEditResponse.from(member);
 	}
+
 }

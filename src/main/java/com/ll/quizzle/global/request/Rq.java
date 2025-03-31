@@ -34,12 +34,14 @@ public class Rq {
 		return actor;
 	}
 
-	public void assertIsOwner(Long targetMemberId) {
+	public Member assertIsOwner(Long targetMemberId) {
 		Member actor = getActor();
 
 		if (!actor.getId().equals(targetMemberId)) {
 			throw ErrorCode.FORBIDDEN_ACCESS.throwServiceException();
 		}
+
+		return actor;
 	}
 
 }
