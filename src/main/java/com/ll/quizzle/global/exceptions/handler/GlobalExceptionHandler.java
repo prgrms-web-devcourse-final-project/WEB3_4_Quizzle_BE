@@ -17,12 +17,12 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(ServiceException.class)
     public ResponseEntity<RsData<?>> handle(ServiceException ex) {
-        HttpStatus status = ex.getResultCode() != null ? ex.getResultCode() : ErrorCode.INTERNAL_SERVER_ERROR.getHttpStatus();
+        HttpStatus status = ex.getHttpStatus() != null ? ex.getHttpStatus() : ErrorCode.INTERNAL_SERVER_ERROR.getHttpStatus();
         String message = ex.getMsg() != null ? ex.getMsg() : ErrorCode.INTERNAL_SERVER_ERROR.getMessage();
 
         return ResponseEntity
-                .status(ex.getResultCode())
-                .body(new RsData<>(ex.getResultCode(), ex.getMsg(), null));
+                .status(ex.getHttpStatus())
+                .body(new RsData<>(ex.getHttpStatus(), ex.getMsg(), null));
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
