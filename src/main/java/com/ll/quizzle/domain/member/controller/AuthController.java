@@ -3,6 +3,7 @@ package com.ll.quizzle.domain.member.controller;
 import com.ll.quizzle.domain.member.dto.request.TokenRefreshRequest;
 import com.ll.quizzle.domain.member.dto.response.TokenInfoResponse;
 import com.ll.quizzle.domain.member.service.MemberService;
+import com.ll.quizzle.global.jwt.dto.JwtProperties;
 import com.ll.quizzle.global.response.RsData;
 import com.ll.quizzle.standard.util.CookieUtil;
 import jakarta.servlet.http.HttpServletResponse;
@@ -20,6 +21,7 @@ import static com.ll.quizzle.global.exceptions.ErrorCode.*;
 public class AuthController {
 
     private final MemberService memberService;
+    private final JwtProperties jwtProperties;
 
     @GetMapping("/token-info")
     public RsData<TokenInfoResponse> getTokenInfo(
@@ -75,7 +77,7 @@ public class AuthController {
             String newAccessToken = refreshResult.getData();
             Long expiryTime = memberService.getTokenExpiryTime(newAccessToken);
             
-            CookieUtil.addCookie(response, "access_token", newAccessToken, 3600, true, true);
+            CookieUtil.addCookie(response, "access_token", newAccessToken, (int) jwtProperties.getAccessTokenExpiration(), true, true);
             
             return new RsData<>(
                     HttpStatus.OK,

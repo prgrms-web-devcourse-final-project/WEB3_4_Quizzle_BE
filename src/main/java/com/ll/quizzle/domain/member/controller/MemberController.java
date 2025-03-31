@@ -1,5 +1,7 @@
 package com.ll.quizzle.domain.member.controller;
 
+import com.ll.quizzle.domain.member.dto.response.UserProfileResponse;
+import com.ll.quizzle.domain.member.entity.Member;
 import com.ll.quizzle.domain.member.service.MemberService;
 import com.ll.quizzle.global.response.RsData;
 import jakarta.servlet.http.Cookie;
@@ -9,6 +11,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
+import static com.ll.quizzle.global.exceptions.ErrorCode.MEMBER_NOT_FOUND;
 import static com.ll.quizzle.global.exceptions.ErrorCode.REFRESH_TOKEN_NOT_FOUND;
 
 @RestController
@@ -49,5 +52,12 @@ public class MemberController {
         }
 
         return memberService.refreshAccessToken(refreshToken);
+    }
+
+    @GetMapping("/{memberId}")
+    public RsData<UserProfileResponse> getUserProfile(@PathVariable Long memberId) {
+        Member member = memberService.findById(memberId).orElseThrow(MEMBER_NOT_FOUND::throwServiceException);
+
+        return RsData.success(HttpStatus.OK, UserProfileResponse.of(member));
     }
 }
