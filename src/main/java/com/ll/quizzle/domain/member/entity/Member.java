@@ -4,7 +4,7 @@ import com.ll.quizzle.domain.member.type.Role;
 import com.ll.quizzle.global.jpa.entity.BaseEntity;
 import com.ll.quizzle.global.security.oauth2.entity.OAuth;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
+import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -13,9 +13,7 @@ import static com.ll.quizzle.global.exceptions.ErrorCode.*;
 
 @Entity
 @Getter
-@Builder
-@AllArgsConstructor
-@NoArgsConstructor
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Member extends BaseEntity {
     @Column(nullable = false)
     private String nickname;
@@ -41,6 +39,17 @@ public class Member extends BaseEntity {
 
     @OneToOne(mappedBy = "member", cascade = CascadeType.ALL, orphanRemoval = true)
     private OAuth oauth;
+
+    @Builder
+    private Member(String nickname, String email, int level, Role role, int exp, String profilePath, int pointBalance) {
+        this.nickname = nickname;
+        this.email = email;
+        this.level = level;
+        this.role = role;
+        this.exp = exp;
+        this.profilePath = profilePath;
+        this.pointBalance = pointBalance;
+    }
 
     public String getUserRole() {
         return this.role.name();
