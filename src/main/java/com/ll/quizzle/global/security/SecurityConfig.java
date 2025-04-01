@@ -62,7 +62,7 @@ public class SecurityConfig {
                         ).permitAll()
                         .requestMatchers(
                                 HttpMethod.GET,
-                                "/api/v1/members/**"
+                                "/api/v1/members/*"
                         ).permitAll()
 
                         // 관리자 전용
