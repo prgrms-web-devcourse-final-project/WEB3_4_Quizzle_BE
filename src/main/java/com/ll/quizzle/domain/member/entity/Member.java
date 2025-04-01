@@ -93,14 +93,6 @@ public class Member extends BaseEntity {
     }
 
     public static Member create(String nickname, String email) {
-        return Member.builder()
-                .nickname(nickname)
-                .email(email)
-                .level(0)
-                .role(Role.MEMBER)
-                .exp(0)
-                .profilePath("기본경로")
-                .pointBalance(0)
-                .build();
+        return Member.builder().nickname(nickname).email(email).level(0).role(Role.MEMBER).exp(0).profilePath("기본경로").pointBalance(0).build();
     }
 }
