@@ -4,18 +4,19 @@ import com.ll.quizzle.domain.member.type.Role;
 import com.ll.quizzle.global.jpa.entity.BaseEntity;
 import com.ll.quizzle.global.security.oauth2.entity.OAuth;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
+import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+
+import java.util.ArrayList;
+import java.util.List;
 
 import static com.ll.quizzle.global.exceptions.ErrorCode.*;
 
 @Entity
 @Getter
-@Builder
-@AllArgsConstructor
-@NoArgsConstructor
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Member extends BaseEntity {
     @Column(nullable = false)
     private String nickname;
@@ -41,6 +42,17 @@ public class Member extends BaseEntity {
 
     @OneToOne(mappedBy = "member", cascade = CascadeType.ALL, orphanRemoval = true)
     private OAuth oauth;
+
+    @Builder
+    private Member(String nickname, String email, int level, Role role, int exp, String profilePath, int pointBalance) {
+        this.nickname = nickname;
+        this.email = email;
+        this.level = level;
+        this.role = role;
+        this.exp = exp;
+        this.profilePath = profilePath;
+        this.pointBalance = pointBalance;
+    }
 
     public String getUserRole() {
         return this.role.name();
@@ -83,27 +95,30 @@ public class Member extends BaseEntity {
         this.pointBalance -= amount;
     }
 
-    /**
-     * EXP 업데이트 메서드 추가
-     *
-     * @param newExp 새로운 EXP 값
-     */
-    /**
-     * EXP 업데이트 및 레벨업 메서드
-     *
-     * @param newExp 새로운 EXP 값
-     */
+
     public void updateExp(int newExp) {
         this.exp = newExp;
-        int newLevel = newExp / 100; // 1000 EXP마다 레벨업
-        // 만약 현재 레벨보다 높아졌다면 레벨 업데이트 (경험치가 감소하는 경우를 방지)
-        if (newLevel > this.level) {
-            this.level = newLevel;
+        int calculatedLevel = newExp / 100;  // 100 EXP마다 레벨업
+        if (calculatedLevel > this.level) {
+            this.level = calculatedLevel;
         }
     }
 
 
     public static Member create(String nickname, String email) {
-        return Member.builder().nickname(nickname).email(email).level(0).role(Role.MEMBER).exp(0).profilePath("기본경로").pointBalance(0).build();
+        return Member.builder()
+                .nickname(nickname)
+                .email(email)
+                .level(0)
+                .role(Role.MEMBER)
+                .exp(0)
+                .profilePath("기본경로")
+                .pointBalance(0)
+                .build();
     }
+
+	public void changeNickname(String nickname) {
+		// Todo:닉네임 유효성 검사 또는 중복 검사 필요 시 여기에 추가
+		this.nickname = nickname;
+	}
 }

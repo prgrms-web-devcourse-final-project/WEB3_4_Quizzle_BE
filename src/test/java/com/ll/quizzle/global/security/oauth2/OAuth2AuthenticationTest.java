@@ -30,7 +30,7 @@ import java.util.Collections;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -119,11 +119,10 @@ public class OAuth2AuthenticationTest {
         Cookie accessTokenCookie = response.getCookie("access_token");
 
         // when & then
-        // todo : api 추가된 후 url 수정 필요
-        mockMvc.perform(delete("/api/v1/members")
+        mockMvc.perform(get("/api/v1/members/{memberId}/points", testMember.getId())
                         .cookie(accessTokenCookie))
                 .andDo(print())
-                .andExpect(status().is(204));
+                .andExpect(status().isOk());
     }
 
     @Test

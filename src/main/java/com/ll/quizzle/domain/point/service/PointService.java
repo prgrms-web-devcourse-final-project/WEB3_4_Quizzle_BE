@@ -1,5 +1,7 @@
 package com.ll.quizzle.domain.point.service;
 
+import static com.ll.quizzle.global.exceptions.ErrorCode.*;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -7,12 +9,13 @@ import org.springframework.stereotype.Service;
 
 import com.ll.quizzle.domain.member.entity.Member;
 import com.ll.quizzle.domain.member.repository.MemberRepository;
-import com.ll.quizzle.domain.point.dto.PointHistoryRequestDTO;
-import com.ll.quizzle.domain.point.dto.PointHistoryResponseDTO;
+import com.ll.quizzle.domain.point.dto.request.PointHistoryRequest;
+import com.ll.quizzle.domain.point.dto.response.PointHistoryResponse;
 import com.ll.quizzle.domain.point.entity.Point;
 import com.ll.quizzle.domain.point.repository.PointRepository;
 import com.ll.quizzle.domain.point.type.PointReason;
 import com.ll.quizzle.domain.point.type.PointType;
+import com.ll.quizzle.global.request.Rq;
 import com.ll.quizzle.standard.page.dto.PageDto;
 
 import lombok.RequiredArgsConstructor;
@@ -23,13 +26,15 @@ public class PointService {
 
 	private final PointRepository pointRepository;
 	private final MemberRepository memberRepository;
+	private final Rq rq;
 
-	public PageDto<PointHistoryResponseDTO> getPointHistoriesWithPage(Long memberId,
-		PointHistoryRequestDTO requestDto) {
-		Member member = memberRepository.findById(memberId)
-			.orElseThrow(() -> new IllegalArgumentException("해당 사용자가 존재하지 않습니다."));
+	public PageDto<PointHistoryResponse> getPointHistoriesWithPage(Long memberId,
+		PointHistoryRequest requestDto) {
 
-		//TODO: 로그인한 사용자와 memberId 일치 여부 검증 (Security 적용 후 추가)
+		memberRepository.findById(memberId)
+			.orElseThrow(MEMBER_NOT_FOUND::throwServiceException);
+
+		Member member = rq.assertIsOwner(memberId);
 
 		Pageable pageable = PageRequest.of(requestDto.page(), requestDto.size());
 
@@ -41,25 +46,30 @@ public class PointService {
 			page = pointRepository.findPageByMemberOrderByCreateDateDesc(member, pageable);
 		}
 
-		return new PageDto<>(page.map(PointHistoryResponseDTO::from));
+		return new PageDto<>(page.map(PointHistoryResponse::from));
 	}
 
-	//포인트 사용
+	// 포인트 사용
 	public void usePoint(Member member, int amount, PointReason reason) {
 		member.decreasePoint(amount);
-		Point point = Point.use(member, amount, reason);
+		Point point = new Point(member, -amount, PointType.USE, reason);
 		pointRepository.save(point);
 	}
 
-	//포인트 획득
+	// 포인트 획득
 	public void gainPoint(Member member, int amount, PointReason reason) {
 		member.increasePoint(amount);
-		Point point = Point.gain(member, amount, reason);
+		Point point = new Point(member, amount, PointType.REWARD, reason);
 		pointRepository.save(point);
 	}
 
+	// 정책 기반 포인트 처리
 	public void applyPointPolicy(Member member, PointReason reason) {
 		int amount = reason.getDefaultAmount();
+
+		if (amount == 0) {
+			throw POINT_POLICY_NOT_FOUND.throwServiceException();
+		}
 
 		if (amount > 0) {
 			gainPoint(member, amount, reason);
@@ -67,5 +77,4 @@ public class PointService {
 			usePoint(member, -amount, reason);
 		}
 	}
-
 }
