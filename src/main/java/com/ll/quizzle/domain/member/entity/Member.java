@@ -88,9 +88,20 @@ public class Member extends BaseEntity {
      *
      * @param newExp 새로운 EXP 값
      */
+    /**
+     * EXP 업데이트 및 레벨업 메서드
+     *
+     * @param newExp 새로운 EXP 값
+     */
     public void updateExp(int newExp) {
         this.exp = newExp;
+        int newLevel = newExp / 100; // 1000 EXP마다 레벨업
+        // 만약 현재 레벨보다 높아졌다면 레벨 업데이트 (경험치가 감소하는 경우를 방지)
+        if (newLevel > this.level) {
+            this.level = newLevel;
+        }
     }
+
 
     public static Member create(String nickname, String email) {
         return Member.builder().nickname(nickname).email(email).level(0).role(Role.MEMBER).exp(0).profilePath("기본경로").pointBalance(0).build();
