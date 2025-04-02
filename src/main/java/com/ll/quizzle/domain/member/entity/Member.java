@@ -1,18 +1,21 @@
 package com.ll.quizzle.domain.member.entity;
 
+import static com.ll.quizzle.global.exceptions.ErrorCode.*;
+
 import com.ll.quizzle.domain.member.type.Role;
 import com.ll.quizzle.global.jpa.entity.BaseEntity;
 import com.ll.quizzle.global.security.oauth2.entity.OAuth;
-import jakarta.persistence.*;
+
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.OneToOne;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-
-import java.util.ArrayList;
-import java.util.List;
-
-import static com.ll.quizzle.global.exceptions.ErrorCode.*;
 
 @Entity
 @Getter
@@ -66,11 +69,6 @@ public class Member extends BaseEntity {
         return this.role == Role.MEMBER;
     }
 
-    /**
-     * 포인트 증가
-     *
-     * @param amount 증가할 포인트 양 (양수)
-     */
     public void increasePoint(int amount) {
         if (amount <= 0) {
             POINT_INCREASE_AMOUNT_INVALID.throwServiceException();
@@ -78,47 +76,37 @@ public class Member extends BaseEntity {
         this.pointBalance += amount;
     }
 
-    /**
-     * 포인트 차감
-     *
-     * @param amount 차감할 포인트 양 (양수)
-     */
     public void decreasePoint(int amount) {
         if (amount <= 0) {
             POINT_DECREASE_AMOUNT_INVALID.throwServiceException();
         }
-
         if (this.pointBalance < amount) {
             POINT_NOT_ENOUGH.throwServiceException();
         }
-
         this.pointBalance -= amount;
     }
 
-
     public void updateExp(int newExp) {
         this.exp = newExp;
-        int calculatedLevel = newExp / 100;  // 100 EXP마다 레벨업
+        int calculatedLevel = newExp / 100;
         if (calculatedLevel > this.level) {
             this.level = calculatedLevel;
         }
     }
 
-
     public static Member create(String nickname, String email) {
         return Member.builder()
-                .nickname(nickname)
-                .email(email)
-                .level(0)
-                .role(Role.MEMBER)
-                .exp(0)
-                .profilePath("기본경로")
-                .pointBalance(0)
-                .build();
+            .nickname(nickname)
+            .email(email)
+            .level(0)
+            .role(Role.MEMBER)
+            .exp(0)
+            .profilePath("기본경로")
+            .pointBalance(0)
+            .build();
     }
 
-	public void changeNickname(String nickname) {
-		// Todo:닉네임 유효성 검사 또는 중복 검사 필요 시 여기에 추가
-		this.nickname = nickname;
-	}
+    public void changeNickname(String nickname) {
+        this.nickname = nickname;
+    }
 }
