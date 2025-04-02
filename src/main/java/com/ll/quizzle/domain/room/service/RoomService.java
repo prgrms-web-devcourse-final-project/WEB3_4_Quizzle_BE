@@ -64,11 +64,11 @@ public class RoomService {
                 .orElseThrow(ROOM_NOT_FOUND::throwServiceException);
                 
         if (blacklistService.isBlacklisted(roomId, memberId)) {
-            throw new ServiceException(HttpStatus.FORBIDDEN, "입장이 제한된 방입니다.");
+            throw ROOM_ENTRY_RESTRICTED.throwServiceException();
         }
                 
         if (!room.validatePassword(password)) {
-            throw new ServiceException(HttpStatus.FORBIDDEN, "비밀번호가 일치하지 않습니다.");
+            throw INVALID_PASSWORD.throwServiceException();
         }
         
         if (room.isFull()) {
