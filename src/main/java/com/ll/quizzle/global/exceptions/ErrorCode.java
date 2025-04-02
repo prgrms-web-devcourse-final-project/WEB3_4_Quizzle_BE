@@ -49,6 +49,10 @@ public enum ErrorCode {
     NOT_ALL_PLAYERS_READY(HttpStatus.BAD_REQUEST, "모든 플레이어가 준비되지 않았습니다."),
     GAME_ALREADY_STARTED(HttpStatus.BAD_REQUEST, "이미 게임이 시작되었습니다."),
     INVALID_ROOM_PASSWORD(HttpStatus.FORBIDDEN, "방 비밀번호가 일치하지 않습니다."),
+    ROOM_OWNER_BLACKLIST_FORBIDDEN(HttpStatus.BAD_REQUEST, "방장은 블랙리스트에 추가할 수 없습니다."),
+    MEMBER_ALREADY_BLACKLISTED(HttpStatus.BAD_REQUEST, "이미 블랙리스트에 추가된 사용자입니다."),
+    ROOM_ENTRY_RESTRICTED(HttpStatus.FORBIDDEN, "입장이 제한된 방입니다."),
+    INVALID_PASSWORD(HttpStatus.FORBIDDEN, "비밀번호가 일치하지 않습니다."),
 
 	// Global
 	FORBIDDEN_ACCESS(HttpStatus.FORBIDDEN, "접근 권한이 없습니다."),
