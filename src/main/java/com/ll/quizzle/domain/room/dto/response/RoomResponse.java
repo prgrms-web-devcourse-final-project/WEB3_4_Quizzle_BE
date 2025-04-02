@@ -1,9 +1,10 @@
 package com.ll.quizzle.domain.room.dto.response;
 
 import com.ll.quizzle.domain.room.entity.Room;
-import com.ll.quizzle.domain.room.type.QuizCategory;
+import com.ll.quizzle.domain.room.type.MainCategory;
 import com.ll.quizzle.domain.room.type.RoomStatus;
-import com.ll.quizzle.domain.quiz.enums.Difficulty;
+import com.ll.quizzle.domain.room.type.Difficulty;
+import com.ll.quizzle.domain.room.type.SubCategory;
 
 import java.util.Set;
 
@@ -16,7 +17,8 @@ public record RoomResponse(
     int currentPlayers,
     RoomStatus status,
     Difficulty difficulty,
-    QuizCategory category,
+    MainCategory mainCategory,
+    SubCategory subCategory,
     String password,
     boolean isPrivate,
     Set<Long> players,
@@ -32,7 +34,8 @@ public record RoomResponse(
             room.getPlayers().size(),
             room.getStatus(),
             room.getDifficulty(),
-            room.getCategory(),
+            room.getMainCategory(),
+            room.getSubCategory(),
             room.getPassword(),
             room.isPrivate(),
             room.getPlayers(),
