@@ -1,5 +1,6 @@
 package com.ll.quizzle.domain.admin.controller;
 
+import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -11,6 +12,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
@@ -76,8 +78,10 @@ public class AdminControllerTest {
 		// then
 		resultActions
 			.andExpect(status().isBadRequest())
-			.andExpect(jsonPath("$.resultCode").value("BAD_REQUEST"))
-			.andExpect(jsonPath("$.data").value("아이디 또는 비밀번호가 일치하지 않습니다."));
+			.andExpect(result -> assertTrue(result.getResolvedException() instanceof BadCredentialsException))
+			.andExpect(result -> assertEquals(
+				"아이디 또는 비밀번호가 일치하지 않습니다.",
+				result.getResolvedException().getMessage()
+			));
 	}
-
 }
