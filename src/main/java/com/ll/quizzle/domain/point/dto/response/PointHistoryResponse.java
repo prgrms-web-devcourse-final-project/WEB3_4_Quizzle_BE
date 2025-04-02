@@ -15,7 +15,7 @@ public record PointHistoryResponse(
 			point.getType().name(),
 			point.getAmount(),
 			point.getReason().getDescription(),
-			point.getCreateDate()
+			point.getOccurredAt()
 		);
 	}
 }

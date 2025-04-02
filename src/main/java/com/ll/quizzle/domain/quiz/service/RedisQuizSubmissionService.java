@@ -15,14 +15,6 @@ public class RedisQuizSubmissionService {
     @Autowired
     private RedisTemplate<String, Object> redisTemplate;
 
-    /**
-     * 사용자가 제출한 답안을 채점하고, 그 결과를 Redis에 저장합니다.
-     *
-     * @param quizId          Redis에 저장된 퀴즈 아이디 (roomId)
-     * @param questionNumber  제출한 문제 번호
-     * @param submittedAnswer 사용자가 제출한 답안
-     * @return QuizSubmissionResultDTO (문제 번호, 채점 결과, 정답, 메시지 포함)
-     */
     public QuizSubmitResponse submitAnswer(String quizId, String userId, int questionNumber, String submittedAnswer) {
         // 정답 리스트가 저장된 Redis 키 생성 (문제의 경우는 그대로)
         String answerListKey = String.format("quiz:%s:answers", quizId);
@@ -46,7 +38,6 @@ public class RedisQuizSubmissionService {
         String correctAnswer = parts[1].trim().toLowerCase();
         boolean isCorrect = correctAnswer.equals(submittedAnswer.trim().toLowerCase());
 
-        // 사용자별 제출 정보를 저장하기 위한 Redis 키 생성
         String submissionKey = String.format("quiz:%s:user:%s:submissions", quizId.trim(), userId.trim());
         String resultStr = isCorrect ? "correct" : "incorrect";
         String submissionEntry = String.format("%d:%s:%s",

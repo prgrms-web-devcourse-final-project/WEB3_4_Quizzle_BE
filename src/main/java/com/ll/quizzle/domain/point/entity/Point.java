@@ -1,16 +1,15 @@
 package com.ll.quizzle.domain.point.entity;
 
+import java.time.LocalDateTime;
+
+import org.springframework.data.annotation.CreatedDate;
+
 import com.ll.quizzle.domain.member.entity.Member;
 import com.ll.quizzle.domain.point.type.PointReason;
 import com.ll.quizzle.domain.point.type.PointType;
-import com.ll.quizzle.global.jpa.entity.BaseTime;
+import com.ll.quizzle.global.jpa.entity.BaseEntity;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
+import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
@@ -19,7 +18,7 @@ import lombok.NoArgsConstructor;
 @Entity
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class Point extends BaseTime {
+public class Point extends BaseEntity {
 
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "member_id")
@@ -32,6 +31,9 @@ public class Point extends BaseTime {
 
 	@Enumerated(EnumType.STRING)
 	private PointReason reason;
+
+	@CreatedDate
+	private LocalDateTime occurredAt;
 
 	@Builder
 	public Point(Member member, int amount, PointType type, PointReason reason) {
