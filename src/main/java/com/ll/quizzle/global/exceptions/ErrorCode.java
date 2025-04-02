@@ -48,6 +48,7 @@ public enum ErrorCode {
     ROOM_IS_FULL(HttpStatus.BAD_REQUEST, "방이 가득 찼습니다."),
     NOT_ALL_PLAYERS_READY(HttpStatus.BAD_REQUEST, "모든 플레이어가 준비되지 않았습니다."),
     GAME_ALREADY_STARTED(HttpStatus.BAD_REQUEST, "이미 게임이 시작되었습니다."),
+    INVALID_ROOM_PASSWORD(HttpStatus.FORBIDDEN, "방 비밀번호가 일치하지 않습니다."),
 
 	// Global
 	FORBIDDEN_ACCESS(HttpStatus.FORBIDDEN, "접근 권한이 없습니다."),
