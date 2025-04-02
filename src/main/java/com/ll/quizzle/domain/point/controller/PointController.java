@@ -14,15 +14,19 @@ import com.ll.quizzle.domain.point.type.PointType;
 import com.ll.quizzle.global.response.RsData;
 import com.ll.quizzle.standard.page.dto.PageDto;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 
 @RestController
 @RequiredArgsConstructor
+@Tag(name = "PointController", description = "포인트 관련 API")
 @RequestMapping("/api/v1/members")
 public class PointController {
 
 	private final PointService pointService;
 
+	@Operation(summary = "포인트 히스토리 조회", description = "멤버 ID를 기반으로 포인트 히스토리를 조회합니다.")
 	@GetMapping("/{memberId}/points")
 	public RsData<PageDto<PointHistoryResponse>> getPointHistories(
 		@PathVariable("memberId") Long memberId,
@@ -34,5 +38,4 @@ public class PointController {
 		PageDto<PointHistoryResponse> result = pointService.getPointHistoriesWithPage(memberId, requestDto);
 		return RsData.success(HttpStatus.OK, result);
 	}
-
 }
