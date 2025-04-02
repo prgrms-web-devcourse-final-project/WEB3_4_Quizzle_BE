@@ -2,18 +2,16 @@ package com.ll.quizzle.global.socket.config;
 
 import com.ll.quizzle.global.socket.core.MessageServiceConstants;
 import lombok.Getter;
+import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.stereotype.Component;
-
 
 @Getter
-@Setter
-@Component
+@RequiredArgsConstructor
 @ConfigurationProperties(prefix = "quizzle.messaging")
 public class MessageServiceProperties {
-    private WebSocketRoom websocketRoom;
-    private WebSocketChat websocketChat;
+    private final WebSocketRoom websocketRoom;
+    private final WebSocketChat websocketChat;
 
     @Getter
     @Setter
