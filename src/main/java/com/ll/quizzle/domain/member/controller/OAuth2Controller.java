@@ -1,12 +1,12 @@
 package com.ll.quizzle.domain.member.controller;
 
-import com.ll.quizzle.domain.member.entity.Member;
-import com.ll.quizzle.global.request.Rq;
+import com.ll.quizzle.domain.member.dto.response.OAuth2InfoResponse;
+import com.ll.quizzle.domain.member.service.OAuth2Service;
 import com.ll.quizzle.global.response.RsData;
-import com.ll.quizzle.global.security.oauth2.entity.OAuth;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -16,77 +16,27 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 @RequestMapping("/api/v1/auth")
 @Slf4j
+@Tag(name = "OAuth2Controller", description = "OAuth2 관련 API")
 public class OAuth2Controller {
-    private final Rq rq;
+    private final OAuth2Service oAuth2Service;
 
 
     /**
-     * Oauth2 callback
+     * OAuth 정보 확인용 (테스트를 위해 일단 보류)
      *
      * @param accessToken  the access token
      * @param refreshToken the refresh token
      * @param status       the status (SUCCESS)
      *
-     * @return the rs data
+     * @return OAuth2InfoResponse
      */
-    @GetMapping("/oauth2/callback") // oauth 정보 확인용 (테스트를 위해 일단 보류)
-    public RsData<OAuth2Response> callback(
-            @RequestParam(required = false) String accessToken,
-            @RequestParam(required = false) String refreshToken,
+    @GetMapping("/oauth2/callback")
+    @Operation(summary = "oauth 정보 확인용", description = "OAuth2 인증 정보 확인 API입니다. Status에 SUCCESS가 아닌 경우, 인증 실패로 간주합니다.")
+    public RsData<OAuth2InfoResponse> callback(
+            @RequestParam String accessToken,
+            @RequestParam String refreshToken,
             @RequestParam String status
     ) {
-        if (!"SUCCESS".equals(status)) {
-            return RsData.success(HttpStatus.BAD_REQUEST, new OAuth2Response(
-                    null, null, status, null, null, null,
-                    false, false, null, null
-            ));
-        }
-
-        Member actor = rq.getActor();
-        if (actor == null) {
-            return RsData.success(HttpStatus.UNAUTHORIZED, new OAuth2Response(
-                    null, null, status, null, null, null,
-                    false, false, null, null
-            ));
-        }
-
-        OAuth oAuth = actor.getOauth();
-        if (oAuth == null) {
-            return RsData.success(HttpStatus.BAD_REQUEST, new OAuth2Response(
-                    actor.getEmail(), actor.getNickname(), status,
-                    actor.getUserRole(), null, null,
-                    actor.isMember(), actor.isAdmin(),
-                    accessToken, refreshToken
-            ));
-        }
-
-        OAuth2Response response = new OAuth2Response(
-                actor.getEmail(),
-                actor.getNickname(),
-                status,
-                actor.getUserRole(),
-                oAuth.getProvider(),
-                oAuth.getOauthId(),
-                actor.isMember(),
-                actor.isAdmin(),
-                accessToken,
-                refreshToken
-        );
-
-        return RsData.success(HttpStatus.OK, response);
+        return oAuth2Service.OAuthInfoToResponseData(accessToken, refreshToken, status);
     }
-}
-
-record OAuth2Response(
-        String email,
-        String name,
-        String status,
-        String role,
-        String provider,
-        String oauthId,
-        boolean isMember,
-        boolean isAdmin,
-        String accessToken,
-        String refreshToken
-) {
 }
