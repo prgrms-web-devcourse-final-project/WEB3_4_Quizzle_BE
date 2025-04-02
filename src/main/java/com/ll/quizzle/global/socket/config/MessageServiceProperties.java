@@ -12,21 +12,18 @@ import org.springframework.stereotype.Component;
 @Component
 @ConfigurationProperties(prefix = "quizzle.messaging")
 public class MessageServiceProperties {
-    private String provider = MessageServiceConstants.PROVIDER_STOMP;
-    
-    private final Room room = new Room();
-    
-    private final Chat chat = new Chat();
-    
+    private WebSocketRoom websocketRoom;
+    private WebSocketChat websocketChat;
+
     @Getter
     @Setter
-    public static class Room {
+    public static class WebSocketRoom {
         private String provider = MessageServiceConstants.PROVIDER_STOMP;
     }
-    
+
     @Getter
     @Setter
-    public static class Chat {
-        private String provider = MessageServiceConstants.PROVIDER_REDIS;
+    public static class WebSocketChat {
+        private String provider = MessageServiceConstants.PROVIDER_STOMP;
     }
 } 
