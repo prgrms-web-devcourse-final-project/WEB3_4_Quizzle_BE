@@ -1,7 +1,6 @@
 package com.ll.quizzle.global.exceptions;
 
 import org.springframework.http.HttpStatus;
-
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
@@ -45,6 +44,14 @@ public enum ErrorCode {
 	// GameRoom
 	ROOM_NOT_FOUND(HttpStatus.NOT_FOUND, "존재하지 않는 방입니다."),
 	NOT_ROOM_OWNER(HttpStatus.FORBIDDEN, "방장만 이 작업을 수행할 수 있습니다."),
+	ROOM_IS_FULL(HttpStatus.BAD_REQUEST, "방이 가득 찼습니다."),
+	NOT_ALL_PLAYERS_READY(HttpStatus.BAD_REQUEST, "모든 플레이어가 준비되지 않았습니다."),
+	GAME_ALREADY_STARTED(HttpStatus.BAD_REQUEST, "이미 게임이 시작되었습니다."),
+	INVALID_ROOM_PASSWORD(HttpStatus.FORBIDDEN, "방 비밀번호가 일치하지 않습니다."),
+	ROOM_OWNER_BLACKLIST_FORBIDDEN(HttpStatus.BAD_REQUEST, "방장은 블랙리스트에 추가할 수 없습니다."),
+	MEMBER_ALREADY_BLACKLISTED(HttpStatus.BAD_REQUEST, "이미 블랙리스트에 추가된 사용자입니다."),
+	ROOM_ENTRY_RESTRICTED(HttpStatus.FORBIDDEN, "입장이 제한된 방입니다."),
+	INVALID_PASSWORD(HttpStatus.FORBIDDEN, "비밀번호가 일치하지 않습니다."),
 
 	// nickname
 	NICKNAME_INVALID(HttpStatus.BAD_REQUEST, "닉네임이 유효하지 않습니다."),
@@ -54,7 +61,16 @@ public enum ErrorCode {
 
 	// Global
 	FORBIDDEN_ACCESS(HttpStatus.FORBIDDEN, "접근 권한이 없습니다."),
-	INVALID_PAGE_REQUEST(HttpStatus.BAD_REQUEST, "잘못된 페이지 요청입니다.");
+	INVALID_PAGE_REQUEST(HttpStatus.BAD_REQUEST, "잘못된 페이지 요청입니다."),
+
+	// Room Validation
+	ROOM_TITLE_REQUIRED(HttpStatus.BAD_REQUEST, "방 제목은 필수입니다."),
+	ROOM_TITLE_EMPTY(HttpStatus.BAD_REQUEST, "방 제목이 비어있을 수 없습니다."),
+	ROOM_CAPACITY_INVALID(HttpStatus.BAD_REQUEST, "방 인원은 2명에서 8명 사이여야 합니다."),
+	ROOM_DIFFICULTY_REQUIRED(HttpStatus.BAD_REQUEST, "난이도는 필수입니다."),
+	ROOM_MAIN_CATEGORY_REQUIRED(HttpStatus.BAD_REQUEST, "대주제는 필수입니다."),
+	ROOM_SUB_CATEGORY_REQUIRED(HttpStatus.BAD_REQUEST, "소주제는 필수입니다."),
+	ROOM_PRIVATE_PASSWORD_REQUIRED(HttpStatus.BAD_REQUEST, "비공개 방의 경우 비밀번호는 필수입니다.");
 
 	private final HttpStatus httpStatus;
 	private final String message;

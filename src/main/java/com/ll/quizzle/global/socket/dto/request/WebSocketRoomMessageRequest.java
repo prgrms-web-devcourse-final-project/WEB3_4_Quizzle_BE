@@ -5,7 +5,7 @@ import com.ll.quizzle.global.socket.type.RoomMessageType;
 /**
  * 클라이언트로부터 받는 게임 상태, 준비 상태 등의 메시지 요청을 위한 DTO
  */
-public record RoomMessageRequest(
+public record WebSocketRoomMessageRequest(
     RoomMessageType type,
     String content,
     String data,
@@ -15,7 +15,7 @@ public record RoomMessageRequest(
     String roomId
 ) {
 
-    public static RoomMessageRequest of(
+    public static WebSocketRoomMessageRequest of(
             RoomMessageType type,
             String content,
             String data,
@@ -24,6 +24,6 @@ public record RoomMessageRequest(
             long timestamp,
             String roomId
     ) {
-        return new RoomMessageRequest(type, content, data, senderId, senderName, timestamp, roomId);
+        return new WebSocketRoomMessageRequest(type, content, data, senderId, senderName, timestamp, roomId);
     }
 } 

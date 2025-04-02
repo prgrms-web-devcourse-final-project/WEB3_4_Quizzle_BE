@@ -19,23 +19,17 @@ public class MessageServiceFactory {
     private final RedisMessageService redisMessageService;
     private final MessageServiceProperties properties;
 
-    public MessageService getDefaultService() {
-        log.debug("기본 메시징 서비스 프로바이더: {}", properties.getProvider());
-        return getService(properties.getProvider());
-    }
-
     public MessageService getRoomService() {
-        log.debug("룸 메시징 서비스 프로바이더: {}", properties.getRoom().getProvider());
-        return getService(properties.getRoom().getProvider());
+        log.debug("룸 메시징 서비스 프로바이더: {}", properties.getWebsocketRoom().getProvider());
+        return getService(properties.getWebsocketRoom().getProvider());
     }
 
     public MessageService getChatService() {
-        log.debug("채팅 메시징 서비스 프로바이더: {}", properties.getChat().getProvider());
-        return getService(properties.getChat().getProvider());
+        log.debug("채팅 메시징 서비스 프로바이더: {}", properties.getWebsocketChat().getProvider());
+        return getService(properties.getWebsocketChat().getProvider());
     }
-    
 
-    public MessageService getService(String provider) {
+    private MessageService getService(String provider) {
         return switch (provider.toLowerCase()) {
             case MessageServiceConstants.PROVIDER_STOMP -> stompMessageService;
             case MessageServiceConstants.PROVIDER_REDIS -> redisMessageService;

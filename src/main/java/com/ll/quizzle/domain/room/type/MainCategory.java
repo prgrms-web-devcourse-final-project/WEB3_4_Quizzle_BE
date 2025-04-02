@@ -5,10 +5,11 @@ import lombok.RequiredArgsConstructor;
 
 @Getter
 @RequiredArgsConstructor
-public enum RoomStatus {
-    WAITING("대기 중"),
-    IN_GAME("게임 중"),
-    FINISHED("게임 종료");
-
+public enum MainCategory {
+    SCIENCE("과학"),
+    HISTORY("역사"),
+    LANGUAGE("언어"),
+    GENERAL_KNOWLEDGE("일반 상식");
+    
     private final String description;
-}
+} 

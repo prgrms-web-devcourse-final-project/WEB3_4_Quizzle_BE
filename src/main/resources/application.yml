@@ -37,10 +37,9 @@ spring:
 
 quizzle:
   messaging:
-    provider: stomp
-    room:
+    websocket-room:
       provider: stomp
-    chat:
+    websocket-chat:
       provider: redis
 
 app:

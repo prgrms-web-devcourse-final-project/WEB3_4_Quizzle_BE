@@ -5,7 +5,7 @@ import com.ll.quizzle.global.socket.type.MessageType;
 /**
  * 클라이언트에게 전송되는 채팅 메시지 응답을 위한 DTO
  */
-public record ChatMessageResponse(
+public record WebSocketChatMessageResponse(
     MessageType type,
     String content,
     String senderId,
@@ -14,7 +14,7 @@ public record ChatMessageResponse(
     String roomId
 ) {
 
-    public static ChatMessageResponse of(
+    public static WebSocketChatMessageResponse of(
             MessageType type,
             String content,
             String senderId,
@@ -22,6 +22,6 @@ public record ChatMessageResponse(
             long timestamp,
             String roomId
     ) {
-        return new ChatMessageResponse(type, content, senderId, senderName, timestamp, roomId);
+        return new WebSocketChatMessageResponse(type, content, senderId, senderName, timestamp, roomId);
     }
 } 
