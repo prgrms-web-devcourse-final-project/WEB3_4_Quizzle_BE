@@ -6,22 +6,19 @@ import com.ll.quizzle.domain.quiz.dto.response.QuizResponse;
 import com.ll.quizzle.domain.quiz.service.GPTQuizService;
 import com.ll.quizzle.domain.quiz.service.RedisQuizAnswerService;
 import com.ll.quizzle.global.response.RsData;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
 
+@RequiredArgsConstructor
 @RestController
 @RequestMapping("/api/v1/quiz")
 public class QuizGenerateController {
 
     private final GPTQuizService gptQuizService;
     private final RedisQuizAnswerService redisQuizAnswerService;
-
-    public QuizGenerateController(GPTQuizService gptQuizService, RedisQuizAnswerService redisQuizAnswerService) {
-        this.gptQuizService = gptQuizService;
-        this.redisQuizAnswerService = redisQuizAnswerService;
-    }
 
     @PostMapping("/generate")
     public RsData<QuizResponse> generateQuiz(@RequestBody QuizGenerationRequest request) {
