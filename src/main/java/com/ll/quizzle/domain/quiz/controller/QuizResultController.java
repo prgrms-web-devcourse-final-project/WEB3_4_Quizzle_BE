@@ -21,13 +21,6 @@ public class QuizResultController {
         this.memberExpService = memberExpService;
     }
 
-    /**
-     * 최종 결과 조회 엔드포인트.
-     * 사용자별 결과 조회와 EXP 업데이트를 수행합니다.
-     *
-     * @param roomId 퀴즈(또는 방) 아이디
-     * @return 사용자별 결과 목록
-     */
     @GetMapping("/{roomId}/result")
     public RsData<List<QuizResultResponse>> getQuizResults(@PathVariable("roomId") String roomId) {
         List<QuizResultResponse> results = quizResultService.getQuizResults(roomId);

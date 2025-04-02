@@ -21,14 +21,6 @@ public class RedisQuizAnswerService {
 
     private static final Duration QUIZ_TTL = Duration.ofMinutes(30);
 
-    /**
-     * 퀴즈 텍스트와 문제별 정답을 Redis에 저장합니다.
-     *
-     * @param quizId    저장에 사용할 퀴즈 ID (null 또는 빈 문자열이면 새로운 UUID 생성)
-     * @param quizText  전체 퀴즈 텍스트
-     * @param answerMap 문제 번호와 정답이 담긴 맵
-     * @return 실제 저장에 사용된 퀴즈 ID
-     */
     public String saveQuiz(String quizId, String quizText, Map<Integer, String> answerMap) {
         log.info("saveQuiz 메소드 시작: quizId={}, quizText={}, answerMap={}", quizId, quizText, answerMap);
 

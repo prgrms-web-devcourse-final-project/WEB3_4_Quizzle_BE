@@ -17,12 +17,6 @@ public class QuizResultService {
         this.redisTemplate = redisTemplate;
     }
 
-    /**
-     * Redis에 저장된 제출 데이터를 기반으로 사용자별 결과를 산출합니다.
-     *
-     * @param quizId 퀴즈(또는 방)의 아이디
-     * @return 각 사용자별 결과 리스트
-     */
     public List<QuizResultResponse> getQuizResults(String quizId) {
         String pattern = String.format("quiz:%s:user:*:submissions", quizId);
         Set<String> keys = redisTemplate.keys(pattern);
@@ -39,12 +33,6 @@ public class QuizResultService {
         return assignRanks(results);
     }
 
-    /**
-     * 각 제출 키를 처리하여 QuizResultResponse 객체를 생성합니다.
-     *
-     * @param key Redis에서 조회한 제출 데이터의 키
-     * @return QuizResultResponse 객체 (userId가 없으면 null 반환)
-     */
     private QuizResultResponse processSubmissionKey(String key) {
         String userId = extractUserIdFromKey(key);
         if (userId == null) {
@@ -59,12 +47,6 @@ public class QuizResultService {
         return new QuizResultResponse(userId, correctCount, totalQuestions, score, 0, score);
     }
 
-    /**
-     * 결과 리스트에 대해 점수를 기준으로 내림차순 정렬하고 랭킹을 부여합니다.
-     *
-     * @param results QuizResultResponse 리스트
-     * @return 랭크가 부여된 새로운 리스트
-     */
     private List<QuizResultResponse> assignRanks(List<QuizResultResponse> results) {
         List<QuizResultResponse> sortedResults = results.stream()
                 .sorted(Comparator.comparingInt(QuizResultResponse::score).reversed())
@@ -86,23 +68,11 @@ public class QuizResultService {
         return rankedResults;
     }
 
-    /**
-     * 키 형식: quiz:{quizId}:user:{userId}:submissions 에서 userId를 추출합니다.
-     *
-     * @param key Redis key
-     * @return userId 문자열 또는 null
-     */
     private String extractUserIdFromKey(String key) {
         String[] parts = key.split(":");
         return parts.length >= 4 ? parts[3] : null;
     }
 
-    /**
-     * 제출 목록에서 정답 횟수를 계산하여 점수를 산출합니다.
-     *
-     * @param submissions Redis에 저장된 제출 목록
-     * @return 계산된 점수
-     */
     private int calculateScore(List<Object> submissions) {
         int correctCount = 0;
         if (submissions != null) {
