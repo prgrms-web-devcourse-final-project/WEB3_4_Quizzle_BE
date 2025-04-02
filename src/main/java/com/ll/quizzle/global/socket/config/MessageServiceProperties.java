@@ -22,6 +22,6 @@ public class MessageServiceProperties {
     @Getter
     @Setter
     public static class WebSocketChat {
-        private String provider = MessageServiceConstants.PROVIDER_STOMP;
+        private String provider = MessageServiceConstants.PROVIDER_REDIS;
     }
 } 
