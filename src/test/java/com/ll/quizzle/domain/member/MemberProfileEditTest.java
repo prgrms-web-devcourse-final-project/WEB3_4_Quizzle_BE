@@ -51,9 +51,40 @@ class MemberProfileEditTest {
     @BeforeEach
     void setUp() {
         member = TestMemberFactory.createOAuthMember("테스트유저", "test@email.com", "google", "1234", memberRepository, oauthRepository);
+        member.increasePoint(100); // 초기 포인트 설정
+        memberRepository.save(member);
+
         GeneratedToken token = authTokenService.generateToken(member.getEmail(), member.getRole().name());
         accessTokenCookie = new Cookie("access_token", token.accessToken());
     }
+
+    @Test
+    @DisplayName("닉네임 변경 성공")
+    void updateNickname_success() throws Exception {
+        String newNickname = "변경된닉네임";
+        mockMvc.perform(patch("/api/v1/members/" + member.getId())
+                .contentType(MediaType.APPLICATION_JSON)
+                .cookie(accessTokenCookie)
+                .content(objectMapper.writeValueAsString(Map.of("nickname", newNickname))))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.data.profile").value(newNickname));
+    }
+
+    @Test
+    @DisplayName("포인트가 없을 때 닉네임 변경 불가")
+    void updateNickname_noPoints() throws Exception {
+        // 포인트를 0으로 설정
+        member.decreasePoint(100);
+        memberRepository.save(member);
+
+        mockMvc.perform(patch("/api/v1/members/" + member.getId())
+                .contentType(MediaType.APPLICATION_JSON)
+                .cookie(accessTokenCookie)
+                .content(objectMapper.writeValueAsString(Map.of("nickname", "새닉네임"))))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.msg").value("포인트가 부족합니다."));
+    }
+
 
     @Test
     @DisplayName("닉네임이 공백일 때")
