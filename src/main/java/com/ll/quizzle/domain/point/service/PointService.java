@@ -38,16 +38,13 @@ public class PointService {
 
 		Pageable pageable = PageRequest.of(requestDto.page(), requestDto.size());
 
-		Page<Point> page;
-
-		if (requestDto.type() != PointType.ALL) {
-			page = pointRepository.findPageByMemberAndTypeOrderByCreateDateDesc(member, requestDto.type(), pageable);
-		} else {
-			page = pointRepository.findPageByMemberOrderByCreateDateDesc(member, pageable);
-		}
+		Page<Point> page = (requestDto.type() == PointType.ALL) ?
+			pointRepository.findPageByMemberOrderByOccurredAtDesc(member, pageable) :
+			pointRepository.findPageByMemberAndTypeOrderByOccurredAtDesc(member, requestDto.type(), pageable);
 
 		return new PageDto<>(page.map(PointHistoryResponse::from));
 	}
+
 
 	// 포인트 사용
 	public void usePoint(Member member, int amount, PointReason reason) {
