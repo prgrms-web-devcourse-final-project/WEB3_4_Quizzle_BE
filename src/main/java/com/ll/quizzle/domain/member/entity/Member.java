@@ -95,6 +95,16 @@ public class Member extends BaseEntity {
         this.pointBalance -= amount;
     }
 
+
+    public void updateExp(int newExp) {
+        this.exp = newExp;
+        int calculatedLevel = newExp / 100;  // 100 EXP마다 레벨업
+        if (calculatedLevel > this.level) {
+            this.level = calculatedLevel;
+        }
+    }
+
+
     public static Member create(String nickname, String email) {
         return Member.builder()
                 .nickname(nickname)
