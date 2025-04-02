@@ -27,10 +27,8 @@ public class QuizGenerateController {
     public RsData<QuizResponse> generateQuiz(@RequestBody QuizGenerationRequest request) {
         String quizId = UUID.randomUUID().toString();
 
-        // GPTQuizService를 통해 퀴즈 생성 결과를 받아옴
         QuizGenerationResponse generationResponse = gptQuizService.generateQuiz(request);
 
-        // 생성된 퀴즈 정보를 Redis에 저장
         redisQuizAnswerService.saveQuiz(quizId, generationResponse.quizText(), generationResponse.answerMap());
 
         QuizResponse response = new QuizResponse(quizId, generationResponse.quizText(), generationResponse.answerMap());

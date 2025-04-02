@@ -33,7 +33,7 @@ public class QuizResultController {
         List<QuizResultResponse> results = quizResultService.getQuizResults(roomId);
 
         // 각 사용자에 대해 EXP 갱신 처리
-        results.forEach(result -> memberExpService.updateMemberExp(result.getUserId(), result.getScore()));
+        results.forEach(result -> memberExpService.updateMemberExp(result.userId(), result.score()));
 
         return RsData.success(HttpStatus.OK, results);
     }
