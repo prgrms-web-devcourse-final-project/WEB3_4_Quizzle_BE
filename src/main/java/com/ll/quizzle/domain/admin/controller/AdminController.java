@@ -1,6 +1,7 @@
 package com.ll.quizzle.domain.admin.controller;
 
 import org.springframework.http.HttpStatus;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -22,12 +23,10 @@ public class AdminController {
 	public RsData<String> login(@RequestBody AdminLoginRequestDTO request) {
 		boolean isAuthenticated = adminService.authenticate(request);
 
-		if (isAuthenticated) {
-			return RsData.success(HttpStatus.OK, "로그인에 성공했습니다.");
+		if (!isAuthenticated) {
+			throw new BadCredentialsException("아이디 또는 비밀번호가 일치하지 않습니다.");
 		}
 
-		return RsData.fail(
-			HttpStatus.BAD_REQUEST, "아이디 또는 비밀번호가 일치하지 않습니다."
-		);
+		return RsData.success(HttpStatus.OK, "로그인에 성공했습니다.");
 	}
 }
