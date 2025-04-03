@@ -89,7 +89,7 @@ public class Room extends BaseTime {
     @Builder
     private Room(String title, Member owner, int capacity, MainCategory mainCategory,
                 SubCategory subCategory, AnswerType answerType, int problemCount, 
-                Difficulty difficulty, Integer password) {
+                Difficulty difficulty, String password) {
         this.title = title;
         this.owner = owner;
         this.capacity = capacity;
@@ -100,8 +100,7 @@ public class Room extends BaseTime {
         this.difficulty = difficulty;
         
         if (password != null) {
-            String passwordStr = String.format("%04d", password);
-            this.passwordHash = passwordEncoder.encode(passwordStr);
+            this.passwordHash = passwordEncoder.encode(password);
             this.isPrivate = true;
         } else {
             this.passwordHash = null;
@@ -112,13 +111,12 @@ public class Room extends BaseTime {
         this.players.add(owner.getId());
     }
     
-    public boolean validatePassword(Integer inputPassword) {
+    public boolean validatePassword(String inputPassword) {
         if (!isPrivate) return true;
         if (passwordHash == null) return true;
+        if (inputPassword == null) return false;
         
-        String inputPasswordStr = String.format("%04d", inputPassword);
-        
-        return passwordEncoder.matches(inputPasswordStr, passwordHash);
+        return passwordEncoder.matches(inputPassword, passwordHash);
     }
     
     public boolean isOwner(Long memberId) {
