@@ -44,6 +44,6 @@ custom:
       - http://127.0.0.1:*
 
 admin:
-  email: admin@quizzle.com
-  password-hash: $2a$12$ywPeTi1k5ZVY5H/D2N1fGOt1Ko9B3mtHRrqJOIwtxG9Go933r4a/u
+  admin-email: ${ADMIN_USERNAME}
+  admin-password-hash: ${ADMIN_PASSWORD_HASH}
 

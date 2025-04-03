@@ -59,9 +59,7 @@ public class SecurityConfig {
                                 "/api/*/oauth2/callback",
                                 "/error",
                                 "/favicon.ico",
-                                "/api/v1/quiz/**",    // 퀴즈 관련 API는 인증 없이 접근 허용
-                                "/api/v1/admin/login",
-                                "/api/v1/admin/**"
+                                "/api/v1/quiz/**"    // 퀴즈 관련 API는 인증 없이 접근 허용
 
                         ).permitAll()
                         .requestMatchers(
@@ -70,6 +68,7 @@ public class SecurityConfig {
                         ).permitAll()
 
                         // 관리자 전용
+                        .requestMatchers("/api/v1/admin/login").permitAll()
                         .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
 
                         // 애플리케이션에만 나머지 인증 요구

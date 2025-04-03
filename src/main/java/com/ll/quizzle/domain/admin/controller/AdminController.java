@@ -1,15 +1,15 @@
 package com.ll.quizzle.domain.admin.controller;
 
 import org.springframework.http.HttpStatus;
-import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.ll.quizzle.domain.admin.dto.AdminLoginRequestDTO;
+import com.ll.quizzle.domain.admin.dto.request.AdminLoginRequest;
 import com.ll.quizzle.domain.admin.service.AdminService;
-import com.ll.quizzle.global.response.RsData;
+import com.ll.quizzle.global.exceptions.ErrorCode;
 
 import lombok.RequiredArgsConstructor;
 
@@ -20,13 +20,12 @@ public class AdminController {
 	private final AdminService adminService;
 
 	@PostMapping("/login")
-	public RsData<String> login(@RequestBody AdminLoginRequestDTO request) {
+	@ResponseStatus(HttpStatus.OK)
+	public void login(@RequestBody AdminLoginRequest request) {
 		boolean isAuthenticated = adminService.authenticate(request);
 
 		if (!isAuthenticated) {
-			throw new BadCredentialsException("아이디 또는 비밀번호가 일치하지 않습니다.");
+			throw ErrorCode.INVALID_LOGIN_CREDENTIALS.throwServiceException();
 		}
-
-		return RsData.success(HttpStatus.OK, "로그인에 성공했습니다.");
 	}
 }

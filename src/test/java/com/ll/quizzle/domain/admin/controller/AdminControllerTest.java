@@ -8,17 +8,17 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
-import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.ll.quizzle.domain.admin.dto.AdminLoginRequestDTO;
+import com.ll.quizzle.domain.admin.dto.request.AdminLoginRequest;
+import com.ll.quizzle.global.config.AdminProperties;
+import com.ll.quizzle.global.exceptions.ServiceException;
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -30,19 +30,24 @@ public class AdminControllerTest {
 	@Autowired
 	private ObjectMapper objectMapper;
 
-	@Value("${admin.email}")
-	private String adminEmail;
+	@Autowired
+	private AdminProperties adminProperties;
 
-	@Value("${admin.password-hash}")
-	private String adminPasswordHash;
+	@Test
+	@DisplayName("로그인 전 테스트 값 출력")
+	void checkAdminProps() {
+		System.out.println("🧪 AdminEmail: " + adminProperties.getAdminEmail());
+		System.out.println("🧪 AdminPasswordHash: " + adminProperties.getAdminPasswordHash());
+	}
+
 
 	@Test
 	@DisplayName("관리자 로그인 성공")
 	void loginSuccess() throws Exception {
 		// given
-		AdminLoginRequestDTO request = new AdminLoginRequestDTO(
-			adminEmail,        // application-test.yml에서 주입받은 값
-			adminPasswordHash  // application-test.yml에서 주입받은 값
+		AdminLoginRequest request = new AdminLoginRequest(
+			adminProperties.getAdminEmail(),
+			"admin1234"
 		);
 
 		// when
@@ -54,17 +59,15 @@ public class AdminControllerTest {
 
 		// then
 		resultActions
-			.andExpect(status().isOk())
-			.andExpect(jsonPath("$.resultCode").value("OK"))
-			.andExpect(jsonPath("$.data").value("로그인에 성공했습니다."));
+			.andExpect(status().isOk());
 	}
 
 	@Test
 	@DisplayName("관리자 로그인 실패 - 잘못된 비밀번호")
 	void loginFailWrongPassword() throws Exception {
 		// given
-		AdminLoginRequestDTO request = new AdminLoginRequestDTO(
-			adminEmail,
+		AdminLoginRequest request = new AdminLoginRequest(
+			adminProperties.getAdminEmail(),
 			"$2a$12$wronghashvalue"
 		);
 
@@ -77,10 +80,10 @@ public class AdminControllerTest {
 
 		// then
 		resultActions
-			.andExpect(status().isBadRequest())
-			.andExpect(result -> assertTrue(result.getResolvedException() instanceof BadCredentialsException))
+			.andExpect(status().isUnauthorized())
+			.andExpect(result -> assertTrue(result.getResolvedException() instanceof ServiceException))
 			.andExpect(result -> assertEquals(
-				"아이디 또는 비밀번호가 일치하지 않습니다.",
+				"401 UNAUTHORIZED : 아이디 또는 비밀번호가 일치하지 않습니다.",
 				result.getResolvedException().getMessage()
 			));
 	}
