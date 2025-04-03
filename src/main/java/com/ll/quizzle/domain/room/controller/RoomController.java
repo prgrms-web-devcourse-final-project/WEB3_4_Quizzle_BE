@@ -9,7 +9,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
-import jakarta.validation.Valid;
 import java.util.List;
 
 @RestController
@@ -22,7 +21,7 @@ public class RoomController {
     
     @PostMapping
     public RsData<RoomResponse> createRoom(
-            @Valid @RequestBody RoomCreateRequest request
+            @RequestBody RoomCreateRequest request
     ) {
         RoomResponse response = roomService.createRoom(rq.getActor().getId(), request);
         return RsData.success(HttpStatus.CREATED, response);
