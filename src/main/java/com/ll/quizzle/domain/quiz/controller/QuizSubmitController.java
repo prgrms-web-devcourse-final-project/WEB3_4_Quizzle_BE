@@ -19,7 +19,7 @@ public class QuizSubmitController {
 
     private final RedisQuizSubmissionService redisQuizSubmissionService;
 
-    @Operation(summary = "퀴즈 제출", description = "사용자가 제출한 퀴즈 답안을 처리합니다.")
+    @Operation(summary = "퀴즈 답안 제출", description = "사용자 퀴즈 답안을 제출합니다.")
     @PostMapping("/{quizId}/submit")
     public RsData<QuizSubmitResponse> submitAnswer(
             @PathVariable("quizId") String quizId,
@@ -34,3 +34,4 @@ public class QuizSubmitController {
         return RsData.success(HttpStatus.OK, result);
     }
 }
+

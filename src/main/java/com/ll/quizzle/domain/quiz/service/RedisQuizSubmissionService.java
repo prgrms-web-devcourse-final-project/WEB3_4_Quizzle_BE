@@ -39,6 +39,7 @@ public class RedisQuizSubmissionService {
         boolean isCorrect = correctAnswer.equals(submittedAnswer.trim().toLowerCase());
 
         String submissionKey = String.format("quiz:%s:user:%s:submissions", quizId.trim(), userId.trim());
+
         String resultStr = isCorrect ? "correct" : "incorrect";
         String submissionEntry = String.format("%d:%s:%s",
                 questionNumber,
@@ -55,3 +56,4 @@ public class RedisQuizSubmissionService {
     }
 
 }
+

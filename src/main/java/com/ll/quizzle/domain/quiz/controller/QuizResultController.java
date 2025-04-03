@@ -21,12 +21,11 @@ public class QuizResultController {
     private final QuizResultService quizResultService;
     private final MemberExpService memberExpService;
 
-    @Operation(summary = "퀴즈 결과 조회", description = "특정 방의 퀴즈 결과를 조회하고, 각 사용자에 대해 EXP를 갱신합니다.")
+    @Operation(summary = "퀴즈 결과 조회", description = "특정 퀴즈 결과를 조회하고, 각 사용자에 대해 EXP를 갱신합니다.")
     @GetMapping("/{quizId}/result")
     public RsData<List<QuizResultResponse>> getQuizResults(@PathVariable("quizId") String quizId) {
-        List<QuizResultResponse> results = quizResultService.getQuizResults(quizId);
 
-        // 각 사용자에 대해 EXP 갱신 처리
+        List<QuizResultResponse> results = quizResultService.getQuizResults(quizId);
         results.forEach(result -> memberExpService.updateMemberExp(result.userId(), result.score()));
 
         return RsData.success(HttpStatus.OK, results);
