@@ -249,13 +249,16 @@ class RoomServiceTest {
     }
     
     @Test
-    @DisplayName("방 퇴장 테스트 - 방장")
-    void leaveRoomOwnerTest() {
+    @DisplayName("방 퇴장 테스트 - 방장 (다른 플레이어 X)")
+    void leaveRoomOwnerWithoutPlayersTest() {
         // given
         when(roomRepository.findById(1L)).thenReturn(Optional.of(testRoom));
         when(memberRepository.findById(1L)).thenReturn(Optional.of(testOwner));
         when(testRoom.isOwner(1L)).thenReturn(true);
         when(messageServiceFactory.getRoomService()).thenReturn(messageService);
+        
+        Set<Long> emptyPlayerSet = new HashSet<>();
+        when(testRoom.getPlayers()).thenReturn(emptyPlayerSet);
         
         // when
         roomService.leaveRoom(1L, 1L);
@@ -265,8 +268,41 @@ class RoomServiceTest {
         verify(memberRepository).findById(1L);
         verify(testRoom).removePlayer(1L);
         verify(testRoom).isOwner(1L);
+        verify(testRoom).getPlayers();
         verify(roomRepository).delete(testRoom);
-        verify(messageService, times(2)).send(anyString(), any());
+        verify(messageService).send(anyString(), any());
+    }
+    
+    @Test
+    @DisplayName("방 퇴장 테스트 - 방장 (다른 플레이어 O)")
+    void leaveRoomOwnerWithPlayersTest() {
+        // given
+        when(roomRepository.findById(1L)).thenReturn(Optional.of(testRoom));
+        when(memberRepository.findById(1L)).thenReturn(Optional.of(testOwner));
+        when(testRoom.isOwner(1L)).thenReturn(true);
+        when(messageServiceFactory.getRoomService()).thenReturn(messageService);
+        
+        Set<Long> playerSet = new HashSet<>();
+        playerSet.add(2L);
+        when(testRoom.getPlayers()).thenReturn(playerSet);
+        
+        Member newOwner = Member.create("새방장", "newowner@example.com");
+        ReflectionTestUtils.setField(newOwner, "id", 2L);
+        when(memberRepository.findById(2L)).thenReturn(Optional.of(newOwner));
+        
+        // when
+        roomService.leaveRoom(1L, 1L);
+        
+        // then
+        verify(roomRepository).findById(1L);
+        verify(memberRepository).findById(1L);
+        verify(testRoom).removePlayer(1L);
+        verify(testRoom).isOwner(1L);
+        verify(testRoom, atLeastOnce()).getPlayers();
+        verify(memberRepository).findById(2L);
+        verify(testRoom).changeOwner(newOwner);
+        verify(roomRepository, never()).delete(testRoom);
+        verify(messageService).send(anyString(), any());
     }
     
     @Test
