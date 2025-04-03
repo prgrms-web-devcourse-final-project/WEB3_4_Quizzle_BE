@@ -11,7 +11,7 @@ public record RoomUpdateRequest(
     Difficulty difficulty,
     MainCategory mainCategory,
     SubCategory subCategory,
-    Integer password,
+    String password,
     boolean isPrivate
 ) {
     public RoomUpdateRequest {
@@ -33,8 +33,7 @@ public record RoomUpdateRequest(
         }
         
         if (password != null) {
-            String passwordStr = String.format("%04d", password);
-            if (passwordStr.length() != 4 || password < 0 || password > 9999) {
+            if (password.length() != 4 || !password.matches("\\d{4}")) {
                 ErrorCode.ROOM_PASSWORD_INVALID.throwServiceException();
             }
         }
