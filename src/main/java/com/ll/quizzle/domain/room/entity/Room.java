@@ -179,4 +179,10 @@ public class Room extends BaseTime {
             removePlayer(member.getId());
         }
     }
+    
+    public void changeOwner(Member newOwner) {
+        this.owner = newOwner;
+        
+        readyPlayers.remove(newOwner.getId());
+    }
 }
