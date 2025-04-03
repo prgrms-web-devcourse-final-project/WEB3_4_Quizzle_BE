@@ -17,55 +17,62 @@ public class QuizResultService {
         this.redisTemplate = redisTemplate;
     }
 
-    /**
-     * Redis에 저장된 제출 데이터를 기반으로 사용자별 결과를 산출합니다.
-     *
-     * @param quizId 퀴즈(또는 방)의 아이디
-     * @return 각 사용자별 결과 리스트
-     */
     public List<QuizResultResponse> getQuizResults(String quizId) {
         String pattern = String.format("quiz:%s:user:*:submissions", quizId);
         Set<String> keys = redisTemplate.keys(pattern);
 
-        List<QuizResultResponse> resultList = new ArrayList<>();
+        List<QuizResultResponse> results = new ArrayList<>();
         if (keys != null) {
             for (String key : keys) {
-                String userId = extractUserIdFromKey(key);
-                if (userId == null) continue;
-
-                List<Object> submissions = redisTemplate.opsForList().range(key, 0, -1);
-                int score = calculateScore(submissions);
-                int totalQuestions = submissions != null ? submissions.size() : 0;
-                int correctCount = score / SCORE_PER_CORRECT;
-
-                QuizResultResponse response = new QuizResultResponse(userId, correctCount, totalQuestions, score, 0, score);
-                resultList.add(response);
+                QuizResultResponse result = processSubmissionKey(key);
+                if (result != null) {
+                    results.add(result);
+                }
             }
         }
-
-        // 점수를 기준으로 내림차순 정렬 후 랭킹 부여
-        resultList = resultList.stream()
-                .sorted(Comparator.comparingInt(QuizResultResponse::getScore).reversed())
-                .collect(Collectors.toList());
-
-        for (int i = 0; i < resultList.size(); i++) {
-            resultList.get(i).setRank(i + 1);
-        }
-
-        return resultList;
+        return assignRanks(results);
     }
 
-    /**
-     * 키 형식: quiz:{quizId}:user:{userId}:submissions 에서 userId 추출
-     */
+    private QuizResultResponse processSubmissionKey(String key) {
+        String userId = extractUserIdFromKey(key);
+        if (userId == null) {
+            return null;
+        }
+        List<Object> submissions = redisTemplate.opsForList().range(key, 0, -1);
+        int score = calculateScore(submissions);
+        int totalQuestions = submissions != null ? submissions.size() : 0;
+        int correctCount = score / SCORE_PER_CORRECT;
+
+        // 초기 랭크는 0으로 설정
+        return new QuizResultResponse(userId, correctCount, totalQuestions, score, 0, score);
+    }
+
+    private List<QuizResultResponse> assignRanks(List<QuizResultResponse> results) {
+        List<QuizResultResponse> sortedResults = results.stream()
+                .sorted(Comparator.comparingInt(QuizResultResponse::score).reversed())
+                .collect(Collectors.toList());
+
+        List<QuizResultResponse> rankedResults = new ArrayList<>();
+        for (int i = 0; i < sortedResults.size(); i++) {
+            QuizResultResponse oldResult = sortedResults.get(i);
+            QuizResultResponse newResult = new QuizResultResponse(
+                    oldResult.userId(),
+                    oldResult.correctCount(),
+                    oldResult.totalQuestions(),
+                    oldResult.score(),
+                    i + 1,
+                    oldResult.exp()
+            );
+            rankedResults.add(newResult);
+        }
+        return rankedResults;
+    }
+
     private String extractUserIdFromKey(String key) {
         String[] parts = key.split(":");
         return parts.length >= 4 ? parts[3] : null;
     }
 
-    /**
-     * 제출 목록에서 정답 횟수를 계산하여 점수를 산출
-     */
     private int calculateScore(List<Object> submissions) {
         int correctCount = 0;
         if (submissions != null) {

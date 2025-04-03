@@ -188,13 +188,28 @@ public class MemberService {
 
 	@Transactional
 	public MemberProfileEditResponse updateProfile(Long memberId, String newNickname) {
-
 		Member member = rq.assertIsOwner(memberId);
 
+		validateNickname(newNickname);
 		member.changeNickname(newNickname);
 		pointService.applyPointPolicy(member, PointReason.NICKNAME_CHANGE);
-
+		memberRepository.save(member);
 		return MemberProfileEditResponse.from(member);
+	}
+
+	public void validateNickname(String nickname) {
+		if (nickname == null || nickname.trim().isEmpty()) {
+			NICKNAME_INVALID.throwServiceException();
+		}
+		if (nickname.length() < 2 || nickname.length() > 20) {
+			NICKNAME_LENGTH_INVALID.throwServiceException();
+		}
+		if (!nickname.matches("^[a-zA-Z0-9가-힣]+$")) {
+			NICKNAME_FORMAT_INVALID.throwServiceException();
+		}
+		if (memberRepository.existsByNickname(nickname)) {
+			NICKNAME_ALREADY_EXISTS.throwServiceException();
+		}
 	}
 
 }

@@ -10,7 +10,7 @@ import com.ll.quizzle.domain.point.type.PointType;
 
 public interface PointRepository extends JpaRepository<Point, Long> {
 
-	Page<Point> findPageByMemberOrderByCreateDateDesc(Member member, Pageable pageable);
+	Page<Point> findPageByMemberAndTypeOrderByOccurredAtDesc(Member member, PointType type, Pageable pageable);
+	Page<Point> findPageByMemberOrderByOccurredAtDesc(Member member, Pageable pageable);
 
-	Page<Point> findPageByMemberAndTypeOrderByCreateDateDesc(Member member, PointType type, Pageable pageable);
 }
