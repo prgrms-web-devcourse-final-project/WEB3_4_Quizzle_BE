@@ -43,7 +43,7 @@ public class RoomController {
     @Operation(summary = "방 입장", description = "특정 방에 입장합니다. 비공개 방인 경우 비밀번호가 필요합니다.")
     public void joinRoom(
             @PathVariable Long roomId,
-            @RequestParam(required = false) Integer password
+            @RequestParam(required = false) String password
     ) {
         roomService.joinRoom(roomId, rq.getActor().getId(), password);
     }
