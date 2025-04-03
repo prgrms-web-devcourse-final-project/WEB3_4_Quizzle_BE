@@ -2,6 +2,8 @@ package com.ll.quizzle.domain.room.entity;
 
 import java.util.HashSet;
 import java.util.Set;
+import java.nio.charset.StandardCharsets;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
 import com.ll.quizzle.domain.member.entity.Member;
 import com.ll.quizzle.domain.room.type.Difficulty;
@@ -21,6 +23,7 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
+import jakarta.persistence.Transient;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
@@ -63,8 +66,8 @@ public class Room extends BaseTime {
     @Column(name = "difficulty", nullable = false)
     private Difficulty difficulty;
     
-    @Column(length = 4)
-    private String password;
+    @Column
+    private String passwordHash;
     
     @Column(nullable = false)
     private boolean isPrivate = false;
@@ -80,10 +83,13 @@ public class Room extends BaseTime {
     @OneToMany(mappedBy = "room", cascade = CascadeType.ALL, orphanRemoval = true)
     private final Set<RoomBlacklist> blacklist = new HashSet<>();
     
+    @Transient
+    private static final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
+    
     @Builder
     private Room(String title, Member owner, int capacity, MainCategory mainCategory,
                 SubCategory subCategory, AnswerType answerType, int problemCount, 
-                Difficulty difficulty, String password) {
+                Difficulty difficulty, Integer password) {
         this.title = title;
         this.owner = owner;
         this.capacity = capacity;
@@ -92,16 +98,27 @@ public class Room extends BaseTime {
         this.answerType = answerType;
         this.problemCount = problemCount;
         this.difficulty = difficulty;
-        this.password = password;
-        this.isPrivate = password != null && !password.isEmpty();
+        
+        if (password != null) {
+            String passwordStr = String.format("%04d", password);
+            this.passwordHash = passwordEncoder.encode(passwordStr);
+            this.isPrivate = true;
+        } else {
+            this.passwordHash = null;
+            this.isPrivate = false;
+        }
+        
         this.status = RoomStatus.WAITING;
         this.players.add(owner.getId());
     }
     
-    public boolean validatePassword(String inputPassword) {
+    public boolean validatePassword(Integer inputPassword) {
         if (!isPrivate) return true;
-        if (password == null) return true;
-        return password.equals(inputPassword);
+        if (passwordHash == null) return true;
+        
+        String inputPasswordStr = String.format("%04d", inputPassword);
+        
+        return passwordEncoder.matches(inputPasswordStr, passwordHash);
     }
     
     public boolean isOwner(Long memberId) {
