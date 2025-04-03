@@ -7,8 +7,10 @@ import org.springframework.stereotype.Service;
 
 import com.ll.quizzle.domain.admin.dto.request.AdminLoginRequest;
 import com.ll.quizzle.global.config.AdminProperties;
+import com.ll.quizzle.global.exceptions.ErrorCode;
 import com.ll.quizzle.global.security.oauth2.dto.SecurityUser;
 
+import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -17,7 +19,9 @@ public class AdminService {
 	private final AdminProperties adminProperties;
 	private final BCryptPasswordEncoder passwordEncoder;
 
-	public boolean authenticate(AdminLoginRequest request) {
+	public static final String SESSION_KEY_ADMIN = "ADMIN_KEY";
+
+	public boolean authenticate(AdminLoginRequest request, HttpSession session) {
 		if (!adminProperties.getAdminEmail().equals(request.adminEmail())) {
 			return false;
 		}
@@ -33,6 +37,10 @@ public class AdminService {
 			"ROLE_ADMIN"
 		);
 
+		// 세션에 관리자 정보 저장
+		session.setAttribute(SESSION_KEY_ADMIN, adminProperties.getAdminEmail());
+		session.setAttribute("ADMIN_ROLE", "ROLE_ADMIN");
+
 		UsernamePasswordAuthenticationToken authentication =
 			new UsernamePasswordAuthenticationToken(
 				adminUser,
@@ -43,5 +51,17 @@ public class AdminService {
 		SecurityContextHolder.getContext().setAuthentication(authentication);
 
 		return true;
+	}
+
+	public void logout(HttpSession session) {
+		String adminEmail = (String) session.getAttribute(SESSION_KEY_ADMIN);
+
+		// 관리자 세션이 아닌 경우 예외 처리
+		if (adminEmail == null || !adminProperties.getAdminEmail().equals(adminEmail)) {
+			throw ErrorCode.UNAUTHORIZED.throwServiceException();
+		}
+
+		session.invalidate();
+		SecurityContextHolder.clearContext();
 	}
 }

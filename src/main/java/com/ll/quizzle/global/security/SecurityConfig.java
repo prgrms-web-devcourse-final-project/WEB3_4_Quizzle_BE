@@ -4,9 +4,12 @@ import java.util.Arrays;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.config.annotation.web.configurers.HeadersConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
@@ -20,6 +23,7 @@ import com.ll.quizzle.domain.member.service.MemberService;
 import com.ll.quizzle.global.jwt.JwtAuthFilter;
 import com.ll.quizzle.global.jwt.exception.JwtExceptionFilter;
 import com.ll.quizzle.global.security.cors.CorsProperties;
+import com.ll.quizzle.global.security.filter.AdminSessionFilter;
 import com.ll.quizzle.global.security.oauth2.CustomOAuth2AuthenticationSuccessHandler;
 import com.ll.quizzle.global.security.oauth2.CustomOAuth2AuthorizationRequestRepository;
 import com.ll.quizzle.global.security.oauth2.CustomOAuth2FailureHandler;
@@ -39,15 +43,65 @@ public class SecurityConfig {
     private final MemberRepository memberRepository;
     private final CustomOAuth2AuthorizationRequestRepository customOAuth2AuthorizationRequestRepository;
     private final CorsProperties corsProperties;
+    private final AdminSessionFilter adminSessionFilter;
 
     @Bean
+    @Order(1) // 관리자용 Security 설정
+    public SecurityFilterChain adminSecurityFilterChain(HttpSecurity http) throws Exception {
+        http
+            .securityMatcher("/api/v1/admin/**")  // 관리자 경로에만 적용
+            .csrf(AbstractHttpConfigurer::disable)
+            .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+            .sessionManagement(session -> session
+                .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
+                .maximumSessions(1)
+                .maxSessionsPreventsLogin(false)
+                .expiredUrl("/api/v1/admin/login?expired")
+            )
+            .sessionManagement(session -> session
+                .sessionFixation().migrateSession()
+                .invalidSessionUrl("/api/v1/admin/login?invalid")
+                .sessionAuthenticationErrorUrl("/api/v1/admin/login?error")
+            )
+            .authorizeHttpRequests(auth -> auth
+                .requestMatchers("/api/v1/admin/login").permitAll()
+                .anyRequest().hasRole("ADMIN")
+            )
+            .logout(logout -> logout
+                .logoutUrl("/api/v1/admin/logout")
+                .invalidateHttpSession(true)
+                .deleteCookies("JSESSIONID")
+                .logoutSuccessHandler((request, response, authentication) -> {
+                    response.setContentType("application/json;charset=UTF-8");
+                    response.setStatus(HttpServletResponse.SC_OK);
+                    response.getWriter().write("{\"resultCode\":\"SUCCESS\", \"msg\":\"로그아웃 되었습니다.\"}");
+                })
+            )
+            .exceptionHandling(exception -> exception
+                .authenticationEntryPoint((request, response, authException) -> {
+                    response.setContentType("application/json;charset=UTF-8");
+                    response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                    response.getWriter().write("{\"resultCode\":\"UNAUTHORIZED\", \"msg\":\"관리자 인증이 필요합니다.\"}");
+                })
+                .accessDeniedHandler((request, response, accessDeniedException) -> {
+                    response.setContentType("application/json;charset=UTF-8");
+                    response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+                    response.getWriter().write("{\"resultCode\":\"FORBIDDEN\", \"msg\":\"관리자 권한이 없습니다.\"}");
+                })
+            )
+            .addFilterBefore(adminSessionFilter, UsernamePasswordAuthenticationFilter.class);
+
+        return http.build();
+    }
+
+    @Bean
+    @Order(2) // 일반 사용자 Security 설정
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-                .csrf(csrf -> csrf.disable())
+                .csrf(AbstractHttpConfigurer::disable)
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .headers(headers -> headers
-                        .frameOptions(frameOptions -> frameOptions
-                                .sameOrigin()
+                        .frameOptions(HeadersConfigurer.FrameOptionsConfig::sameOrigin
                         )
                 )
                 .authorizeHttpRequests(authorizeHttpRequests -> authorizeHttpRequests
@@ -66,10 +120,8 @@ public class SecurityConfig {
                                 HttpMethod.GET,
                                 "/api/v1/members/*"
                         ).permitAll()
-
-                        // 관리자 전용
-                        .requestMatchers("/api/v1/admin/login").permitAll()
                         .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
+                        .requestMatchers("/api/v1/**").authenticated()
 
                         // 애플리케이션에만 나머지 인증 요구
                         .requestMatchers("/api/v1/**").authenticated()
@@ -95,8 +147,10 @@ public class SecurityConfig {
                             ));
                         })
                 )
+                // 전체 API는 JWT 기반 무상태 인증 유지
                 .sessionManagement(session -> session
-                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                    .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+                )
                 .oauth2Login(oauth2Login -> oauth2Login
                         .authorizationEndpoint(endpoint -> endpoint
                                 .authorizationRequestRepository(customOAuth2AuthorizationRequestRepository)
