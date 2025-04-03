@@ -78,6 +78,7 @@ class RoomServiceTest {
                 .subCategory(SubCategory.CULTURE)
                 .answerType(AnswerType.MULTIPLE_CHOICE)
                 .problemCount(10)
+                .password(1234)
                 .build();
         
         ReflectionTestUtils.setField(roomTemp, "id", 1L);
@@ -112,6 +113,35 @@ class RoomServiceTest {
         assertThat(response.difficulty()).isEqualTo(Difficulty.NORMAL);
         assertThat(response.mainCategory()).isEqualTo(MainCategory.GENERAL_KNOWLEDGE);
         assertThat(response.subCategory()).isEqualTo(SubCategory.CULTURE);
+        
+        verify(memberRepository).findById(1L);
+        verify(roomRepository).save(any(Room.class));
+    }
+    
+    @Test
+    @DisplayName("비밀번호가 있는 방 생성 테스트")
+    void createPrivateRoomTest() {
+        // given
+        RoomCreateRequest request = new RoomCreateRequest(
+                "비밀방",
+                4,
+                Difficulty.NORMAL,
+                MainCategory.GENERAL_KNOWLEDGE,
+                SubCategory.CULTURE,
+                1234,
+                true
+        );
+        
+        when(memberRepository.findById(1L)).thenReturn(Optional.of(testOwner));
+        when(roomRepository.save(any(Room.class))).thenReturn(testRoom);
+        
+        // when
+        RoomResponse response = roomService.createRoom(1L, request);
+        
+        // then
+        assertThat(response).isNotNull();
+        assertThat(response.title()).isEqualTo("테스트 방");
+        assertThat(response.isPrivate()).isTrue();
         
         verify(memberRepository).findById(1L);
         verify(roomRepository).save(any(Room.class));
@@ -168,10 +198,10 @@ class RoomServiceTest {
         // given
         when(roomRepository.findById(1L)).thenReturn(Optional.of(testRoom));
         when(blacklistService.isBlacklisted(1L, 2L)).thenReturn(false);
-        when(testRoom.validatePassword("wrongPassword")).thenReturn(false);
+        when(testRoom.validatePassword(1234)).thenReturn(false);
 
         // when & then
-        assertThatThrownBy(() -> roomService.joinRoom(1L, 2L, "wrongPassword"))
+        assertThatThrownBy(() -> roomService.joinRoom(1L, 2L, 1234))
                 .isInstanceOf(ServiceException.class);
 
         verify(testRoom, never()).addPlayer(anyLong());
