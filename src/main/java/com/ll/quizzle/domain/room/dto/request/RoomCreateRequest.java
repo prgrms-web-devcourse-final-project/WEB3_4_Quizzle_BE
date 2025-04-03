@@ -11,12 +11,15 @@ public record RoomCreateRequest(
     Difficulty difficulty,
     MainCategory mainCategory,
     SubCategory subCategory,
-    String password,
+    Integer password,
     boolean isPrivate
 ) {
     public RoomCreateRequest {
         if (title == null || title.trim().isEmpty()) {
             ErrorCode.ROOM_TITLE_REQUIRED.throwServiceException();
+        }
+        if (title != null && title.length() > 30) {
+            ErrorCode.ROOM_TITLE_TOO_LONG.throwServiceException();
         }
         if (capacity < 2 || capacity > 8) {
             ErrorCode.ROOM_CAPACITY_INVALID.throwServiceException();
@@ -30,8 +33,15 @@ public record RoomCreateRequest(
         if (subCategory == null) {
             ErrorCode.ROOM_SUB_CATEGORY_REQUIRED.throwServiceException();
         }
-        if (isPrivate && (password == null || password.trim().isEmpty())) {
+        if (isPrivate && password == null) {
             ErrorCode.ROOM_PRIVATE_PASSWORD_REQUIRED.throwServiceException();
+        }
+        
+        if (password != null) {
+            String passwordStr = String.format("%04d", password);
+            if (passwordStr.length() != 4 || password < 0 || password > 9999) {
+                ErrorCode.ROOM_PASSWORD_INVALID.throwServiceException();
+            }
         }
     }
 } 
