@@ -78,7 +78,7 @@ class RoomServiceTest {
                 .subCategory(SubCategory.CULTURE)
                 .answerType(AnswerType.MULTIPLE_CHOICE)
                 .problemCount(10)
-                .password(1234)
+                .password("1234")
                 .build();
         
         ReflectionTestUtils.setField(roomTemp, "id", 1L);
@@ -128,7 +128,7 @@ class RoomServiceTest {
                 Difficulty.NORMAL,
                 MainCategory.GENERAL_KNOWLEDGE,
                 SubCategory.CULTURE,
-                1234,
+                "1234",
                 true
         );
         
