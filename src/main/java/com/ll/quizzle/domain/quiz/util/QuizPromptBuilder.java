@@ -1,7 +1,7 @@
 package com.ll.quizzle.domain.quiz.util;
 
 import com.ll.quizzle.domain.quiz.dto.request.QuizGenerationRequest;
-import com.ll.quizzle.domain.quiz.enums.AnswerType;
+import com.ll.quizzle.domain.room.type.AnswerType;
 
 public class QuizPromptBuilder {
     public static String buildPrompt(QuizGenerationRequest request) {
