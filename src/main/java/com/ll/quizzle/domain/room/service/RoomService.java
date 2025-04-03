@@ -59,7 +59,7 @@ public class RoomService {
     }
     
     @Transactional
-    public void joinRoom(Long roomId, Long memberId, Integer password) {
+    public void joinRoom(Long roomId, Long memberId, String password) {
         Room room = roomRepository.findById(roomId)
                 .orElseThrow(ROOM_NOT_FOUND::throwServiceException);
                 
