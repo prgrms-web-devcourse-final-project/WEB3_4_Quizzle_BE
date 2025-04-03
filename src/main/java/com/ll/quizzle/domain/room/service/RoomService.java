@@ -103,28 +103,50 @@ public class RoomService {
         Member member = memberRepository.findById(memberId)
                 .orElseThrow(MEMBER_NOT_FOUND::throwServiceException);
                 
+        boolean isOwner = room.isOwner(memberId);
+        
         room.removePlayer(memberId);
         
         MessageService roomService = messageServiceFactory.getRoomService();
-        WebSocketRoomMessageResponse message = WebSocketRoomMessageResponse.of(
-                RoomMessageType.LEAVE,
-                member.getNickname() + "님이 퇴장하셨습니다.",
-                null,
-                memberId.toString(),
-                member.getNickname(),
-                System.currentTimeMillis(),
-                roomId.toString()
-        );
-        roomService.send("/topic/room/" + roomId, message);
+        WebSocketRoomMessageResponse message;
         
-        if (room.isOwner(memberId)) {
-            roomRepository.delete(room);
+        if (isOwner) {
+            if (room.getPlayers().isEmpty()) {
+                roomRepository.delete(room);
+                message = WebSocketRoomMessageResponse.of(
+                        RoomMessageType.SYSTEM,
+                        "방장이 퇴장하여 방이 삭제되었습니다.",
+                        null,
+                        "SYSTEM",
+                        "SYSTEM",
+                        System.currentTimeMillis(),
+                        roomId.toString()
+                );
+            } else {
+                Long newOwnerId = room.getPlayers().iterator().next();
+                Member newOwner = memberRepository.findById(newOwnerId)
+                        .orElseThrow(MEMBER_NOT_FOUND::throwServiceException);
+                
+                room.changeOwner(newOwner);
+                
+                message = WebSocketRoomMessageResponse.of(
+                        RoomMessageType.SYSTEM,
+                        member.getNickname() + "님이 퇴장하여 " + newOwner.getNickname() + "님이 새로운 방장이 되었습니다.",
+                        null,
+                        "SYSTEM",
+                        "SYSTEM",
+                        System.currentTimeMillis(),
+                        roomId.toString()
+                );
+            }
+            roomService.send("/topic/room/" + roomId, message);
+        } else {
             message = WebSocketRoomMessageResponse.of(
-                    RoomMessageType.SYSTEM,
-                    "방장이 퇴장하여 방이 삭제되었습니다.",
+                    RoomMessageType.LEAVE,
+                    member.getNickname() + "님이 퇴장하셨습니다.",
                     null,
-                    "SYSTEM",
-                    "SYSTEM",
+                    memberId.toString(),
+                    member.getNickname(),
                     System.currentTimeMillis(),
                     roomId.toString()
             );
