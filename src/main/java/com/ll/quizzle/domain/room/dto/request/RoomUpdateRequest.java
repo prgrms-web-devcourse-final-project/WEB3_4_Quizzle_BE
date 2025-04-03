@@ -1,8 +1,8 @@
 package com.ll.quizzle.domain.room.dto.request;
 
+import com.ll.quizzle.domain.room.type.Difficulty;
 import com.ll.quizzle.domain.room.type.MainCategory;
 import com.ll.quizzle.domain.room.type.SubCategory;
-import com.ll.quizzle.domain.room.type.Difficulty;
 import com.ll.quizzle.global.exceptions.ErrorCode;
 
 public record RoomUpdateRequest(

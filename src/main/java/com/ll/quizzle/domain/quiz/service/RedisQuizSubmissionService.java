@@ -16,7 +16,6 @@ public class RedisQuizSubmissionService {
     private RedisTemplate<String, Object> redisTemplate;
 
     public QuizSubmitResponse submitAnswer(String quizId, String userId, int questionNumber, String submittedAnswer) {
-        // 정답 리스트가 저장된 Redis 키 생성 (문제의 경우는 그대로)
         String answerListKey = String.format("quiz:%s:answers", quizId);
 
         Long size = redisTemplate.opsForList().size(answerListKey);
@@ -39,6 +38,7 @@ public class RedisQuizSubmissionService {
         boolean isCorrect = correctAnswer.equals(submittedAnswer.trim().toLowerCase());
 
         String submissionKey = String.format("quiz:%s:user:%s:submissions", quizId.trim(), userId.trim());
+
         String resultStr = isCorrect ? "correct" : "incorrect";
         String submissionEntry = String.format("%d:%s:%s",
                 questionNumber,
@@ -55,3 +55,4 @@ public class RedisQuizSubmissionService {
     }
 
 }
+
