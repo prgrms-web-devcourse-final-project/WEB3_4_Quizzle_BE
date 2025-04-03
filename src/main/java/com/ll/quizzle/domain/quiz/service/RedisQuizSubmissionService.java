@@ -16,7 +16,6 @@ public class RedisQuizSubmissionService {
     private RedisTemplate<String, Object> redisTemplate;
 
     public QuizSubmitResponse submitAnswer(String quizId, String userId, int questionNumber, String submittedAnswer) {
-        // 정답 리스트가 저장된 Redis 키 생성 (문제의 경우는 그대로)
         String answerListKey = String.format("quiz:%s:answers", quizId);
 
         Long size = redisTemplate.opsForList().size(answerListKey);
