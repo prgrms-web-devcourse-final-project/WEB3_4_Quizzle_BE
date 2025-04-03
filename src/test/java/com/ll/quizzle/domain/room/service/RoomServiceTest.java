@@ -198,10 +198,10 @@ class RoomServiceTest {
         // given
         when(roomRepository.findById(1L)).thenReturn(Optional.of(testRoom));
         when(blacklistService.isBlacklisted(1L, 2L)).thenReturn(false);
-        when(testRoom.validatePassword(1234)).thenReturn(false);
+        when(testRoom.validatePassword("1234")).thenReturn(false);
 
         // when & then
-        assertThatThrownBy(() -> roomService.joinRoom(1L, 2L, 1234))
+        assertThatThrownBy(() -> roomService.joinRoom(1L, 2L, "1234"))
                 .isInstanceOf(ServiceException.class);
 
         verify(testRoom, never()).addPlayer(anyLong());
