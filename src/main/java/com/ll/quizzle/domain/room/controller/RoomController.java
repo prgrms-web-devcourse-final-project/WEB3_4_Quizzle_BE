@@ -50,7 +50,7 @@ public class RoomController {
     
     @PostMapping("/{roomId}/leave")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    @Operation(summary = "방 퇴장", description = "현재 입장해 있는 방에서 퇴장합니다. 방장이 퇴장하면 방이 삭제됩니다.")
+    @Operation(summary = "방 퇴장", description = "현재 입장해 있는 방에서 퇴장합니다. 방장이 퇴장하면 다른 플레이어가 있을 경우 방장 권한이 위임되고, 다른 플레이어가 없을 경우 방이 삭제됩니다.")
     public void leaveRoom(
             @PathVariable Long roomId
     ) {
