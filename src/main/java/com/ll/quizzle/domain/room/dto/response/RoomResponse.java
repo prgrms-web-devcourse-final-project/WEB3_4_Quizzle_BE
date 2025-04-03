@@ -36,7 +36,7 @@ public record RoomResponse(
             room.getDifficulty(),
             room.getMainCategory(),
             room.getSubCategory(),
-            room.getPassword(),
+            room.getPasswordHash(),
             room.isPrivate(),
             room.getPlayers(),
             room.getReadyPlayers()

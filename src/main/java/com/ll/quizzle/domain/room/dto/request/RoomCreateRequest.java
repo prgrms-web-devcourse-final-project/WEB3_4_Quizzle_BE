@@ -18,6 +18,9 @@ public record RoomCreateRequest(
         if (title == null || title.trim().isEmpty()) {
             ErrorCode.ROOM_TITLE_REQUIRED.throwServiceException();
         }
+        if (title != null && title.length() > 30) {
+            ErrorCode.ROOM_TITLE_TOO_LONG.throwServiceException();
+        }
         if (capacity < 2 || capacity > 8) {
             ErrorCode.ROOM_CAPACITY_INVALID.throwServiceException();
         }
@@ -30,8 +33,14 @@ public record RoomCreateRequest(
         if (subCategory == null) {
             ErrorCode.ROOM_SUB_CATEGORY_REQUIRED.throwServiceException();
         }
-        if (isPrivate && (password == null || password.trim().isEmpty())) {
+        if (isPrivate && password == null) {
             ErrorCode.ROOM_PRIVATE_PASSWORD_REQUIRED.throwServiceException();
+        }
+        
+        if (password != null) {
+            if (password.length() != 4 || !password.matches("\\d{4}")) {
+                ErrorCode.ROOM_PASSWORD_INVALID.throwServiceException();
+            }
         }
     }
 } 
