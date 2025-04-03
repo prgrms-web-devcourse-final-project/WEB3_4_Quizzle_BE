@@ -1,6 +1,7 @@
 package com.ll.quizzle.global.exceptions;
 
 import org.springframework.http.HttpStatus;
+
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
@@ -40,6 +41,11 @@ public enum ErrorCode {
 	WEBSOCKET_TOKEN_VALIDATION_FAILED(HttpStatus.UNAUTHORIZED, "WebSocket 토큰 검증에 실패했습니다."),
 	WEBSOCKET_INVALID_REQUEST_TYPE(HttpStatus.BAD_REQUEST, "잘못된 WebSocket 요청 타입입니다."),
 	WEBSOCKET_UNSUPPORTED_PROVIDER(HttpStatus.BAD_REQUEST, "지원하지 않는 메시징 프로바이더입니다."),
+	WEBSOCKET_MESSAGE_TYPE_REQUIRED(HttpStatus.BAD_REQUEST, "메시지 타입은 필수입니다."),
+	WEBSOCKET_SENDER_ID_REQUIRED(HttpStatus.BAD_REQUEST, "발신자 ID는 필수입니다."),
+	WEBSOCKET_SENDER_NAME_REQUIRED(HttpStatus.BAD_REQUEST, "발신자 이름은 필수입니다."),
+	WEBSOCKET_ROOM_ID_REQUIRED(HttpStatus.BAD_REQUEST, "방 ID는 필수입니다."),
+	WEBSOCKET_TIMESTAMP_INVALID(HttpStatus.BAD_REQUEST, "유효하지 않은 타임스탬프입니다."),
 
 	// GameRoom
 	ROOM_NOT_FOUND(HttpStatus.NOT_FOUND, "존재하지 않는 방입니다."),

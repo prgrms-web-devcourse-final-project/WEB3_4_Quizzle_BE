@@ -1,5 +1,6 @@
 package com.ll.quizzle.global.socket.dto.request;
 
+import com.ll.quizzle.global.exceptions.ErrorCode;
 import com.ll.quizzle.global.socket.type.RoomMessageType;
 
 /**
@@ -14,6 +15,23 @@ public record WebSocketRoomMessageRequest(
     long timestamp,
     String roomId
 ) {
+    public WebSocketRoomMessageRequest {
+        if (type == null) {
+            ErrorCode.WEBSOCKET_MESSAGE_TYPE_REQUIRED.throwServiceException();
+        }
+        if (senderId == null || senderId.trim().isEmpty()) {
+            ErrorCode.WEBSOCKET_SENDER_ID_REQUIRED.throwServiceException();
+        }
+        if (senderName == null || senderName.trim().isEmpty()) {
+            ErrorCode.WEBSOCKET_SENDER_NAME_REQUIRED.throwServiceException();
+        }
+        if (roomId == null || roomId.trim().isEmpty()) {
+            ErrorCode.WEBSOCKET_ROOM_ID_REQUIRED.throwServiceException();
+        }
+        if (timestamp <= 0) {
+            ErrorCode.WEBSOCKET_TIMESTAMP_INVALID.throwServiceException();
+        }
+    }
 
     public static WebSocketRoomMessageRequest of(
             RoomMessageType type,
