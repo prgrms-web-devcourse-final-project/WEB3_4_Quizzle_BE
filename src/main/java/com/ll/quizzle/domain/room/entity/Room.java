@@ -1,17 +1,21 @@
 package com.ll.quizzle.domain.room.entity;
 
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
-import java.nio.charset.StandardCharsets;
+
+import io.netty.util.internal.ConcurrentSet;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
 import com.ll.quizzle.domain.member.entity.Member;
+import com.ll.quizzle.domain.room.type.AnswerType;
 import com.ll.quizzle.domain.room.type.Difficulty;
 import com.ll.quizzle.domain.room.type.MainCategory;
-import com.ll.quizzle.domain.room.type.SubCategory;
-import com.ll.quizzle.domain.room.type.AnswerType;
 import com.ll.quizzle.domain.room.type.RoomStatus;
+import com.ll.quizzle.domain.room.type.SubCategory;
 import com.ll.quizzle.global.jpa.entity.BaseTime;
+import com.ll.quizzle.global.exceptions.ServiceException;
+import static com.ll.quizzle.global.exceptions.ErrorCode.*;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.CollectionTable;
@@ -24,6 +28,7 @@ import jakarta.persistence.FetchType;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Transient;
+import jakarta.persistence.Version;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
@@ -72,16 +77,19 @@ public class Room extends BaseTime {
     @Column(nullable = false)
     private boolean isPrivate = false;
     
+    @Version
+    private Long version;
+    
     @ElementCollection
     @CollectionTable(name = "room_players")
-    private final Set<Long> players = new HashSet<>();
+    private final Set<Long> players = Collections.synchronizedSet(new HashSet<>());
     
     @ElementCollection
     @CollectionTable(name = "room_ready_players")
-    private final Set<Long> readyPlayers = new HashSet<>();
+    private final Set<Long> readyPlayers = Collections.synchronizedSet(new HashSet<>());
     
     @OneToMany(mappedBy = "room", cascade = CascadeType.ALL, orphanRemoval = true)
-    private final Set<RoomBlacklist> blacklist = new HashSet<>();
+    private final Set<RoomBlacklist> blacklist = Collections.synchronizedSet(new HashSet<>());
     
     @Transient
     private static final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
@@ -153,13 +161,29 @@ public class Room extends BaseTime {
     }
     
     public boolean isAllPlayersReady() {
+        if (players.size() == 1 && isOwner(players.iterator().next())) {
+            return true;
+        }
+        
         long nonOwnerCount = players.stream()
             .filter(playerId -> !isOwner(playerId))
             .count();
-        return players.size() > 1 && nonOwnerCount == readyPlayers.size();
+        return nonOwnerCount == readyPlayers.size();
     }
     
-    public void startGame() {
+    public void startGame(Long memberId) {
+        if (!isOwner(memberId)) {
+            throw NOT_ROOM_OWNER.throwServiceException();
+        }
+        
+        if (this.players.isEmpty()) {
+            throw MIN_PLAYER_COUNT_NOT_MET.throwServiceException();
+        }
+        
+        if (!isAllPlayersReady()) {
+            throw NOT_ALL_PLAYERS_READY.throwServiceException();
+        }
+        
         this.status = RoomStatus.IN_GAME;
     }
     
