@@ -6,7 +6,7 @@ import java.util.function.BiConsumer;
 
 /**
  * 기존 인메모리 방식의 세션 관리 방식의 세션 공유 문제를 해결하기 위해
- * Redis 방식을 도입하면서 인터페이스를 분리 추후 확장성도 고려
+ * Redis 방식을 도입하면서 인터페이스를 분리, 추후 확장성도 고려
  */
 public interface WebSocketSessionManager {
 
