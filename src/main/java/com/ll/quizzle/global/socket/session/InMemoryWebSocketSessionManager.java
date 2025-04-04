@@ -10,7 +10,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BiConsumer;
 
 /**
- * 메모리 기반 WebSocket 세션 관리 구현체
+ * 기존 메모리 기반 WebSocket 세션 관리 구현체 (Redis 방식 도입 시 사용 안할 예정)
  */
 @Slf4j
 @Service("inMemoryWebSocketSessionManager")
