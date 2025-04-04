@@ -42,3 +42,8 @@ custom:
     allowed-origins:
       - http://localhost:*
       - http://127.0.0.1:*
+
+admin:
+  admin-email: ${ADMIN_USERNAME}
+  admin-password-hash: ${ADMIN_PASSWORD_HASH}
+
