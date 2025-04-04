@@ -36,3 +36,7 @@ custom:
       - https://quizzle.com
       - https://www.quizzle.com
       - https://api.quizzle.com
+
+app:
+  websocket:
+    use-distributed-sessions: true
