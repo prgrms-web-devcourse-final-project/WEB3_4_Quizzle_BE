@@ -1,10 +1,5 @@
 package com.ll.quizzle.global.initdata;
 
-import com.ll.quizzle.domain.member.entity.Member;
-import com.ll.quizzle.domain.member.repository.MemberRepository;
-import com.ll.quizzle.global.security.oauth2.entity.OAuth;
-import com.ll.quizzle.global.security.oauth2.repository.OAuthRepository;
-import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.context.annotation.Bean;
@@ -12,6 +7,13 @@ import org.springframework.context.annotation.Lazy;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
+
+import com.ll.quizzle.domain.member.entity.Member;
+import com.ll.quizzle.domain.member.repository.MemberRepository;
+import com.ll.quizzle.global.security.oauth2.entity.OAuth;
+import com.ll.quizzle.global.security.oauth2.repository.OAuthRepository;
+
+import lombok.RequiredArgsConstructor;
 
 @Profile("dev")
 @Component
@@ -28,6 +30,7 @@ public class BaseInitData {
     public ApplicationRunner baseInitDataRunner() {
         return args -> {
             self.init();
+            self.adminInit();
         };
     }
 
@@ -49,5 +52,18 @@ public class BaseInitData {
             memberRepository.save(member);
             oAuthRepository.save(oauth);
         }
+    }
+
+    @Transactional
+    public void adminInit() {
+        if (memberRepository.findByEmail("admin@quizzle.com").isPresent()) {
+            return;
+        }
+
+        Member member = Member.create("admin", "admin@quizzle.com");
+        OAuth oauth = OAuth.create(member, "kakao", "51");
+
+        memberRepository.save(member);
+        oAuthRepository.save(oauth);
     }
 }

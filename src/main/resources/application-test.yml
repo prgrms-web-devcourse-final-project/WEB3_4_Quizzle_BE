@@ -43,7 +43,7 @@ custom:
       - http://localhost:*
       - http://127.0.0.1:*
 
-admin:
-  admin-email: ${ADMIN_USERNAME}
-  admin-password-hash: ${ADMIN_PASSWORD_HASH}
+system:
+  system-email: ${SYSTEM_USERNAME}
+  system-password-hash: ${SYSTEM_PASSWORD_HASH}
 

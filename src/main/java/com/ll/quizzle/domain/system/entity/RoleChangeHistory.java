@@ -1,0 +1,51 @@
+package com.ll.quizzle.domain.system.entity;
+
+import com.ll.quizzle.domain.member.entity.Member;
+import com.ll.quizzle.domain.member.type.Role;
+import com.ll.quizzle.global.jpa.entity.BaseEntity;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import lombok.AccessLevel;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+
+@Entity
+@Getter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+public class RoleChangeHistory extends BaseEntity {
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "member_id", nullable = false)
+    private Member member; // 권한이 바뀐 대상
+
+    private String changedBy;
+    
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private Role previousRole;
+    
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private Role newRole;
+
+    @Column(length = 500)
+    private String reason;
+    private String ipAddress;
+
+    @Builder
+    public RoleChangeHistory(Member member, String changedBy, Role previousRole, Role newRole, String reason,
+        String ipAddress) {
+        this.member = member;
+        this.changedBy = changedBy;
+        this.previousRole = previousRole;
+        this.newRole = newRole;
+        this.reason = reason;
+        this.ipAddress = ipAddress;
+    }
+}

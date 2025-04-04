@@ -17,6 +17,7 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import com.ll.quizzle.domain.member.repository.MemberRepository;
 import com.ll.quizzle.domain.member.service.MemberService;
+import com.ll.quizzle.global.config.SystemProperties;
 import com.ll.quizzle.global.jwt.JwtAuthFilter;
 import com.ll.quizzle.global.jwt.exception.JwtExceptionFilter;
 import com.ll.quizzle.global.security.cors.CorsProperties;
@@ -39,6 +40,7 @@ public class SecurityConfig {
     private final MemberRepository memberRepository;
     private final CustomOAuth2AuthorizationRequestRepository customOAuth2AuthorizationRequestRepository;
     private final CorsProperties corsProperties;
+    private final SystemProperties systemProperties;
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
@@ -51,7 +53,9 @@ public class SecurityConfig {
                         )
                 )
                 .authorizeHttpRequests(authorizeHttpRequests -> authorizeHttpRequests
-                        .requestMatchers(
+                    .requestMatchers("/api/v1/system/login").permitAll()
+                    .requestMatchers("/api/v1/system/**").hasRole("SYSTEM")
+                    .requestMatchers(
                                 "/",
                                 "/h2-console/**",
                                 "/oauth2/authorization/**",
@@ -121,7 +125,14 @@ public class SecurityConfig {
         configuration.setAllowedHeaders(Arrays.asList("*"));
         configuration.setAllowCredentials(true);
 
+        CorsConfiguration systemConfiguration = new CorsConfiguration();
+        systemConfiguration.setAllowedOrigins(systemProperties.getAllowedOrigins());  // 시스템 관리자용 Origin만 허용
+        systemConfiguration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "HEAD", "PATCH"));
+        systemConfiguration.setAllowedHeaders(Arrays.asList("*"));
+        systemConfiguration.setAllowCredentials(true);
+
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/api/v1/system/**", systemConfiguration);
         source.registerCorsConfiguration("/**", configuration);
         return source;
     }
