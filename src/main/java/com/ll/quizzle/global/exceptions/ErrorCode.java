@@ -73,12 +73,13 @@ public enum ErrorCode {
 	ROOM_TITLE_REQUIRED(HttpStatus.BAD_REQUEST, "방 제목은 필수입니다."),
 	ROOM_TITLE_EMPTY(HttpStatus.BAD_REQUEST, "방 제목이 비어있을 수 없습니다."),
 	ROOM_TITLE_TOO_LONG(HttpStatus.BAD_REQUEST, "방 제목은 30자 이내여야 합니다."),
-	ROOM_CAPACITY_INVALID(HttpStatus.BAD_REQUEST, "방 인원은 2명에서 8명 사이여야 합니다."),
+	ROOM_CAPACITY_INVALID(HttpStatus.BAD_REQUEST, "방 인원은 1명에서 8명 사이여야 합니다."),
 	ROOM_DIFFICULTY_REQUIRED(HttpStatus.BAD_REQUEST, "난이도는 필수입니다."),
 	ROOM_MAIN_CATEGORY_REQUIRED(HttpStatus.BAD_REQUEST, "대주제는 필수입니다."),
 	ROOM_SUB_CATEGORY_REQUIRED(HttpStatus.BAD_REQUEST, "소주제는 필수입니다."),
 	ROOM_PRIVATE_PASSWORD_REQUIRED(HttpStatus.BAD_REQUEST, "비공개 방의 경우 비밀번호는 필수입니다."),
-	ROOM_PASSWORD_INVALID(HttpStatus.BAD_REQUEST, "방 비밀번호는 4자리 숫자(0000~9999)여야 합니다.");
+	ROOM_PASSWORD_INVALID(HttpStatus.BAD_REQUEST, "방 비밀번호는 4자리 숫자(0000~9999)여야 합니다."),
+	MIN_PLAYER_COUNT_NOT_MET(HttpStatus.BAD_REQUEST, "게임을 시작하려면 최소 1명의 플레이어가 필요합니다.");
 
 	private final HttpStatus httpStatus;
 	private final String message;
