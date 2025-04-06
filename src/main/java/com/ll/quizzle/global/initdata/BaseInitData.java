@@ -10,6 +10,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.ll.quizzle.domain.member.entity.Member;
 import com.ll.quizzle.domain.member.repository.MemberRepository;
+import com.ll.quizzle.domain.member.type.Role;
+import com.ll.quizzle.domain.system.service.SystemService;
 import com.ll.quizzle.global.security.oauth2.entity.OAuth;
 import com.ll.quizzle.global.security.oauth2.repository.OAuthRepository;
 
@@ -21,6 +23,7 @@ import lombok.RequiredArgsConstructor;
 public class BaseInitData {
     private final MemberRepository memberRepository;
     private final OAuthRepository oAuthRepository;
+    private final SystemService systemService;
 
     @Autowired
     @Lazy
@@ -60,10 +63,16 @@ public class BaseInitData {
             return;
         }
 
-        Member member = Member.create("admin", "admin@quizzle.com");
-        OAuth oauth = OAuth.create(member, "kakao", "51");
+        Member testAdmin = Member.create("admin", "admin@quizzle.com");
+        Member testMember = Member.create("member", "member@quizzle.com");
+        testMember.changeRole(Role.ADMIN);
 
-        memberRepository.save(member);
-        oAuthRepository.save(oauth);
+        OAuth testAdminOauth = OAuth.create(testAdmin, "kakao", "51");
+        OAuth testMemberOauth2 = OAuth.create(testMember, "google", "52");
+
+        memberRepository.save(testAdmin);
+        memberRepository.save(testMember);
+        oAuthRepository.save(testAdminOauth);
+        oAuthRepository.save(testMemberOauth2);
     }
 }
