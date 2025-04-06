@@ -1,10 +1,9 @@
 package com.ll.quizzle.global.exceptions;
 
-import org.springframework.http.HttpStatus;
-
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 
 @Getter
 @AllArgsConstructor
@@ -64,6 +63,14 @@ public enum ErrorCode {
 	NICKNAME_LENGTH_INVALID(HttpStatus.BAD_REQUEST, "닉네임은 2자 이상 20자 이하이어야 합니다."),
 	NICKNAME_FORMAT_INVALID(HttpStatus.BAD_REQUEST, "닉네임은 영문, 숫자, 한글만 사용할 수 있습니다."),
 	NICKNAME_ALREADY_EXISTS(HttpStatus.BAD_REQUEST, "이미 존재하는 닉네임입니다."),
+
+    // friend
+    FRIEND_ALREADY_EXISTS(HttpStatus.BAD_REQUEST, "이미 친구 관계입니다."),
+    FRIEND_NOT_FOUND(HttpStatus.BAD_REQUEST, "친구 관계가 아닙니다."),
+    FRIEND_REQUEST_NOT_YOURSELF(HttpStatus.BAD_REQUEST, "자기 자신에게 친구 요청을 보낼 수 없습니다."),
+    FRIEND_REQUEST_NOT_FOUND(HttpStatus.NOT_FOUND, "해당 친구 요청을 찾을 수 없습니다."),
+    FRIEND_LIST_NOT_FOUND(HttpStatus.BAD_REQUEST, "친구 목록 조회에 실패했습니다."),
+    FRIEND_REQUEST_ALREADY_EXISTS(HttpStatus.BAD_REQUEST, "이미 친구 요청을 보냈습니다."),
 
 	// Global
 	FORBIDDEN_ACCESS(HttpStatus.FORBIDDEN, "접근 권한이 없습니다."),
