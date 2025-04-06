@@ -8,6 +8,7 @@ public record FriendListResponse(
         long memberId,
         String nickname,
         int level,
+        boolean isOnline,
         LocalDateTime acceptedAt
 ) {
     public static FriendListResponse from(Friend friend) {
@@ -15,6 +16,7 @@ public record FriendListResponse(
                 friend.getFriend().getId(),
                 friend.getFriend().getNickname(),
                 friend.getFriend().getLevel(),
+                friend.isOnline(),
                 friend.getCreateDate()
         );
     }

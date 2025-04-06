@@ -26,7 +26,6 @@ public class FriendService {
     private final FriendOfferRepository friendOfferRepository;
     private final MemberRepository memberRepository;
 
-    // todo : 동시성 문제 해결 필요. 서로 동시에 요청하는경우 (단일락, 낙관적락)
     @Transactional
     public FriendResponse sendFriendOffer(long actorId, long memberId) {
         Member member = getMemberById(actorId);

@@ -25,6 +25,9 @@ public class FriendOffer extends BaseTime {
     @Enumerated(EnumType.STRING)
     private FriendRequestStatus status;
 
+    @Version
+    private Integer version;
+
     @Builder
     private FriendOffer(Member fromMember, Member toMember, FriendRequestStatus status) {
         this.fromMember = fromMember;

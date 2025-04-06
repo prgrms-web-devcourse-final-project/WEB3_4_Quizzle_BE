@@ -28,6 +28,8 @@ public class Friend extends BaseEntity {
     @CreatedDate
     private LocalDateTime createDate;
 
+    private boolean isOnline;
+
     @Builder
     private Friend(Member member, Member friend) {
         this.member = member;
