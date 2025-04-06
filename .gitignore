@@ -39,3 +39,6 @@ out/
 ### Custom ###
 .env
 src/main/resources/application-secret.yml
+
+db_dev.trace.db
+db_dev.mv.db
