@@ -91,7 +91,7 @@
 
   content?: string,
 
-  data?: string,  // id,name,isReady,isOwner 포함
+  data?: string,  // id,name,isReady,isOwner,isSubmitted 포함
 [
   {
     "id": "1",
