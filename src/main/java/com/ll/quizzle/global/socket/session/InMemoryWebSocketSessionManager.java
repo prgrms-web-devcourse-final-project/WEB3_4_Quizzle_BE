@@ -133,4 +133,31 @@ public class InMemoryWebSocketSessionManager implements WebSocketSessionManager 
         
         return count;
     }
+
+    @Override
+    public boolean refreshSession(String email, String sessionId) {
+        Map<String, SessionInfo> sessions = activeUserSessions.get(email);
+        if (sessions == null || !sessions.containsKey(sessionId)) {
+            log.debug("갱신 실패 - 세션 정보가 없음: 사용자={}, 세션={}", email, sessionId);
+            return false;
+        }
+        
+        SessionInfo sessionInfo = sessions.get(sessionId);
+        if (sessionInfo == null) {
+            log.debug("갱신 실패 - 세션 정보가 없음: 사용자={}, 세션={}", email, sessionId);
+            return false;
+        }
+        
+        long newExpiryTime = System.currentTimeMillis() + (3600 * 1000);
+        SessionInfo updatedSessionInfo = new SessionInfo(
+                sessionInfo.accessToken(),
+                newExpiryTime,
+                sessionInfo.sessionId()
+        );
+        
+        sessions.put(sessionId, updatedSessionInfo);
+        
+        log.debug("세션 갱신 완료: 사용자={}, 세션={}", email, sessionId);
+        return true;
+    }
 } 
