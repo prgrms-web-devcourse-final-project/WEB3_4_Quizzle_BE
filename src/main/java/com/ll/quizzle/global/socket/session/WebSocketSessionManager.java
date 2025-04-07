@@ -29,4 +29,6 @@ public interface WebSocketSessionManager {
     String getSessionToTerminate(String email, String sessionId);
     
     int markOtherSessionsForTermination(String email, String sessionToKeep);
+
+    boolean refreshSession(String email, String sessionId);
 } 
