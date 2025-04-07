@@ -5,7 +5,6 @@ import java.util.Arrays;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
-import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -32,7 +31,6 @@ import lombok.RequiredArgsConstructor;
 
 @Configuration
 @EnableWebSecurity
-@EnableMethodSecurity
 @RequiredArgsConstructor
 public class SecurityConfig {
     private final CustomOAuth2UserService customOAuth2UserService;
@@ -74,8 +72,8 @@ public class SecurityConfig {
                         ).permitAll()
 
                         // 관리자 전용
-                        .requestMatchers("/api/v1/admin/login").permitAll()
                         .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
+                        .requestMatchers("/api/v1/**").authenticated()
 
                         // 애플리케이션에만 나머지 인증 요구
                         .requestMatchers("/api/v1/**").authenticated()
@@ -102,7 +100,8 @@ public class SecurityConfig {
                         })
                 )
                 .sessionManagement(session -> session
-                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                    .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+                )
                 .oauth2Login(oauth2Login -> oauth2Login
                         .authorizationEndpoint(endpoint -> endpoint
                                 .authorizationRequestRepository(customOAuth2AuthorizationRequestRepository)

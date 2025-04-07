@@ -1,18 +1,15 @@
 package com.ll.quizzle.global.jwt;
 
-import com.ll.quizzle.domain.member.entity.Member;
-import com.ll.quizzle.domain.member.repository.MemberRepository;
-import com.ll.quizzle.domain.member.service.AuthTokenService;
-import com.ll.quizzle.domain.member.service.MemberService;
-import com.ll.quizzle.domain.member.type.Role;
-import com.ll.quizzle.global.exceptions.ServiceException;
-import com.ll.quizzle.global.jwt.dto.GeneratedToken;
-import com.ll.quizzle.global.jwt.dto.JwtProperties;
-import com.ll.quizzle.global.request.Rq;
-import com.ll.quizzle.global.response.RsData;
-import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.security.Keys;
-import jakarta.servlet.http.Cookie;
+import static com.ll.quizzle.global.exceptions.ErrorCode.*;
+import static org.assertj.core.api.Assertions.*;
+import static org.mockito.Mockito.*;
+import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+
+import java.util.Date;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -30,15 +27,20 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.context.WebApplicationContext;
 
-import java.util.Date;
+import com.ll.quizzle.domain.member.entity.Member;
+import com.ll.quizzle.domain.member.repository.MemberRepository;
+import com.ll.quizzle.domain.member.service.AuthTokenService;
+import com.ll.quizzle.domain.member.service.MemberService;
+import com.ll.quizzle.domain.member.type.Role;
+import com.ll.quizzle.global.exceptions.ServiceException;
+import com.ll.quizzle.global.jwt.dto.GeneratedToken;
+import com.ll.quizzle.global.jwt.dto.JwtProperties;
+import com.ll.quizzle.global.request.Rq;
+import com.ll.quizzle.global.response.RsData;
 
-import static com.ll.quizzle.global.exceptions.ErrorCode.UNAUTHORIZED;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.when;
-import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.security.Keys;
+import jakarta.servlet.http.Cookie;
 
 @SpringBootTest
 @AutoConfigureMockMvc
