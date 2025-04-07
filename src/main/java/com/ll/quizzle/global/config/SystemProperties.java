@@ -16,4 +16,5 @@ public class SystemProperties {
 	private String systemEmail;
 	private String systemPasswordHash;
 	private List<String> allowedOrigins;
+	private List<String> allowedIps;
 }
