@@ -8,5 +8,5 @@ import com.ll.quizzle.domain.member.entity.Member;
 import com.ll.quizzle.domain.system.entity.RoleChangeHistory;
 
 public interface RoleChangeHistoryRepository extends JpaRepository<RoleChangeHistory, Long> {
-	Optional<RoleChangeHistory> findTopByMemberOrderByCreatedAtDesc(Member member);
+	Optional<RoleChangeHistory> findTopByMemberOrderByCreateDateDesc(Member member);
 }

@@ -73,7 +73,7 @@ public class SystemServiceTest {
 		assertThat(member.getRole()).isEqualTo(Role.ADMIN);
 
 		RoleChangeHistory history = roleChangeHistoryRepository
-			.findTopByMemberOrderByCreatedAtDesc(member)
+			.findTopByMemberOrderByCreateDateDesc(member)
 			.orElseThrow();
 		assertThat(history.getNewRole()).isEqualTo(Role.ADMIN);
 	}
@@ -99,8 +99,8 @@ public class SystemServiceTest {
 		assertThat(result.isSuccess()).isTrue();
 		assertThat(member.getRole()).isEqualTo(Role.MEMBER);
 
-		RoleChangeHistory history = roleChangeHistoryRepository
-			.findTopByMemberOrderByCreatedAtDesc(member)
+		var history = roleChangeHistoryRepository
+			.findTopByMemberOrderByCreateDateDesc(member)
 			.orElseThrow();
 		assertThat(history.getNewRole()).isEqualTo(Role.MEMBER);
 	}

@@ -2,7 +2,7 @@ package com.ll.quizzle.domain.system.entity;
 
 import com.ll.quizzle.domain.member.entity.Member;
 import com.ll.quizzle.domain.member.type.Role;
-import com.ll.quizzle.global.jpa.entity.BaseEntity;
+import com.ll.quizzle.global.jpa.entity.BaseTime;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -19,7 +19,7 @@ import lombok.NoArgsConstructor;
 @Entity
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class RoleChangeHistory extends BaseEntity {
+public class RoleChangeHistory extends BaseTime {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "member_id", nullable = false)
     private Member member; // 권한이 바뀐 대상
