@@ -2,6 +2,7 @@ package com.ll.quizzle.domain.room.service;
 
 import com.ll.quizzle.domain.member.entity.Member;
 import com.ll.quizzle.domain.member.repository.MemberRepository;
+import com.ll.quizzle.domain.quiz.service.QuizParticipantService;
 import com.ll.quizzle.domain.room.dto.request.RoomCreateRequest;
 import com.ll.quizzle.domain.room.dto.response.RoomResponse;
 import com.ll.quizzle.domain.room.entity.Room;
@@ -31,7 +32,9 @@ public class RoomService {
     private final MemberRepository memberRepository;
     private final MessageServiceFactory messageServiceFactory;
     private final RoomBlacklistService blacklistService;
-    
+    private final QuizParticipantService quizParticipantService;
+
+
     @Transactional
     public RoomResponse createRoom(Long ownerId, RoomCreateRequest request) {
         Member owner = memberRepository.findById(ownerId)
@@ -77,7 +80,9 @@ public class RoomService {
         
         if (!room.hasPlayer(memberId)) {
             room.addPlayer(memberId);
-            
+
+            quizParticipantService.registerParticipant(room.getId().toString(), memberId.toString());
+
             MessageService messageService = messageServiceFactory.getRoomService();
             String nickName = memberRepository.findById(memberId)
                     .map(Member::getNickname)

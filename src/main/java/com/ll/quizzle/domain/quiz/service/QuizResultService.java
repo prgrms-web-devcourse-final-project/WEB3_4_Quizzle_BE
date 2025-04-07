@@ -78,6 +78,8 @@ public class QuizResultService {
         if (submissions != null) {
             for (Object submission : submissions) {
                 String[] tokens = submission.toString().split(":");
+                // 유효한 제출 문자열 형식은 " 질문ID:답변:상태"
+                // token[0] : 질문ID , token[1] : 제출한 답 , token[2] : 제출한 상태 ( correct)
                 if (tokens.length == 3 && "correct".equals(tokens[2])) {
                     correctCount++;
                 }
