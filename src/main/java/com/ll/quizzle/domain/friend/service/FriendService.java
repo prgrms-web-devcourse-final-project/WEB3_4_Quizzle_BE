@@ -75,7 +75,7 @@ public class FriendService {
 
     public List<FriendOfferListResponse> getFriendOfferList(long actorId) {
         Member member = getMemberById(actorId);
-        List<FriendOffer> friendOfferList = friendOfferRepository.findAllByToMember(member);
+        List<FriendOffer> friendOfferList = friendOfferRepository.findAllByToMemberOrderByCreateDateAsc(member);
 
         return friendOfferList.stream()
                 .map(FriendOfferListResponse::from)
@@ -84,7 +84,7 @@ public class FriendService {
 
     public List<FriendListResponse> getFriendList(long actorId) {
         Member member = getMemberById(actorId);
-        List<Friend> friendList = friendRepository.findAllByMember(member);
+        List<Friend> friendList = friendRepository.findAllByMemberOrderByFriendNicknameAsc(member);
 
         return friendList.stream()
                 .map(FriendListResponse::from)

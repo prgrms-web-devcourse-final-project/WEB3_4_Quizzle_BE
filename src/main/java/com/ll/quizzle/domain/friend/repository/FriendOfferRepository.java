@@ -12,5 +12,5 @@ public interface FriendOfferRepository extends JpaRepository<FriendOffer, Long> 
 
     Optional<FriendOffer> findByFromMemberAndToMember(Member fromMember, Member toMember);
 
-    List<FriendOffer> findAllByToMember(Member member);
+    List<FriendOffer> findAllByToMemberOrderByCreateDateAsc(Member member);
 }

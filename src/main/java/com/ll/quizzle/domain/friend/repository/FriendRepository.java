@@ -10,7 +10,7 @@ import java.util.Optional;
 public interface FriendRepository extends JpaRepository<Friend, Long> {
     boolean existsByMemberAndFriend(Member member, Member friend);
     
-    List<Friend> findAllByMember(Member member);
+    List<Friend> findAllByMemberOrderByFriendNicknameAsc(Member member);
 
     Optional<Friend> findByMemberAndFriend(Member member, Member friend);
 }
