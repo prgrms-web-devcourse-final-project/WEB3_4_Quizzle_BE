@@ -46,6 +46,7 @@ public enum ErrorCode {
 	WEBSOCKET_SENDER_NAME_REQUIRED(HttpStatus.BAD_REQUEST, "발신자 이름은 필수입니다."),
 	WEBSOCKET_ROOM_ID_REQUIRED(HttpStatus.BAD_REQUEST, "방 ID는 필수입니다."),
 	WEBSOCKET_TIMESTAMP_INVALID(HttpStatus.BAD_REQUEST, "유효하지 않은 타임스탬프입니다."),
+	INVALID_READY_MESSAGE_TYPE(HttpStatus.BAD_REQUEST, "준비 상태 메시지는 READY 또는 UNREADY 타입만 가능합니다."),
 
 	// GameRoom
 	ROOM_NOT_FOUND(HttpStatus.NOT_FOUND, "존재하지 않는 방입니다."),
