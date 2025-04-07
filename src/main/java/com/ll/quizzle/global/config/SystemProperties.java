@@ -15,6 +15,6 @@ import lombok.Setter;
 public class SystemProperties {
 	private String systemEmail;
 	private String systemPasswordHash;
+	private String secondaryPasswordHash;
 	private List<String> allowedOrigins;
-	private List<String> allowedIps;
 }

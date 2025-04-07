@@ -24,6 +24,7 @@ public class RoleChangeHistory extends BaseTime {
     @JoinColumn(name = "member_id", nullable = false)
     private Member member; // 권한이 바뀐 대상
 
+    @Column(nullable = false)
     private String changedBy;
     
     @Enumerated(EnumType.STRING)
@@ -36,16 +37,19 @@ public class RoleChangeHistory extends BaseTime {
 
     @Column(length = 500)
     private String reason;
-    private String ipAddress;
 
     @Builder
-    public RoleChangeHistory(Member member, String changedBy, Role previousRole, Role newRole, String reason,
-        String ipAddress) {
+    public RoleChangeHistory(
+        Member member,
+        String changedBy,
+        Role previousRole,
+        Role newRole,
+        String reason
+    ) {
         this.member = member;
         this.changedBy = changedBy;
         this.previousRole = previousRole;
         this.newRole = newRole;
         this.reason = reason;
-        this.ipAddress = ipAddress;
     }
 }

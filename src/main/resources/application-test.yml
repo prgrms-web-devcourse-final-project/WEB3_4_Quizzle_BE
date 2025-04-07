@@ -44,6 +44,7 @@ custom:
       - http://127.0.0.1:*
 
 system:
-  system-email: ${SYSTEM_USERNAME}
-  system-password-hash: ${SYSTEM_PASSWORD_HASH}
+  systemEmail: system@quizzle.com
+  systemPasswordHash: $2a$10$yNOvzUXqY3HzYzQk1QbZBeYqeZMaGGZ3h4M4YBxzwHwMAQVbDXcXi
+  secondaryPasswordHash: $2a$10$yNOvzUXqY3HzYzQk1QbZBeYqeZMaGGZ3h4M4YBxzwHwMAQVbDXcXi
 

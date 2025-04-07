@@ -64,8 +64,9 @@ public class BaseInitData {
         }
 
         Member testAdmin = Member.create("admin", "admin@quizzle.com");
+        testAdmin.changeRole(Role.ADMIN);
+
         Member testMember = Member.create("member", "member@quizzle.com");
-        testMember.changeRole(Role.ADMIN);
 
         OAuth testAdminOauth = OAuth.create(testAdmin, "kakao", "51");
         OAuth testMemberOauth2 = OAuth.create(testMember, "google", "52");
