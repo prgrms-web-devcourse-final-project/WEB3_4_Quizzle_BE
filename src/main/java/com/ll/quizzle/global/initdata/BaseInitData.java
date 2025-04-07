@@ -63,6 +63,10 @@ public class BaseInitData {
             return;
         }
 
+        if (memberRepository.findByEmail("member@quizzle.com").isPresent()) {
+            return;
+        }
+
         Member testAdmin = Member.create("admin", "admin@quizzle.com");
         testAdmin.changeRole(Role.ADMIN);
 
