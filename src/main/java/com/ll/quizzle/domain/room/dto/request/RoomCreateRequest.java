@@ -21,7 +21,7 @@ public record RoomCreateRequest(
         if (title != null && title.length() > 30) {
             ErrorCode.ROOM_TITLE_TOO_LONG.throwServiceException();
         }
-        if (capacity < 2 || capacity > 8) {
+        if (capacity < 1 || capacity > 8) {
             ErrorCode.ROOM_CAPACITY_INVALID.throwServiceException();
         }
         if (difficulty == null) {

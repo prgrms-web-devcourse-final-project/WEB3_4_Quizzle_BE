@@ -1,94 +1,34 @@
 package com.ll.quizzle.global.socket.session;
 
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Service;
-
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.BiConsumer;
+
+import com.ll.quizzle.global.socket.core.SessionInfo;
+
+/**
+ * 기존 인메모리 방식의 세션 관리 방식의 세션 공유 문제를 해결하기 위해
+ * Redis 방식을 도입하면서 인터페이스를 분리, 추후 확장성도 고려
+ */
+public interface WebSocketSessionManager {
 
 
-@Slf4j
-@Service
-@RequiredArgsConstructor
-public class WebSocketSessionManager {
-
-    private final Map<String, Map<String, SessionInfo>> activeUserSessions = new ConcurrentHashMap<>();
+    void registerSession(String email, String sessionId, String accessToken, Long expiryTime);
 
 
-    public void registerSession(String email, String sessionId, String accessToken, Long expiryTime) {
-        Map<String, SessionInfo> sessions = activeUserSessions.computeIfAbsent(email, k -> new ConcurrentHashMap<>());
-        sessions.put(sessionId, new SessionInfo(accessToken, expiryTime, sessionId));
-        log.debug("세션 등록: 사용자={}, 세션={}", email, sessionId);
-    }
-
- 
-    public void removeSession(String email, String sessionId) {
-        Map<String, SessionInfo> sessions = activeUserSessions.get(email);
-        if (sessions != null) {
-            sessions.remove(sessionId);
-            log.debug("세션 제거: 사용자={}, 세션={}", email, sessionId);
-            
-            if (sessions.isEmpty()) {
-                activeUserSessions.remove(email);
-                log.debug("사용자 세션 항목 제거: 사용자={}", email);
-            }
-        }
-    }
+    void removeSession(String email, String sessionId);
 
 
-    public boolean isSessionValid(String email, String sessionId) {
-        Map<String, SessionInfo> sessions = activeUserSessions.get(email);
-        if (sessions == null) return false;
-        
-        SessionInfo sessionInfo = sessions.get(sessionId);
-        if (sessionInfo == null) return false;
-        
-        return System.currentTimeMillis() < sessionInfo.getExpiryTime();
-    }
+    boolean isSessionValid(String email, String sessionId);
 
 
-    public void removeExpiredSessions(long currentTime, ExpiredSessionCallback expiredSessionCallback) {
-        activeUserSessions.forEach((email, sessions) -> {
-            sessions.entrySet().removeIf(entry -> {
-                SessionInfo sessionInfo = entry.getValue();
-                if (sessionInfo.getExpiryTime() < currentTime) {
-                    log.debug("토큰 만료 감지 - 사용자: {}, 세션: {}", email, sessionInfo.getSessionId());
-                    
-                    if (expiredSessionCallback != null) {
-                        expiredSessionCallback.onSessionExpired(email, sessionInfo);
-                    }
-                    
-                    return true;
-                }
-                return false;
-            });
-            
-            if (sessions.isEmpty()) {
-                activeUserSessions.remove(email);
-            }
-        });
-    }
+    void removeExpiredSessions(long currentTime, BiConsumer<String, SessionInfo> expiredSessionCallback);
 
 
-    public Map<String, Map<String, SessionInfo>> getActiveUserSessions() {
-        return activeUserSessions;
-    }
+    Map<String, Map<String, SessionInfo>> getActiveUserSessions();
+    
+    String getSessionToTerminate(String email, String sessionId);
+    
+    int markOtherSessionsForTermination(String email, String sessionToKeep);
 
-
-    @FunctionalInterface
-    public interface ExpiredSessionCallback {
-        void onSessionExpired(String email, SessionInfo sessionInfo);
-    }
-
-
-    @Getter
-    @AllArgsConstructor
-    public static class SessionInfo {
-        private final String accessToken;
-        private final long expiryTime;
-        private final String sessionId;
-    }
+    boolean refreshSession(String email, String sessionId);
 } 
