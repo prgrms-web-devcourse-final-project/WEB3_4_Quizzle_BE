@@ -57,7 +57,7 @@ public class SecurityConfig {
                                 "/api/*/oauth2/callback",
                                 "/error",
                                 "/favicon.ico",
-                                "/api/v1/quiz/**"    // 퀴즈 관련 API는 인증 없이 접근 허용
+                                "/api/v1/quiz/**"   // 퀴즈 관련 API는 인증 없이 접근 허용
 
                         ).permitAll()
                         .requestMatchers(

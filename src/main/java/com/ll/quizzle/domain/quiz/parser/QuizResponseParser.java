@@ -26,27 +26,38 @@ public class QuizResponseParser {
             JsonNode root = objectMapper.readTree(responseBody);
             String content = root.path("choices").get(0).path("message").path("content").asText();
 
-            StringBuilder quizText = new StringBuilder();
+            Map<Integer, String> questionMap = new LinkedHashMap<>();
             Map<Integer, String> answerMap = new LinkedHashMap<>();
             int currentQuestion = 0;
+            StringBuilder currentQuestionText = new StringBuilder();
 
             for (String line : content.split("\\r?\\n")) {
                 Matcher qm = QUESTION_PATTERN.matcher(line.trim());
                 if (qm.find()) {
+                    // 이전 질문이 있다면 저장
+                    if (currentQuestion != 0) {
+                        questionMap.put(currentQuestion, currentQuestionText.toString().trim());
+                    }
                     currentQuestion = Integer.parseInt(qm.group(1));
-                    quizText.append(line).append("\n");
+                    currentQuestionText = new StringBuilder();
+                    String questionLine = line.replaceFirst("^\\d+\\.\\s*", "");
+                    currentQuestionText.append(questionLine).append("\n");
                     continue;
                 }
                 Matcher am = ANSWER_PATTERN.matcher(line.trim());
                 if (am.find() && currentQuestion > 0) {
                     answerMap.put(currentQuestion, am.group(1).toLowerCase());
-                    quizText.append(line).append("\n");
                     continue;
                 }
-                quizText.append(line).append("\n");
+                if (currentQuestion != 0) {
+                    currentQuestionText.append(line).append("\n");
+                }
+            }
+            if (currentQuestion != 0) {
+                questionMap.put(currentQuestion, currentQuestionText.toString().trim());
             }
 
-            return new QuizGenerationResponse(quizText.toString().trim(), answerMap);
+            return new QuizGenerationResponse(questionMap, answerMap);
         } catch (IOException e) {
             ErrorCode.INTERNAL_SERVER_ERROR.throwServiceException(e);
             return null; // Unreachable
