@@ -1,8 +1,9 @@
 package com.ll.quizzle.global.socket.session;
 
-import com.ll.quizzle.global.socket.core.SessionInfo;
 import java.util.Map;
 import java.util.function.BiConsumer;
+
+import com.ll.quizzle.global.socket.core.SessionInfo;
 
 /**
  * 기존 인메모리 방식의 세션 관리 방식의 세션 공유 문제를 해결하기 위해
@@ -24,4 +25,8 @@ public interface WebSocketSessionManager {
 
 
     Map<String, Map<String, SessionInfo>> getActiveUserSessions();
+    
+    String getSessionToTerminate(String email, String sessionId);
+    
+    int markOtherSessionsForTermination(String email, String sessionToKeep);
 } 
