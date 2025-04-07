@@ -4,7 +4,6 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
-import io.netty.util.internal.ConcurrentSet;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
 import com.ll.quizzle.domain.member.entity.Member;
@@ -13,9 +12,11 @@ import com.ll.quizzle.domain.room.type.Difficulty;
 import com.ll.quizzle.domain.room.type.MainCategory;
 import com.ll.quizzle.domain.room.type.RoomStatus;
 import com.ll.quizzle.domain.room.type.SubCategory;
+import static com.ll.quizzle.global.exceptions.ErrorCode.MIN_PLAYER_COUNT_NOT_MET;
+import static com.ll.quizzle.global.exceptions.ErrorCode.NOT_ALL_PLAYERS_READY;
+import static com.ll.quizzle.global.exceptions.ErrorCode.NOT_ROOM_OWNER;
+import static com.ll.quizzle.global.exceptions.ErrorCode.PLAYER_LEFT_DURING_START;
 import com.ll.quizzle.global.jpa.entity.BaseTime;
-import com.ll.quizzle.global.exceptions.ServiceException;
-import static com.ll.quizzle.global.exceptions.ErrorCode.*;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.CollectionTable;
@@ -183,6 +184,28 @@ public class Room extends BaseTime {
         if (!isAllPlayersReady()) {
             throw NOT_ALL_PLAYERS_READY.throwServiceException();
         }
+
+        /**
+         * 기존에 플레이어가 방을 떠나거나 연결이 끊기면 자동으로 처리를 해주긴 하지만,
+         * 동시성 문제로 readyPlayers 에서는 제거되지 않고 players 에만 남아있을 수 있기에
+         * 게임이 시작될 때 중복된 방어 코드를 추가하여 사용자 경험을 향상시키는 목적
+         */
+        Set<Long> currentPlayers = new HashSet<>(this.players);
+        Set<Long> invalidPlayers = new HashSet<>();
+        
+        for (Long readyPlayerId : this.readyPlayers) {
+            if (!currentPlayers.contains(readyPlayerId)) {
+                invalidPlayers.add(readyPlayerId);
+            }
+        }
+        
+        if (!invalidPlayers.isEmpty()) {
+            for (Long invalidPlayer : invalidPlayers) {
+                this.readyPlayers.remove(invalidPlayer);
+            }
+            
+            throw PLAYER_LEFT_DURING_START.throwServiceException();
+        }
         
         this.status = RoomStatus.IN_GAME;
     }
@@ -210,3 +233,4 @@ public class Room extends BaseTime {
         readyPlayers.remove(newOwner.getId());
     }
 }
+
