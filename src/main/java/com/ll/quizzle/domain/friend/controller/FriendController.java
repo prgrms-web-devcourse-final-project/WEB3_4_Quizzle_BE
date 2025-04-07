@@ -2,7 +2,7 @@ package com.ll.quizzle.domain.friend.controller;
 
 import com.ll.quizzle.domain.friend.dto.response.FriendListResponse;
 import com.ll.quizzle.domain.friend.dto.response.FriendOfferResponse;
-import com.ll.quizzle.domain.friend.dto.response.FriendRequestListResponse;
+import com.ll.quizzle.domain.friend.dto.response.FriendOfferListResponse;
 import com.ll.quizzle.domain.friend.dto.response.FriendResponse;
 import com.ll.quizzle.domain.friend.service.FriendService;
 import com.ll.quizzle.domain.friend.type.FriendRequestStatus;
@@ -51,10 +51,10 @@ public class FriendController {
 
     @GetMapping("/requests")
     @Operation(summary = "친구 요청 목록", description = "내가 받은 친구 요청 목록을 조회합니다.")
-    public RsData<List<FriendRequestListResponse>> getFriendRequestList() {
+    public RsData<List<FriendOfferListResponse>> getFriendRequestList() {
         Member actor = rq.getActor();
-        List<FriendRequestListResponse> friendRequestListResponse = friendService.getFriendRequestList(actor.getId());
-        return RsData.success(HttpStatus.OK, friendRequestListResponse);
+        List<FriendOfferListResponse> friendOfferListResponse = friendService.getFriendOfferList(actor.getId());
+        return RsData.success(HttpStatus.OK, friendOfferListResponse);
     }
 
     @GetMapping

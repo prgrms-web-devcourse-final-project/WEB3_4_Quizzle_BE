@@ -2,7 +2,7 @@ package com.ll.quizzle.domain.friend.service;
 
 import com.ll.quizzle.domain.friend.dto.response.FriendListResponse;
 import com.ll.quizzle.domain.friend.dto.response.FriendOfferResponse;
-import com.ll.quizzle.domain.friend.dto.response.FriendRequestListResponse;
+import com.ll.quizzle.domain.friend.dto.response.FriendOfferListResponse;
 import com.ll.quizzle.domain.friend.dto.response.FriendResponse;
 import com.ll.quizzle.domain.friend.entity.Friend;
 import com.ll.quizzle.domain.friend.entity.FriendOffer;
@@ -73,12 +73,12 @@ public class FriendService {
         return FriendOfferResponse.from(friendOffer);
     }
 
-    public List<FriendRequestListResponse> getFriendRequestList(long actorId) {
+    public List<FriendOfferListResponse> getFriendOfferList(long actorId) {
         Member member = getMemberById(actorId);
         List<FriendOffer> friendOfferList = friendOfferRepository.findAllByToMember(member);
 
         return friendOfferList.stream()
-                .map(FriendRequestListResponse::from)
+                .map(FriendOfferListResponse::from)
                 .toList();
     }
 
@@ -103,7 +103,7 @@ public class FriendService {
 
         // 친구 삭제
         Friend friendAtoB = getFriendRelation(member, friend);
-        Friend friendBtoA = getFriendRelation(friend, friend);
+        Friend friendBtoA = getFriendRelation(friend, member);
 
         friendRepository.delete(friendAtoB);
         friendRepository.delete(friendBtoA);
