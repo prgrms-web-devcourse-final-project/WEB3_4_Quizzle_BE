@@ -92,18 +92,22 @@
   content?: string,
 
   data?: string,  // id,name,isReady,isOwner 포함
+[
   {
     "id": "1",
     "name": "홍길동",
     "isReady": false,
-    "isOwner": true
+    "isOwner": true,
+    "isSubmitted": false
   },
   {
     "id": "2",
     "name": "김철수",
     "isReady": true,
-    "isOwner": false
-  },
+    "isOwner": false,
+    "isSubmitted": true
+  }
+]
   ...
 
   timestamp: number,
