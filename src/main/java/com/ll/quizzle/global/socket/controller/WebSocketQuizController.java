@@ -34,7 +34,6 @@ public class WebSocketQuizController {
         log.debug("퀴즈 제출 요청 수신 - quizId: {}, 전송자: {}, 요청 내용: {}",
                 quizId, senderId, submitRequest);
 
-        // 제출 처리를 서비스로 위임하고, WebSocket 전용 응답 DTO를 반환받음.
         WebSocketQuizSubmitResponse response = quizSubmissionService.submitAnswer(
                 quizId,
                 senderId,

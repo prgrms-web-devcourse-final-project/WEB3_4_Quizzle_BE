@@ -86,7 +86,6 @@ public class RedisQuizSubmissionService {
         String resultMessage = isCorrect ? "정답입니다." : "오답입니다.";
         long timestamp = System.currentTimeMillis();
 
-        // 실제 회원의 닉네임을 조회 (memberId를 Long으로 변환하여 조회)
         String nickname = memberService.findById(Long.parseLong(memberId))
                 .map(Member::getNickname)
                 .orElse(memberId);
