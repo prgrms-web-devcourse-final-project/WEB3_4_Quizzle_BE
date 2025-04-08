@@ -8,8 +8,7 @@ import com.ll.quizzle.domain.member.entity.Member;
 
 public interface MemberRepository extends JpaRepository<Member, Long> {
     Optional<Member> findByEmail(String memberEmail);
-
-    Optional<Member> findByNickname(String nickname);
+     Optional<Member> findById(Long id);
 
     boolean existsByNickname(String nickname);
 }
