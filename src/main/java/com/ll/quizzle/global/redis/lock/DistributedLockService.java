@@ -9,7 +9,7 @@ public interface DistributedLockService {
     /**
      * 분산 락 획득
      */
-    boolean acquireLock(String key, String value, long waitTime, TimeUnit timeUnit);
+    boolean acquireLock(String key, String value, long waitTime, long leaseTime, TimeUnit timeUnit);
     /**
      * 분산 락 해제
      */
