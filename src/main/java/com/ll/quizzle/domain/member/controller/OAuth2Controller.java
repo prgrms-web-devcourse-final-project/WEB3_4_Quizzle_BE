@@ -36,4 +36,15 @@ public class OAuth2Controller {
     ) {
         return oAuth2Service.OAuthInfoToResponseData(accessToken, refreshToken, status);
     }
+
+    @GetMapping("/no-use")
+    @Operation(summary = "소셜로그인 방법 (문서화를 위한, 사용하지 않는 api입니다.)", description = """
+            localhost:8080/oauth2/authorization/{provider} \n
+            provider : kakao, google \n
+            카카오, 구글 로그인 주소입니다.
+            """)
+    public void noUse() {
+        // 이 API는 사용되지 않음
+        // 실제로는 사용되지 않지만, Swagger 문서화 용도로 남겨둡니다.
+    }
 }
