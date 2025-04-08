@@ -1,13 +1,14 @@
 package com.ll.quizzle.global.redis.lock;
 
 import java.lang.reflect.Method;
-import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.reflect.MethodSignature;
+import org.redisson.api.RLock;
+import org.redisson.api.RedissonClient;
 import org.springframework.core.annotation.Order;
 import org.springframework.expression.ExpressionParser;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
@@ -26,7 +27,7 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class DistributedLockAspect {
     
-    private final DistributedLockService redisLockService;
+    private final RedissonClient redissonClient;
     private final ExpressionParser parser = new SpelExpressionParser();
     
     @Around("@annotation(com.ll.quizzle.global.redis.lock.DistributedLock)")
@@ -40,12 +41,13 @@ public class DistributedLockAspect {
         long waitTime = distributedLock.waitTime();
         
         String lockKey = parseLockKey(rawKey, joinPoint);
-        String lockValue = UUID.randomUUID().toString();
         
+        RLock lock = redissonClient.getLock(lockKey);
         boolean locked = false;
+        
         try {
             log.debug("분산 락 획득 시도: {}, 대기시간: {}ms, 유효기간: {}ms", lockKey, waitTime, leaseTime);
-            locked = redisLockService.acquireLock(lockKey, lockValue, waitTime, leaseTime, TimeUnit.MILLISECONDS);
+            locked = lock.tryLock(waitTime, leaseTime, TimeUnit.MILLISECONDS);
             
             if (!locked) {
                 log.debug("분산 락 획득 실패: {}", lockKey);
@@ -56,12 +58,17 @@ public class DistributedLockAspect {
             return joinPoint.proceed();
         } finally {
             if (locked) {
-                redisLockService.releaseLock(lockKey, lockValue);
-                log.debug("분산 락 해제: {}", lockKey);
+                try {
+                    lock.unlock();
+                    log.debug("분산 락 해제: {}", lockKey);
+                } catch (IllegalMonitorStateException e) {
+                    log.debug("분산 락 해제 실패 (이미 해제됨): {}, {}", lockKey, e.getMessage());
+                }
             }
         }
     }
     
+
     private String parseLockKey(String rawKey, ProceedingJoinPoint joinPoint) {
         MethodSignature signature = (MethodSignature) joinPoint.getSignature();
         String[] parameterNames = signature.getParameterNames();
