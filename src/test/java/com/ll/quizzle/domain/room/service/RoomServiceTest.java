@@ -346,7 +346,7 @@ class RoomServiceTest {
         // then
         verify(roomRepository).findById(1L);
         verify(testRoom).isOwner(1L);
-        verify(testRoom).startGame();
+        verify(testRoom).startGame(1L);
         verify(messageService).send(anyString(), any());
     }
     
@@ -363,7 +363,7 @@ class RoomServiceTest {
         
         verify(roomRepository).findById(1L);
         verify(testRoom).isOwner(2L);
-        verify(testRoom, never()).startGame();
+        verify(testRoom, never()).startGame(anyLong());
     }
     
     @Test
@@ -380,7 +380,7 @@ class RoomServiceTest {
         
         verify(roomRepository).findById(1L);
         verify(testRoom).isOwner(1L);
-        verify(testRoom, never()).startGame();
+        verify(testRoom, never()).startGame(anyLong());
     }
     
     @Test
