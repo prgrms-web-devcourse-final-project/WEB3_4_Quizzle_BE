@@ -1,30 +1,33 @@
 package com.ll.quizzle.global.socket;
 
-import com.ll.quizzle.global.socket.session.WebSocketSessionManager;
-import com.ll.quizzle.global.socket.session.WebSocketSessionManager.ExpiredSessionCallback;
-import com.ll.quizzle.global.socket.session.WebSocketSessionManager.SessionInfo;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.BiConsumer;
+
+import static org.assertj.core.api.Assertions.assertThat;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import org.mockito.Mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.context.ActiveProfiles;
 
-import java.util.Map;
-import java.util.concurrent.atomic.AtomicBoolean;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.*;
+import com.ll.quizzle.global.socket.core.SessionInfo;
+import com.ll.quizzle.global.socket.session.InMemoryWebSocketSessionManager;
 
 @ExtendWith(MockitoExtension.class)
 @ActiveProfiles("test")
 class WebSocketSessionManagerTest {
     
-    private WebSocketSessionManager sessionManager;
+    private InMemoryWebSocketSessionManager sessionManager;
     
     @Mock
-    private ExpiredSessionCallback callback;
+    private BiConsumer<String, SessionInfo> mockCallback;
     
     private final String testEmail = "test@example.com";
     private final String testSessionId = "test-session-id";
@@ -34,7 +37,7 @@ class WebSocketSessionManagerTest {
     
     @BeforeEach
     void setUp() {
-        sessionManager = new WebSocketSessionManager();
+        sessionManager = new InMemoryWebSocketSessionManager();
     }
     
     @Test
@@ -53,9 +56,9 @@ class WebSocketSessionManagerTest {
         assertThat(userSessions).containsKey(testSessionId);
         
         SessionInfo sessionInfo = userSessions.get(testSessionId);
-        assertThat(sessionInfo.getAccessToken()).isEqualTo(testAccessToken);
-        assertThat(sessionInfo.getExpiryTime()).isEqualTo(futureExpiryTime);
-        assertThat(sessionInfo.getSessionId()).isEqualTo(testSessionId);
+        assertThat(sessionInfo.accessToken()).isEqualTo(testAccessToken);
+        assertThat(sessionInfo.expiryTime()).isEqualTo(futureExpiryTime);
+        assertThat(sessionInfo.sessionId()).isEqualTo(testSessionId);
     }
     
     @Test
@@ -107,7 +110,7 @@ class WebSocketSessionManagerTest {
         sessionManager.registerSession(testEmail, validSessionId, testAccessToken, futureExpiryTime);
         
         // when
-        sessionManager.removeExpiredSessions(System.currentTimeMillis(), callback);
+        sessionManager.removeExpiredSessions(System.currentTimeMillis(), mockCallback);
         
         // then
         Map<String, Map<String, SessionInfo>> activeSessions = sessionManager.getActiveUserSessions();
@@ -118,7 +121,7 @@ class WebSocketSessionManagerTest {
         assertThat(userSessions).doesNotContainKey(testSessionId);
         assertThat(userSessions).containsKey(validSessionId);
         
-        verify(callback, times(1)).onSessionExpired(eq(testEmail), any(SessionInfo.class));
+        verify(mockCallback, times(1)).accept(eq(testEmail), any(SessionInfo.class));
     }
     
     @Test
@@ -128,9 +131,9 @@ class WebSocketSessionManagerTest {
         sessionManager.registerSession(testEmail, testSessionId, testAccessToken, pastExpiryTime);
         
         AtomicBoolean callbackExecuted = new AtomicBoolean(false);
-        ExpiredSessionCallback localCallback = (email, sessionInfo) -> {
+        BiConsumer<String, SessionInfo> localCallback = (email, sessionInfo) -> {
             assertThat(email).isEqualTo(testEmail);
-            assertThat(sessionInfo.getSessionId()).isEqualTo(testSessionId);
+            assertThat(sessionInfo.sessionId()).isEqualTo(testSessionId);
             callbackExecuted.set(true);
         };
         
@@ -157,5 +160,47 @@ class WebSocketSessionManagerTest {
         // then
         assertThat(activeSessions).hasSize(2);
         assertThat(activeSessions).containsKeys(testEmail, anotherEmail);
+    }
+    
+    @Test
+    @DisplayName("세션 갱신 테스트")
+    void testRefreshSession() {
+        // given
+        sessionManager.registerSession(testEmail, testSessionId, testAccessToken, pastExpiryTime);
+        
+        // when
+        boolean refreshed = sessionManager.refreshSession(testEmail, testSessionId);
+        
+        // then
+        assertThat(refreshed).isTrue();
+        
+        boolean isValid = sessionManager.isSessionValid(testEmail, testSessionId);
+        assertThat(isValid).isTrue();
+    }
+    
+    @Test
+    @DisplayName("다중 세션 종료 표시 테스트")
+    void testMarkOtherSessionsForTermination() {
+        // given
+        String sessionId1 = "session-1";
+        String sessionId2 = "session-2";
+        String sessionId3 = "session-3";
+        
+        sessionManager.registerSession(testEmail, sessionId1, testAccessToken, futureExpiryTime);
+        sessionManager.registerSession(testEmail, sessionId2, testAccessToken, futureExpiryTime);
+        sessionManager.registerSession(testEmail, sessionId3, testAccessToken, futureExpiryTime);
+        
+        // when
+        int markedCount = sessionManager.markOtherSessionsForTermination(testEmail, sessionId1);
+        
+        // then
+        assertThat(markedCount).isEqualTo(2);
+        
+        Map<String, Map<String, SessionInfo>> activeSessions = sessionManager.getActiveUserSessions();
+        Map<String, SessionInfo> userSessions = activeSessions.get(testEmail);
+        
+        assertThat(userSessions).containsKey(sessionId1);
+        assertThat(userSessions).doesNotContainKey(sessionId2);
+        assertThat(userSessions).doesNotContainKey(sessionId3);
     }
 } 

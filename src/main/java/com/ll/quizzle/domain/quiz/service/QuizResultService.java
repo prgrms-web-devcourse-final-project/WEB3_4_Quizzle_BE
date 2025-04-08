@@ -18,7 +18,7 @@ public class QuizResultService {
     }
 
     public List<QuizResultResponse> getQuizResults(String quizId) {
-        String pattern = String.format("quiz:%s:user:*:submissions", quizId);
+        String pattern = String.format("quiz:%s:memberId:*:submissions", quizId);
         Set<String> keys = redisTemplate.keys(pattern);
 
         List<QuizResultResponse> results = new ArrayList<>();

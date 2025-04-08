@@ -1,5 +1,7 @@
 package com.ll.quizzle.global.socket.service.quiz;
 
+import com.ll.quizzle.domain.member.entity.Member;
+import com.ll.quizzle.domain.member.service.MemberService;
 import com.ll.quizzle.global.socket.dto.response.WebSocketQuizSubmitResponse;
 import com.ll.quizzle.global.socket.type.RoomMessageType;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,8 +18,11 @@ public class RedisQuizSubmissionService {
     @Autowired
     private RedisTemplate<String, Object> redisTemplate;
 
+    // 실제 회원의 닉네임 조회를 위한 MemberService 주입
+    @Autowired
+    private MemberService memberService;
 
-    public WebSocketQuizSubmitResponse submitAnswer(String quizId, String userId, int questionNumber, String submittedAnswer) {
+    public WebSocketQuizSubmitResponse submitAnswer(String quizId, String memberId, int questionNumber, String submittedAnswer) {
         // 정답 검증
         String answerListKey = String.format("quiz:%s:answers", quizId);
         Long totalQuestions = redisTemplate.opsForList().size(answerListKey);
@@ -47,8 +52,8 @@ public class RedisQuizSubmissionService {
             throw new IllegalStateException("현재 활성화된 문제에 대해서만 답안을 제출할 수 있습니다.");
         }
 
-        //  중복 제출 방지
-        String submissionKey = String.format("quiz:%s:user:%s:submissions", quizId.trim(), userId.trim());
+        // 중복 제출 방지
+        String submissionKey = String.format("quiz:%s:memberId:%s:submissions", quizId.trim(), memberId.trim());
         if (redisTemplate.opsForList().range(submissionKey, 0, -1).stream()
                 .anyMatch(entry -> entry.toString().startsWith(questionNumber + ":"))) {
             throw new IllegalStateException("이미 해당 문제에 대해 제출하셨습니다.");
@@ -59,13 +64,13 @@ public class RedisQuizSubmissionService {
         redisTemplate.opsForList().rightPush(submissionKey, submissionEntry);
         redisTemplate.expire(submissionKey, QUIZ_TTL);
 
-        //  문제별 제출 상태 업데이트: 제출 Set에 등록
+        // 문제별 제출 상태 업데이트: 제출 Set에 등록
         String submittedSetKey = String.format("quiz:%s:submitted:%d", quizId, questionNumber);
-        Boolean alreadySubmitted = redisTemplate.opsForSet().isMember(submittedSetKey, userId);
+        Boolean alreadySubmitted = redisTemplate.opsForSet().isMember(submittedSetKey, memberId);
         if (Boolean.TRUE.equals(alreadySubmitted)) {
             throw new IllegalStateException("이미 제출하셨습니다.");
         }
-        redisTemplate.opsForSet().add(submittedSetKey, userId);
+        redisTemplate.opsForSet().add(submittedSetKey, memberId);
         redisTemplate.expire(submittedSetKey, QUIZ_TTL);
 
         // 모든 참가자 제출 여부 확인 후 이벤트 발행
@@ -81,15 +86,19 @@ public class RedisQuizSubmissionService {
         String resultMessage = isCorrect ? "정답입니다." : "오답입니다.";
         long timestamp = System.currentTimeMillis();
 
-        // WebSocket 전용 DTO 생성 (이제 기존 REST API용 DTO 대신 이 DTO를 사용)
+        // 실제 회원의 닉네임을 조회 (memberId를 Long으로 변환하여 조회)
+        String nickname = memberService.findById(Long.parseLong(memberId))
+                .map(Member::getNickname)
+                .orElse(memberId);
+
         return new WebSocketQuizSubmitResponse(
                 RoomMessageType.ANSWER_SUBMIT,
                 questionNumber,
                 isCorrect,
                 correctAnswer,
                 resultMessage,
-                userId,
-                userId,  // 필요에 따라 실제 사용자 이름으로 변경
+                memberId,     // 내부 식별자
+                nickname,     // 실제 닉네임을 보여줌
                 true,
                 timestamp,
                 quizId

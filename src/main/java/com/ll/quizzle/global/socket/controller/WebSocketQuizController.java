@@ -42,7 +42,6 @@ public class WebSocketQuizController {
                 submitRequest.submittedAnswer()
         );
 
-        // 구독 채널: /topic/quiz/{quizId}/updates
         messagingTemplate.convertAndSend("/topic/quiz/" + quizId + "/updates", response);
     }
 }
