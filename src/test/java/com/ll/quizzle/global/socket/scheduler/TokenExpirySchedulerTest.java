@@ -1,8 +1,8 @@
 package com.ll.quizzle.global.socket.scheduler;
 
+import com.ll.quizzle.global.socket.core.SessionInfo;
 import com.ll.quizzle.global.socket.service.WebSocketNotificationService;
 import com.ll.quizzle.global.socket.session.WebSocketSessionManager;
-import com.ll.quizzle.global.socket.session.WebSocketSessionManager.SessionInfo;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -15,9 +15,11 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.Instant;
+import java.util.function.BiConsumer;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -31,7 +33,7 @@ class TokenExpirySchedulerTest {
     private WebSocketNotificationService notificationService;
 
     @Captor
-    private ArgumentCaptor<WebSocketSessionManager.ExpiredSessionCallback> callbackCaptor;
+    private ArgumentCaptor<BiConsumer<String, SessionInfo>> callbackCaptor;
 
     private TokenExpiryScheduler tokenExpiryScheduler;
 
@@ -61,9 +63,9 @@ class TokenExpirySchedulerTest {
         final long expiryTime = Instant.now().minusSeconds(60).toEpochMilli();
 
         doAnswer(invocation -> {
-            WebSocketSessionManager.ExpiredSessionCallback callback = invocation.getArgument(1);
+            BiConsumer<String, SessionInfo> callback = invocation.getArgument(1);
             SessionInfo sessionInfo = new SessionInfo(testToken, expiryTime, testSessionId);
-            callback.onSessionExpired(testEmail, sessionInfo);
+            callback.accept(testEmail, sessionInfo);
             return null;
         }).when(sessionManager).removeExpiredSessions(anyLong(), any());
 
