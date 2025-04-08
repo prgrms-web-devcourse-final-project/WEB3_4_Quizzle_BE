@@ -7,6 +7,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BiConsumer;
 
+import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
 
 import com.ll.quizzle.global.socket.core.SessionInfo;
@@ -18,7 +19,7 @@ import lombok.extern.slf4j.Slf4j;
  * 기존 메모리 기반 WebSocket 세션 관리 구현체 (Redis 방식 도입 시 사용 안할 예정, 현재는 개발 테스트 용도)
  */
 @Slf4j
-@Service("inMemoryWebSocketSessionManager")
+@Component
 @RequiredArgsConstructor
 public class InMemoryWebSocketSessionManager implements WebSocketSessionManager {
 
