@@ -35,7 +35,6 @@ public class SystemController {
 	@Operation(summary = "system 계정 로그인", description = "최고 관리자(system)의 로그인 입니다.")
 	public RsData<SystemLoginResponse> login(@RequestBody SystemLoginRequest loginRequest) {
 		SystemLoginResponse loginResponse = systemService.authenticate(loginRequest);
-
 		return RsData.success(HttpStatus.OK, loginResponse);
 	}
 

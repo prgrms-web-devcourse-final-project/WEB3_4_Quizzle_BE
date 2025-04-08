@@ -20,7 +20,6 @@ import com.ll.quizzle.global.config.SystemProperties;
 import com.ll.quizzle.global.exceptions.ErrorCode;
 import com.ll.quizzle.global.jwt.dto.GeneratedToken;
 import com.ll.quizzle.global.jwt.dto.JwtProperties;
-import com.ll.quizzle.global.security.PasswordVerifier;
 import com.ll.quizzle.standard.util.CookieUtil;
 
 import jakarta.servlet.http.Cookie;
@@ -40,12 +39,11 @@ public class SystemService {
 	private final MemberRepository memberRepository;
 	private final RoleChangeHistoryRepository roleChangeHistoryRepository;
 	private final RefreshTokenService refreshTokenService;
-	private final PasswordVerifier passwordVerifier;
+	private final SystemVerifier passwordVerifier;
 
 	public SystemLoginResponse authenticate(SystemLoginRequest loginRequest) {
 		passwordVerifier.verifySystemEmail(loginRequest.systemEmail());
 		passwordVerifier.verifySystemPassword(loginRequest.systemPassword());
-		passwordVerifier.verifySecondaryPassword(loginRequest.secondaryPassword());
 
 		GeneratedToken tokenInfo = authTokenService.generateToken(loginRequest.systemEmail(), "ROLE_SYSTEM");
 

@@ -12,6 +12,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Component;
 
 import com.ll.quizzle.domain.system.dto.request.RoleChangeRequest;
+import com.ll.quizzle.domain.system.service.SystemVerifier;
 import com.ll.quizzle.global.config.SystemProperties;
 import com.ll.quizzle.global.exceptions.ServiceException;
 import com.ll.quizzle.global.security.annotation.RequireSecondaryPassword;
@@ -27,24 +28,27 @@ import lombok.extern.slf4j.Slf4j;
 public class SecondaryPasswordAspect {
 	private final SystemProperties systemProperties;
 	private final BCryptPasswordEncoder passwordEncoder;
+	private final SystemVerifier systemVerifier;
 
+	// @RequireSecondaryPassword 라는 커스텀 어노테이션이 붙은 메서드 실행 전후에 2차 비밀번호가 입력되었는지 확인
 	@Around("@annotation(requireSecondaryPassword)")
 	public Object validateSecondaryPassword(ProceedingJoinPoint joinPoint,
 		RequireSecondaryPassword requireSecondaryPassword) throws Throwable {
 
 		String secondaryPassword = extractSecondaryPasswordFromRequest(joinPoint);
-		if (secondaryPassword == null) {
-			throw new ServiceException(HttpStatus.BAD_REQUEST, "2차 비밀번호를 입력해주세요.");
-		}
+
+		// 2차 비밀번호를 입력하지 않았다면 예외 처리
+		systemVerifier.checkSecondaryPasswordPresence(secondaryPassword);
 
 		SecurityUser user = getCurrentUser();
-		if (isSystemAdmin(user)) {
-			validateSystemAdminPassword(secondaryPassword);
+		if (isSystem(user)) {
+			systemVerifier.verifySecondaryPassword(secondaryPassword);
 		}
 
 		return joinPoint.proceed();
 	}
 
+	// 현재 로그인된 사용자를 SecurityContext 에서 꺼내옴
 	private SecurityUser getCurrentUser() {
 		Authentication auth = SecurityContextHolder.getContext().getAuthentication();
 		if (auth == null || !(auth.getPrincipal() instanceof SecurityUser)) {
@@ -53,16 +57,12 @@ public class SecondaryPasswordAspect {
 		return (SecurityUser) auth.getPrincipal();
 	}
 
-	private boolean isSystemAdmin(SecurityUser user) {
+	// System 여부 확인
+	private boolean isSystem(SecurityUser user) {
 		return systemProperties.getSystemEmail().equals(user.getEmail());
 	}
 
-	private void validateSystemAdminPassword(String secondaryPassword) {
-		if (!passwordEncoder.matches(secondaryPassword, systemProperties.getSecondaryPasswordHash())) {
-			throw new ServiceException(HttpStatus.UNAUTHORIZED, "2차 비밀번호가 일치하지 않습니다.");
-		}
-	}
-
+	// 요청 객체애서 2차 비밀번호 값을 추출하는 매서드
 	private String extractSecondaryPasswordFromRequest(ProceedingJoinPoint joinPoint) {
 		return Stream.of(joinPoint.getArgs())
 			.filter(arg -> arg instanceof RoleChangeRequest)

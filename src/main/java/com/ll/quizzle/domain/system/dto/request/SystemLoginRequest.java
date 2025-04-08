@@ -2,14 +2,12 @@ package com.ll.quizzle.domain.system.dto.request;
 
 public record SystemLoginRequest(
 	String systemEmail,
-	String systemPassword,
-	String secondaryPassword
+	String systemPassword
 ) {
 	public static SystemLoginRequest of(
 		String systemEmail,
-		String systemPassword,
-		String secondaryPassword
+		String systemPassword
 	) {
-		return new SystemLoginRequest(systemEmail, systemPassword, secondaryPassword);
+		return new SystemLoginRequest(systemEmail, systemPassword);
 	}
 }

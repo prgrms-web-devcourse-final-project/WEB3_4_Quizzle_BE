@@ -53,8 +53,6 @@ public class SecurityConfig {
                         )
                 )
                 .authorizeHttpRequests(authorizeHttpRequests -> authorizeHttpRequests
-                    .requestMatchers("/api/v1/system/login").permitAll()
-                    .requestMatchers("/api/v1/system/**").hasRole("SYSTEM")
                     .requestMatchers(
                                 "/",
                                 "/h2-console/**",
@@ -63,7 +61,8 @@ public class SecurityConfig {
                                 "/api/*/oauth2/callback",
                                 "/error",
                                 "/favicon.ico",
-                                "/api/v1/quiz/**"    // 퀴즈 관련 API는 인증 없이 접근 허용
+                                "/api/v1/quiz/**",    // 퀴즈 관련 API는 인증 없이 접근 허용
+                                "/api/v1/system/login"
 
                         ).permitAll()
                         .requestMatchers(
@@ -73,7 +72,7 @@ public class SecurityConfig {
 
                         // 관리자 전용
                         .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
-                        .requestMatchers("/api/v1/**").authenticated()
+                        .requestMatchers("/api/v1/system/**").hasRole("SYSTEM")
 
                         // 애플리케이션에만 나머지 인증 요구
                         .requestMatchers("/api/v1/**").authenticated()
@@ -126,14 +125,7 @@ public class SecurityConfig {
         configuration.setAllowedHeaders(Arrays.asList("*"));
         configuration.setAllowCredentials(true);
 
-        CorsConfiguration systemConfiguration = new CorsConfiguration();
-        systemConfiguration.setAllowedOrigins(systemProperties.getAllowedOrigins());  // 시스템 관리자용 Origin만 허용
-        systemConfiguration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "HEAD", "PATCH"));
-        systemConfiguration.setAllowedHeaders(Arrays.asList("*"));
-        systemConfiguration.setAllowCredentials(true);
-
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/api/v1/system/**", systemConfiguration);
         source.registerCorsConfiguration("/**", configuration);
         return source;
     }

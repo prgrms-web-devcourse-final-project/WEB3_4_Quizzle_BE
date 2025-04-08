@@ -115,8 +115,7 @@ public class SystemControllerTest {
 		// Given
 		SystemLoginRequest loginRequest = new SystemLoginRequest(
 				systemProperties.getSystemEmail(),
-				"system1234",
-				"system5678");
+				"system1234");
 
 		// When & Then
 		mockMvc.perform(post("/api/v1/system/login")
@@ -135,8 +134,7 @@ public class SystemControllerTest {
 	void loginFail() throws Exception {
 		SystemLoginRequest loginRequest = new SystemLoginRequest(
 				"wrongemail@quizzle.com",
-				"system1234",
-				"system5678");
+				"system1234");
 
 		mockMvc.perform(post("/api/v1/system/login")
 				.contentType(MediaType.APPLICATION_JSON)
@@ -146,12 +144,11 @@ public class SystemControllerTest {
 	}
 
 	@Test
-	@DisplayName("로그인 실패 - 잘못된 2차 비밀번호")
+	@DisplayName("로그인 실패 - 잘못된 비밀번호")
 	void loginFailWithWrongSecondaryPassword() throws Exception {
 		SystemLoginRequest loginRequest = new SystemLoginRequest(
 				systemProperties.getSystemEmail(),
-				"system1234",
-				"wrongSecondaryPassword");
+				"system1234");
 
 		mockMvc.perform(post("/api/v1/system/login")
 				.contentType(MediaType.APPLICATION_JSON)
@@ -168,8 +165,7 @@ public class SystemControllerTest {
 		// Given
 		SystemLoginRequest loginRequest = new SystemLoginRequest(
 			SYSTEM_EMAIL,
-			SYSTEM_PASSWORD,
-			SECONDARY_PASSWORD
+			SYSTEM_PASSWORD
 		);
 
 		// 로그인 수행하고 쿠키 저장

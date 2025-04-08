@@ -66,25 +66,6 @@ public class RedisConfig {
     }
 
     /**
-     * 관리자 세션 전용 RedisTemplate
-     */
-    @Bean(name = "adminSessionRedisTemplate")
-    public RedisTemplate<String, Object> adminSessionRedisTemplate(RedisConnectionFactory connectionFactory) {
-        RedisTemplate<String, Object> template = new RedisTemplate<>();
-        template.setConnectionFactory(connectionFactory);
-
-        StringRedisSerializer stringSerializer = new StringRedisSerializer();
-        GenericJackson2JsonRedisSerializer jsonSerializer = new GenericJackson2JsonRedisSerializer();
-
-        template.setKeySerializer(stringSerializer);
-        template.setValueSerializer(jsonSerializer);
-        template.setHashKeySerializer(stringSerializer);
-        template.setHashValueSerializer(jsonSerializer);
-
-        return template;
-    }
-
-    /**
      * 관리자 세션 키 생성
      */
     public static String getAdminSessionKey(String sessionId) {
