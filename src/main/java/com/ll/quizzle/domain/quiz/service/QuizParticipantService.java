@@ -15,9 +15,10 @@ public class QuizParticipantService {
     @Autowired
     private RedisTemplate<String, String> redisTemplate;
 
-    public void registerParticipant(String quizId, String userId) {
+    public void registerParticipant(String quizId, Long memberId) {
         String participantsKey = String.format("quiz:%s:participants", quizId);
-        redisTemplate.opsForSet().add(participantsKey, userId);
+
+        redisTemplate.opsForSet().add(participantsKey, memberId.toString());
         redisTemplate.expire(participantsKey, QUIZ_TTL);
     }
 

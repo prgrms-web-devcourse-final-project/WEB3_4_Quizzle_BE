@@ -81,7 +81,7 @@ public class RoomService {
         if (!room.hasPlayer(memberId)) {
             room.addPlayer(memberId);
 
-            quizParticipantService.registerParticipant(room.getId().toString(), memberId.toString());
+            quizParticipantService.registerParticipant(room.getId().toString(), Long.valueOf(memberId));
 
             MessageService messageService = messageServiceFactory.getRoomService();
             String nickName = memberRepository.findById(memberId)
