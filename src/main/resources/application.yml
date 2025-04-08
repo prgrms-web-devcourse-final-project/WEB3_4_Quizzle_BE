@@ -51,7 +51,7 @@ app:
   oauth2:
     authorizedRedirectUris: "${custom.site.frontUrl}/oauth/callback"
   websocket:
-    use-distributed-sessions: false
+    use-distributed-sessions: true
 
 custom:
   site:

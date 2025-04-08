@@ -48,10 +48,14 @@ public class InMemoryWebSocketSessionManager implements WebSocketSessionManager 
     @Override
     public boolean isSessionValid(String email, String sessionId) {
         Map<String, SessionInfo> sessions = activeUserSessions.get(email);
-        if (sessions == null) return false;
+        if (sessions == null) {
+            return false;
+        }
         
         SessionInfo sessionInfo = sessions.get(sessionId);
-        if (sessionInfo == null) return false;
+        if (sessionInfo == null) {
+            return false;
+        }
         
         return System.currentTimeMillis() < sessionInfo.expiryTime();
     }
@@ -90,12 +94,9 @@ public class InMemoryWebSocketSessionManager implements WebSocketSessionManager 
         return result;
     }
 
-    /**
-     * InMemory 구현에서는 항상 null 을 반환 (Redis 구현에서만 사용 할 예정)
-     * 단일 서버에선 세션을 바로 관리할 수 있기 때문에 필요 없음
-     */
     @Override
     public String getSessionToTerminate(String email, String sessionId) {
+        // InMemory 구현에서는 종료 대상 세션을 관리하지 않음 (Redis 구현에서만 사용)
         return null;
     }
     
