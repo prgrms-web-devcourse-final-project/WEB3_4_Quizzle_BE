@@ -3,6 +3,7 @@ package com.ll.quizzle.global.socket.session;
 import com.ll.quizzle.global.socket.core.SessionInfo;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.annotation.Primary;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
@@ -16,6 +17,7 @@ import java.util.function.BiConsumer;
 /**
  * 분산 환경에서 세션 정보를 공유할 수 있도록 Redis 를 사용하여 세션 관리
  */
+@Primary
 @Slf4j
 @Service("redisWebSocketSessionManager")
 @RequiredArgsConstructor
