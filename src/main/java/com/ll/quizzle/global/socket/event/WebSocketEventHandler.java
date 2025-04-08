@@ -99,7 +99,7 @@ public class WebSocketEventHandler {
             }
 
             try {
-                roomService.handleDisconnect(memberId);
+//                roomService.handleDisconnect(memberId);
                 log.debug("방 연결 해제 처리 완료: 멤버ID={}", memberId);
             } catch (Exception e) {
                 log.error("방 연결 해제 처리 중 오류 발생: {}", e.getMessage(), e);
