@@ -5,7 +5,6 @@ import java.util.stream.Stream;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
-import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -14,7 +13,7 @@ import org.springframework.stereotype.Component;
 import com.ll.quizzle.domain.system.dto.request.RoleChangeRequest;
 import com.ll.quizzle.domain.system.service.SystemVerifier;
 import com.ll.quizzle.global.config.SystemProperties;
-import com.ll.quizzle.global.exceptions.ServiceException;
+import com.ll.quizzle.global.exceptions.ErrorCode;
 import com.ll.quizzle.global.security.annotation.RequireSecondaryPassword;
 import com.ll.quizzle.global.security.oauth2.dto.SecurityUser;
 
@@ -52,7 +51,7 @@ public class SecondaryPasswordAspect {
 	private SecurityUser getCurrentUser() {
 		Authentication auth = SecurityContextHolder.getContext().getAuthentication();
 		if (auth == null || !(auth.getPrincipal() instanceof SecurityUser)) {
-			throw new ServiceException(HttpStatus.UNAUTHORIZED, "인증이 필요합니다.");
+			ErrorCode.UNAUTHORIZED.throwServiceException();
 		}
 		return (SecurityUser) auth.getPrincipal();
 	}

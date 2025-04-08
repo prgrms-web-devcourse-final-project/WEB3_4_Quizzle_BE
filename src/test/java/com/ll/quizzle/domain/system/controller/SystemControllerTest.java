@@ -148,7 +148,7 @@ public class SystemControllerTest {
 	void loginFailWithWrongSecondaryPassword() throws Exception {
 		SystemLoginRequest loginRequest = new SystemLoginRequest(
 				systemProperties.getSystemEmail(),
-				"system1234");
+				"system1111");
 
 		mockMvc.perform(post("/api/v1/system/login")
 				.contentType(MediaType.APPLICATION_JSON)

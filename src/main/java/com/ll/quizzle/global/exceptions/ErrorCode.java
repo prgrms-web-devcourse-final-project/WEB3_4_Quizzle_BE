@@ -12,7 +12,6 @@ import lombok.extern.slf4j.Slf4j;
 public enum ErrorCode {
 
 	// system
-
 	SECONDARY_PASSWORD_REQUIRED(HttpStatus.BAD_REQUEST, "2차 비밀번호를 입력해주세요."),
 	SECONDARY_PASSWORD_INVALID(HttpStatus.UNAUTHORIZED, "2차 비밀번호가 일치하지 않습니다."),
 
