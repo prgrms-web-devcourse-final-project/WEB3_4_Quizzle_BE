@@ -95,7 +95,6 @@ public class RedisQuizSubmissionService {
                 questionNumber,
                 isCorrect,
                 correctAnswer,
-                resultMessage,
                 memberId,     // 내부 식별자
                 nickname,     // 실제 닉네임을 보여줌
                 true,
