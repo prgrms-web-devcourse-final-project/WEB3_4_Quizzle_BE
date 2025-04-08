@@ -3,6 +3,7 @@ package com.ll.quizzle.global.socket.interceptor;
 import java.security.Principal;
 import java.util.Map;
 
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.simp.stomp.StompCommand;
@@ -20,6 +21,7 @@ import static com.ll.quizzle.global.security.oauth2.dto.SecurityUser.of;
 import com.ll.quizzle.global.socket.security.WebSocketSecurityService;
 import com.ll.quizzle.global.socket.service.WebSocketNotificationService;
 import com.ll.quizzle.global.socket.session.WebSocketSessionManager;
+import com.ll.quizzle.global.socket.session.WebSocketSessionRegistry;
 
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
@@ -31,7 +33,7 @@ import lombok.extern.slf4j.Slf4j;
 public class StompChannelInterceptor implements ChannelInterceptor {
 
     private final MemberService memberService;
-    private final WebSocketSessionManager sessionManager;
+    private final WebSocketSessionRegistry sessionRegistry;
     private final WebSocketNotificationService notificationService;
     private final WebSocketSecurityService securityService;
 
@@ -84,7 +86,7 @@ public class StompChannelInterceptor implements ChannelInterceptor {
                 String stompSessionId = accessor.getSessionId();
                 log.debug("STOMP 세션 ID: {}, WebSocket 세션 ID: {}", stompSessionId, sessionId);
                 
-                sessionManager.registerSession(email, stompSessionId, accessToken, tokenExpiryTime);
+                sessionRegistry.getSessionManager().registerSession(email, stompSessionId, accessToken, tokenExpiryTime);
                 
                 log.debug("STOMP 연결 성공 - 사용자: {}", member.getEmail());
             } else {
@@ -94,7 +96,7 @@ public class StompChannelInterceptor implements ChannelInterceptor {
         else if (StompCommand.DISCONNECT.equals(accessor.getCommand())) {
             if (accessor.getUser() != null) {
                 String email = accessor.getUser().getName();
-                sessionManager.removeSession(email, accessor.getSessionId());
+                sessionRegistry.getSessionManager().removeSession(email, accessor.getSessionId());
                 log.debug("STOMP 연결 종료 - 사용자: {}", email);
             }
         }
@@ -109,14 +111,14 @@ public class StompChannelInterceptor implements ChannelInterceptor {
                 if (sessionAttributes != null && sessionAttributes.containsKey("email")) {
                     String email = (String) sessionAttributes.get("email");
                     
-                    if (!sessionManager.isSessionValid(email, sessionId)) {
+                    if (!sessionRegistry.getSessionManager().isSessionValid(email, sessionId)) {
                         log.debug("유효하지 않은 세션으로부터의 메시지: 닉네임={}, 이메일={}, 세션={}", 
                                   principalName, email, sessionId);
                         notificationService.sendTokenExpiredNotification(principalName);
                         return null;
                     }
                     
-                    boolean refreshed = sessionManager.refreshSession(email, sessionId);
+                    boolean refreshed = sessionRegistry.getSessionManager().refreshSession(email, sessionId);
                     
                     if (!refreshed) {
                         log.debug("세션 유효성 검사는 통과했으나 갱신 실패 - 데이터 불일치 감지: 사용자={}, 세션={}", 
