@@ -9,17 +9,11 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 public @interface DistributedLock {
     /**
-     * 락에 사용될 키 (SpEL 표현식 지원)
+     * SpEL 표현식으로 동적 키를 생성하는 값
      */
     String key();
-    
-    /**
-     * 락이 자동으로 해제되는 시간 (밀리초)
-     */
+
     long leaseTime() default 5000;
     
-    /**
-     * 락 획득 대기 시간 (밀리초)
-     */
     long waitTime() default 3000;
 } 
