@@ -7,6 +7,7 @@ import com.ll.quizzle.domain.member.service.MemberService;
 import com.ll.quizzle.global.exceptions.ServiceException;
 import com.ll.quizzle.global.response.RsData;
 import com.ll.quizzle.global.security.oauth2.dto.SecurityUser;
+import com.ll.quizzle.standard.util.CookieUtil;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.Cookie;
@@ -98,10 +99,14 @@ public class JwtAuthFilter extends OncePerRequestFilter implements Ordered {
                         RsData<String> refreshResult = memberService.refreshAccessToken(refreshToken);
                         if (refreshResult.isSuccess()) {
                             log.debug("새로운 Access Token 발급 성공");
-                            Cookie newAccessTokenCookie = new Cookie("access_token", refreshResult.getData());
-                            newAccessTokenCookie.setPath("/");
-                            newAccessTokenCookie.setHttpOnly(true);
-                            response.addCookie(newAccessTokenCookie);
+                            CookieUtil.addCookie(
+                                    response,
+                                    "access_token",
+                                    refreshResult.getData(),
+                                    86400,
+                                    true,
+                                    true
+                            );
 
                             String email = memberService.extractEmailIfValid(refreshResult.getData());
                             Member member = memberRepository.findByEmail(email)
