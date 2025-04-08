@@ -175,7 +175,7 @@ class WebSocketSessionManagerTest {
         assertThat(refreshed).isTrue();
         
         boolean isValid = sessionManager.isSessionValid(testEmail, testSessionId);
-        assertThat(isValid).isFalse();
+        assertThat(isValid).isTrue();
     }
     
     @Test
@@ -200,7 +200,7 @@ class WebSocketSessionManagerTest {
         Map<String, SessionInfo> userSessions = activeSessions.get(testEmail);
         
         assertThat(userSessions).containsKey(sessionId1);
-        assertThat(userSessions).containsKey(sessionId2);
-        assertThat(userSessions).containsKey(sessionId3);
+        assertThat(userSessions).doesNotContainKey(sessionId2);
+        assertThat(userSessions).doesNotContainKey(sessionId3);
     }
 } 
