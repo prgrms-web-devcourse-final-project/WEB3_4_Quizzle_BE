@@ -10,6 +10,12 @@ import org.springframework.http.HttpStatus;
 @Slf4j
 public enum ErrorCode {
 
+	// system
+	SECONDARY_PASSWORD_REQUIRED(HttpStatus.BAD_REQUEST, "2차 비밀번호를 입력해주세요."),
+	SECONDARY_PASSWORD_INVALID(HttpStatus.UNAUTHORIZED, "2차 비밀번호가 일치하지 않습니다."),
+
+	// login
+	INVALID_LOGIN_CREDENTIALS(HttpStatus.UNAUTHORIZED, "아이디 또는 비밀번호가 일치하지 않습니다."),
 	UNAUTHORIZED(HttpStatus.UNAUTHORIZED, "로그인이 필요합니다."),
 	INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "서버 내부 오류가 발생했습니다."),
 
@@ -45,6 +51,7 @@ public enum ErrorCode {
 	WEBSOCKET_SENDER_NAME_REQUIRED(HttpStatus.BAD_REQUEST, "발신자 이름은 필수입니다."),
 	WEBSOCKET_ROOM_ID_REQUIRED(HttpStatus.BAD_REQUEST, "방 ID는 필수입니다."),
 	WEBSOCKET_TIMESTAMP_INVALID(HttpStatus.BAD_REQUEST, "유효하지 않은 타임스탬프입니다."),
+	INVALID_READY_MESSAGE_TYPE(HttpStatus.BAD_REQUEST, "준비 상태 메시지는 READY 또는 UNREADY 타입만 가능합니다."),
 
 	// GameRoom
 	ROOM_NOT_FOUND(HttpStatus.NOT_FOUND, "존재하지 않는 방입니다."),
@@ -80,12 +87,15 @@ public enum ErrorCode {
 	ROOM_TITLE_REQUIRED(HttpStatus.BAD_REQUEST, "방 제목은 필수입니다."),
 	ROOM_TITLE_EMPTY(HttpStatus.BAD_REQUEST, "방 제목이 비어있을 수 없습니다."),
 	ROOM_TITLE_TOO_LONG(HttpStatus.BAD_REQUEST, "방 제목은 30자 이내여야 합니다."),
-	ROOM_CAPACITY_INVALID(HttpStatus.BAD_REQUEST, "방 인원은 2명에서 8명 사이여야 합니다."),
+	ROOM_CAPACITY_INVALID(HttpStatus.BAD_REQUEST, "방 인원은 1명에서 8명 사이여야 합니다."),
 	ROOM_DIFFICULTY_REQUIRED(HttpStatus.BAD_REQUEST, "난이도는 필수입니다."),
 	ROOM_MAIN_CATEGORY_REQUIRED(HttpStatus.BAD_REQUEST, "대주제는 필수입니다."),
 	ROOM_SUB_CATEGORY_REQUIRED(HttpStatus.BAD_REQUEST, "소주제는 필수입니다."),
 	ROOM_PRIVATE_PASSWORD_REQUIRED(HttpStatus.BAD_REQUEST, "비공개 방의 경우 비밀번호는 필수입니다."),
-	ROOM_PASSWORD_INVALID(HttpStatus.BAD_REQUEST, "방 비밀번호는 4자리 숫자(0000~9999)여야 합니다.");
+	ROOM_PASSWORD_INVALID(HttpStatus.BAD_REQUEST, "방 비밀번호는 4자리 숫자(0000~9999)여야 합니다."),
+	MIN_PLAYER_COUNT_NOT_MET(HttpStatus.BAD_REQUEST, "게임을 시작하려면 최소 1명의 플레이어가 필요합니다."),
+	PLAYER_NOT_IN_ROOM(HttpStatus.BAD_REQUEST, "준비된 플레이어가 방에 존재하지 않습니다."),
+	PLAYER_LEFT_DURING_START(HttpStatus.BAD_REQUEST, "게임 시작 중에 플레이어가 퇴장했습니다.");
 
 	private final HttpStatus httpStatus;
 	private final String message;

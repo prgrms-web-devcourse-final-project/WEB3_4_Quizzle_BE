@@ -1,15 +1,21 @@
 package com.ll.quizzle.domain.member.entity;
 
+import static com.ll.quizzle.global.exceptions.ErrorCode.*;
+
 import com.ll.quizzle.domain.member.type.Role;
 import com.ll.quizzle.global.jpa.entity.BaseTime;
 import com.ll.quizzle.global.security.oauth2.entity.OAuth;
-import jakarta.persistence.*;
+
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.OneToOne;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-
-import static com.ll.quizzle.global.exceptions.ErrorCode.*;
 
 @Entity
 @Getter
@@ -102,5 +108,9 @@ public class Member extends BaseTime {
 
     public void changeNickname(String nickname) {
         this.nickname = nickname;
+    }
+
+    public void changeRole(Role newRole) {
+        this.role = newRole;
     }
 }
