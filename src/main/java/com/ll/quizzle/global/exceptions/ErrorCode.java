@@ -10,6 +10,12 @@ import org.springframework.http.HttpStatus;
 @Slf4j
 public enum ErrorCode {
 
+	// system
+	SECONDARY_PASSWORD_REQUIRED(HttpStatus.BAD_REQUEST, "2차 비밀번호를 입력해주세요."),
+	SECONDARY_PASSWORD_INVALID(HttpStatus.UNAUTHORIZED, "2차 비밀번호가 일치하지 않습니다."),
+
+	// login
+	INVALID_LOGIN_CREDENTIALS(HttpStatus.UNAUTHORIZED, "아이디 또는 비밀번호가 일치하지 않습니다."),
 	UNAUTHORIZED(HttpStatus.UNAUTHORIZED, "로그인이 필요합니다."),
 	INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "서버 내부 오류가 발생했습니다."),
 

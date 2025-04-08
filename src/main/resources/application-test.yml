@@ -42,3 +42,9 @@ custom:
     allowed-origins:
       - http://localhost:*
       - http://127.0.0.1:*
+
+system:
+  systemEmail: system@quizzle.com
+  systemPasswordHash: $2a$10$yNOvzUXqY3HzYzQk1QbZBeYqeZMaGGZ3h4M4YBxzwHwMAQVbDXcXi
+  secondaryPasswordHash: $2a$10$yNOvzUXqY3HzYzQk1QbZBeYqeZMaGGZ3h4M4YBxzwHwMAQVbDXcXi
+

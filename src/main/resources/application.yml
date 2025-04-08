@@ -7,6 +7,11 @@ spring:
       - secret
   config:
     import: optional:file:.env[.properties]
+  session:
+    store-type: redis
+    redis:
+      namespace: "quizzle:session"  # Redis에 저장될 세션 데이터의 네임스페이스
+    timeout: 30m  # 세션 만료 시간
 
   security:
     oauth2:
