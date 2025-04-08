@@ -71,7 +71,7 @@ public class FriendServiceTest {
         // Then
         assertThat(friendResponse)
                 .extracting("fromMemberId", "toMemberId", "status")
-                .containsExactly(testMemberId, secondMemberId, FriendRequestStatus.PENDING.getDescription());
+                .containsExactly(testMemberId, secondMemberId, FriendRequestStatus.PENDING.name());
     }
 
     @Test
@@ -136,7 +136,7 @@ public class FriendServiceTest {
         // Then
         assertThat(friendOfferResponse)
                 .extracting("memberId", "nickname", "status")
-                .containsExactly(testMemberId, testMember.getNickname(), FriendRequestStatus.ACCEPTED.getDescription());
+                .containsExactly(testMemberId, testMember.getNickname(), FriendRequestStatus.ACCEPTED.name());
     }
 
     @Test
@@ -198,7 +198,7 @@ public class FriendServiceTest {
         // Then
         assertThat(friendOfferResponse)
                 .extracting("memberId", "nickname", "status")
-                .containsExactly(testMemberId, testMember.getNickname(), FriendRequestStatus.REJECTED.getDescription());
+                .containsExactly(testMemberId, testMember.getNickname(), FriendRequestStatus.REJECTED.name());
     }
 
     @Test
@@ -231,7 +231,7 @@ public class FriendServiceTest {
         // Then
         assertThat(friendResponse)
                 .extracting("fromMemberId", "toMemberId", "status")
-                .containsExactly(testMemberId, secondMemberId, FriendRequestStatus.PENDING.getDescription());
+                .containsExactly(testMemberId, secondMemberId, FriendRequestStatus.PENDING.name());
     }
 
     @Test
@@ -387,7 +387,7 @@ public class FriendServiceTest {
         // Then
         assertThat(response)
                 .extracting("fromMemberId", "toMemberId", "status")
-                .containsExactly(testMemberId, secondMemberId, FriendRequestStatus.PENDING.getDescription());
+                .containsExactly(testMemberId, secondMemberId, FriendRequestStatus.PENDING.name());
     }
 
     @Test

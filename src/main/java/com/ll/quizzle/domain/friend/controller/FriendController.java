@@ -67,9 +67,9 @@ public class FriendController {
 
     @DeleteMapping("/{memberId}")
     @Operation(summary = "친구 삭제", description = "특정 친구를 삭제합니다.")
-    public RsData<Void> deleteFriend(@PathVariable long memberId) {
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void deleteFriend(@PathVariable long memberId) {
         Member actor = rq.getActor();
         friendService.deleteFriend(actor.getId(), memberId);
-        return RsData.success(HttpStatus.OK, null);
     }
 }

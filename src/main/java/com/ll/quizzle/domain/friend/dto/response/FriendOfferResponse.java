@@ -14,7 +14,7 @@ public record FriendOfferResponse(
         return new FriendOfferResponse(
                 friendOffer.getFromMember().getId(),
                 friendOffer.getFromMember().getNickname(),
-                friendOffer.getStatus().getDescription(),
+                friendOffer.getStatus().name(),
                 friendOffer.getModifyDate()
         );
     }
