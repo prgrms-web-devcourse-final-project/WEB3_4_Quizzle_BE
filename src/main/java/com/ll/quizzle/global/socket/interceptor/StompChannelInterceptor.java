@@ -1,14 +1,8 @@
 package com.ll.quizzle.global.socket.interceptor;
 
-import com.ll.quizzle.domain.member.entity.Member;
-import com.ll.quizzle.domain.member.service.MemberService;
-import com.ll.quizzle.global.security.oauth2.dto.SecurityUser;
-import com.ll.quizzle.global.socket.security.WebSocketSecurityService;
-import com.ll.quizzle.global.socket.service.WebSocketNotificationService;
-import com.ll.quizzle.global.socket.session.WebSocketSessionManager;
-import lombok.NonNull;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import java.security.Principal;
+import java.util.Map;
+
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.simp.stomp.StompCommand;
@@ -19,10 +13,17 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Component;
 
-import java.security.Principal;
-import java.util.Map;
-
+import com.ll.quizzle.domain.member.entity.Member;
+import com.ll.quizzle.domain.member.service.MemberService;
+import com.ll.quizzle.global.security.oauth2.dto.SecurityUser;
 import static com.ll.quizzle.global.security.oauth2.dto.SecurityUser.of;
+import com.ll.quizzle.global.socket.security.WebSocketSecurityService;
+import com.ll.quizzle.global.socket.service.WebSocketNotificationService;
+import com.ll.quizzle.global.socket.session.WebSocketSessionManager;
+
+import lombok.NonNull;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Component
@@ -111,6 +112,15 @@ public class StompChannelInterceptor implements ChannelInterceptor {
                     if (!sessionManager.isSessionValid(email, sessionId)) {
                         log.debug("유효하지 않은 세션으로부터의 메시지: 닉네임={}, 이메일={}, 세션={}", 
                                   principalName, email, sessionId);
+                        notificationService.sendTokenExpiredNotification(principalName);
+                        return null;
+                    }
+                    
+                    boolean refreshed = sessionManager.refreshSession(email, sessionId);
+                    
+                    if (!refreshed) {
+                        log.debug("세션 유효성 검사는 통과했으나 갱신 실패 - 데이터 불일치 감지: 사용자={}, 세션={}", 
+                                email, sessionId);
                         notificationService.sendTokenExpiredNotification(principalName);
                         return null;
                     }
