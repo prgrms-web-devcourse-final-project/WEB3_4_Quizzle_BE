@@ -50,6 +50,8 @@ quizzle:
 app:
   oauth2:
     authorizedRedirectUris: "${custom.site.frontUrl}/oauth/callback"
+  websocket:
+    use-distributed-sessions: false
 
 custom:
   site:
