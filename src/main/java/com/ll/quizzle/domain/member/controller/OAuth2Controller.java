@@ -7,10 +7,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequiredArgsConstructor
@@ -33,8 +30,8 @@ public class OAuth2Controller {
     @GetMapping("/oauth2/callback")
     @Operation(summary = "oauth 정보 확인용", description = "OAuth2 인증 정보 확인 API입니다. Status에 SUCCESS가 아닌 경우, 인증 실패로 간주합니다.")
     public RsData<OAuth2InfoResponse> callback(
-            @RequestParam String accessToken,
-            @RequestParam String refreshToken,
+            @CookieValue(value = "access_token", required = false) String accessToken,
+            @CookieValue(value = "refresh_token", required = false) String refreshToken,
             @RequestParam String status
     ) {
         return oAuth2Service.OAuthInfoToResponseData(accessToken, refreshToken, status);
