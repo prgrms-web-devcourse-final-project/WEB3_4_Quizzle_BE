@@ -26,7 +26,7 @@ public class QuizResultController {
     public RsData<List<QuizResultResponse>> getQuizResults(@PathVariable("quizId") String quizId) {
 
         List<QuizResultResponse> results = quizResultService.getQuizResults(quizId);
-        results.forEach(result -> memberExpService.updateMemberExp(result.userId(), result.score()));
+        results.forEach(result -> memberExpService.updateMemberExp(result.memberId(), result.score()));
 
         return RsData.success(HttpStatus.OK, results);
     }

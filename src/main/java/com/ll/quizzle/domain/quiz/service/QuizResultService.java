@@ -34,8 +34,8 @@ public class QuizResultService {
     }
 
     private QuizResultResponse processSubmissionKey(String key) {
-        String userId = extractUserIdFromKey(key);
-        if (userId == null) {
+        String memberId = extractUserIdFromKey(key);
+        if (memberId == null) {
             return null;
         }
         List<Object> submissions = redisTemplate.opsForList().range(key, 0, -1);
@@ -44,7 +44,7 @@ public class QuizResultService {
         int correctCount = score / SCORE_PER_CORRECT;
 
         // 초기 랭크는 0으로 설정
-        return new QuizResultResponse(userId, correctCount, totalQuestions, score, 0, score);
+        return new QuizResultResponse(memberId, correctCount, totalQuestions, score, 0, score);
     }
 
     private List<QuizResultResponse> assignRanks(List<QuizResultResponse> results) {
@@ -56,7 +56,7 @@ public class QuizResultService {
         for (int i = 0; i < sortedResults.size(); i++) {
             QuizResultResponse oldResult = sortedResults.get(i);
             QuizResultResponse newResult = new QuizResultResponse(
-                    oldResult.userId(),
+                    oldResult.memberId(),
                     oldResult.correctCount(),
                     oldResult.totalQuestions(),
                     oldResult.score(),

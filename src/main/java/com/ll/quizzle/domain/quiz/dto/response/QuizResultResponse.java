@@ -1,7 +1,7 @@
 package com.ll.quizzle.domain.quiz.dto.response;
 
 public record QuizResultResponse(
-        String userId,
+        String memberId,
         int correctCount,
         int totalQuestions,
         int score,
