@@ -31,6 +31,9 @@
 
 - `/app/game/chat/{roomId}`: 게임 채팅 메시지 전송
 
+#### 퀴즈
+- `/app/quiz/{quizId}/submit` : 퀴즈 답안 제출 메시지 전송
+
 ### 구독 주제
 
 #### 로비
@@ -55,6 +58,9 @@
 
 - `/topic/game/chat/{roomId}`: 게임 채팅 메시지 수신
 
+#### 퀴즈
+
+- `/topic/quiz/{quizId}/updates`: 퀴즈 제출 결과 및 상태 업데이트 수신
 ### 메시지 형식
 
 #### ChatMessageDTO
@@ -71,4 +77,45 @@
 
   timestamp: number,
 
-  roomId
+  roomId?: string  // 방/게임 채팅에만 필요
+
+}
+```
+
+#### RoomMessageDTO
+```typescript
+
+{
+
+type: 'JOIN' | 'LEAVE' | 'READY' | 'UNREADY' | 'GAME_START' | 'GAME_END'
+
+| 'ANSWER_SUBMIT' | 'TIMER' | 'ROUND_START' | 'ROUND_END' | 'SYSTEM',
+
+senderId: string,
+
+senderName: string,
+
+content?: string,
+
+data?: string,  // JSON 형식의 추가 데이터 (예: 참가자 목록, 준비 상태 등)
+
+timestamp: number,
+
+roomId: string
+
+}
+```
+#### WebSocketQuizSubmitResponse
+```
+{
+  type: 'ANSWER_SUBMIT',
+  questionNumber: number,
+  correct: boolean,
+  correctAnswer: string,
+  memberId: string,
+  nickname: string,
+  isSubmitted: boolean,
+  timestamp: number,
+  quizId: string
+}
+```
