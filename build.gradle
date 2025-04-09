@@ -58,7 +58,7 @@ dependencies {
     developmentOnly 'org.springframework.boot:spring-boot-devtools'
 
     // Swagger
-    implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.1")
+    implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.1'
 
     // Testing
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
@@ -67,7 +67,8 @@ dependencies {
     byteBuddyAgent 'net.bytebuddy:byte-buddy-agent:1.15.11'
 
     // Redisson
-    implementation 'org.redisson:redisson-spring-boot-starter:3.18.0'
+    implementation 'org.redisson:redisson-spring-boot-starter:3.27.1'
+    implementation 'org.redisson:redisson-spring-data-31:3.27.1'
 }
 
 tasks.named('test') {
