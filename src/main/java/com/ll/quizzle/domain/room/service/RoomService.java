@@ -27,7 +27,7 @@ import static com.ll.quizzle.global.exceptions.ErrorCode.ROOM_IS_FULL;
 import static com.ll.quizzle.global.exceptions.ErrorCode.ROOM_NOT_FOUND;
 import com.ll.quizzle.global.redis.lock.DistributedLock;
 import com.ll.quizzle.global.redis.lock.DistributedLockService;
-import com.ll.quizzle.global.socket.service.RoomMessageService;
+import com.ll.quizzle.global.socket.service.WebSocketRoomMessageService;
 import com.ll.quizzle.global.socket.type.RoomMessageType;
 
 import lombok.RequiredArgsConstructor;
@@ -44,7 +44,7 @@ public class RoomService {
     private final RoomBlacklistService blacklistService;
     private final DistributedLockService redisLockService;
     private final RedisTemplate<String, String> redisTemplate;
-    private final RoomMessageService roomMessageService;
+    private final WebSocketRoomMessageService roomMessageService;
 
     @Transactional(isolation = Isolation.SERIALIZABLE)
     public RoomResponse createRoom(Long ownerId, RoomCreateRequest request) {
@@ -323,7 +323,7 @@ public class RoomService {
         log.debug("게임 시작 처리 완료 - 방ID: {}", room.getId());
 
         if (room.getPlayers().size() < initialPlayerCount) {
-            log.warn("게임 시작 중 플레이어 수 변경 감지 - 방ID: {}, 초기: {}, 현재: {}",
+            log.debug("게임 시작 중 플레이어 수 변경 감지 - 방ID: {}, 초기: {}, 현재: {}",
                     room.getId(), initialPlayerCount, room.getPlayers().size());
 
             if (room.getPlayers().isEmpty()) {
