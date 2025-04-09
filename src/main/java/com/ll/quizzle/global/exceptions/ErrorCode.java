@@ -1,9 +1,10 @@
 package com.ll.quizzle.global.exceptions;
 
+import org.springframework.http.HttpStatus;
+
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpStatus;
 
 @Getter
 @AllArgsConstructor
@@ -33,6 +34,9 @@ public enum ErrorCode {
 	REFRESH_TOKEN_NOT_FOUND(HttpStatus.BAD_REQUEST, "리프레시 토큰을 찾을 수 없습니다."),
 	REFRESH_TOKEN_INVALID(HttpStatus.BAD_REQUEST, "유효하지 않은 리프레시 토큰입니다."),
 	TOKEN_INFO_NOT_FOUND(HttpStatus.BAD_REQUEST, "토큰 정보가 없습니다."),
+
+	// 분산 락
+	DISTRIBUTED_LOCK_ACQUISITION_FAILED(HttpStatus.CONFLICT, "분산 락을 획득할 수 없습니다."),
 
 	// member + oauth
 	MEMBER_NOT_FOUND(HttpStatus.NOT_FOUND, "해당 회원이 존재하지 않습니다."),

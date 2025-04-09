@@ -38,6 +38,10 @@ dependencies {
     // Spring Session + Redis
     implementation 'org.springframework.session:spring-session-data-redis'
 
+    // Redisson
+    implementation 'org.redisson:redisson-spring-boot-starter:3.27.1'
+    implementation 'org.redisson:redisson-spring-data-31:3.27.1'
+
     // Spring Messaging (WebSocket/STOMP)
     implementation 'org.springframework:spring-messaging'
 
@@ -58,14 +62,13 @@ dependencies {
     developmentOnly 'org.springframework.boot:spring-boot-devtools'
 
     // Swagger
-    implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.1")
+    implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.1'
 
     // Testing
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation 'org.springframework.security:spring-security-test'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
     byteBuddyAgent 'net.bytebuddy:byte-buddy-agent:1.15.11'
-
 
 }
 
