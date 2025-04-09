@@ -25,6 +25,8 @@ import static com.ll.quizzle.global.exceptions.ErrorCode.MIN_PLAYER_COUNT_NOT_ME
 import static com.ll.quizzle.global.exceptions.ErrorCode.ROOM_ENTRY_RESTRICTED;
 import static com.ll.quizzle.global.exceptions.ErrorCode.ROOM_IS_FULL;
 import static com.ll.quizzle.global.exceptions.ErrorCode.ROOM_NOT_FOUND;
+import static com.ll.quizzle.global.exceptions.ErrorCode.NOT_ROOM_OWNER;
+import static com.ll.quizzle.global.exceptions.ErrorCode.NOT_ALL_PLAYERS_READY;
 import com.ll.quizzle.global.redis.lock.DistributedLock;
 import com.ll.quizzle.global.redis.lock.DistributedLockService;
 import com.ll.quizzle.global.socket.service.WebSocketRoomMessageService;
@@ -300,6 +302,8 @@ public class RoomService {
         int initialPlayerCount = room.getPlayers().size();
         log.debug("게임 시작 요청 - 방ID: {}, 방장ID: {}, 초기 플레이어 수: {}", room.getId(), memberId, initialPlayerCount);
 
+        validateGameStart(room, memberId);
+
         String roomStateKey = validateGameState(room);
 
         try {
@@ -317,6 +321,7 @@ public class RoomService {
             throw e;
         }
     }
+
 
     private void processGameStart(Room room, Long memberId, int initialPlayerCount, String roomStateKey) {
         room.startGame(memberId);
@@ -366,5 +371,17 @@ public class RoomService {
     protected Member findMemberOrThrow(Long memberId) {
         return memberRepository.findById(memberId)
                 .orElseThrow(MEMBER_NOT_FOUND::throwServiceException);
+    }
+
+    private void validateGameStart(Room room, Long memberId) {
+        if (!room.isOwner(memberId)) {
+            log.error("게임 시작 중 오류 발생 - 방ID: {}, 오류: 403 FORBIDDEN : 방장만 이 작업을 수행할 수 있습니다.", room.getId());
+            throw NOT_ROOM_OWNER.throwServiceException();
+        }
+
+        if (!room.isAllPlayersReady()) {
+            log.error("게임 시작 중 오류 발생 - 방ID: {}, 오류: 모든 플레이어가 준비되지 않았습니다.", room.getId());
+            throw NOT_ALL_PLAYERS_READY.throwServiceException();
+        }
     }
 }
