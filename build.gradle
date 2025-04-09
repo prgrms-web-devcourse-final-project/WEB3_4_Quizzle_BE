@@ -66,8 +66,6 @@ dependencies {
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
     byteBuddyAgent 'net.bytebuddy:byte-buddy-agent:1.15.11'
 
-
-
     // Redisson
     implementation 'org.redisson:redisson-spring-boot-starter:3.18.0'
 }
