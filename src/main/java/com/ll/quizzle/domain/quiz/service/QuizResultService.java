@@ -18,7 +18,7 @@ public class QuizResultService {
     }
 
     public List<QuizResultResponse> getQuizResults(String quizId) {
-        String pattern = String.format("quiz:%s:user:*:submissions", quizId);
+        String pattern = String.format("quiz:%s:memberId:*:submissions", quizId);
         Set<String> keys = redisTemplate.keys(pattern);
 
         List<QuizResultResponse> results = new ArrayList<>();
@@ -34,8 +34,8 @@ public class QuizResultService {
     }
 
     private QuizResultResponse processSubmissionKey(String key) {
-        String userId = extractUserIdFromKey(key);
-        if (userId == null) {
+        String memberId = extractUserIdFromKey(key);
+        if (memberId == null) {
             return null;
         }
         List<Object> submissions = redisTemplate.opsForList().range(key, 0, -1);
@@ -44,7 +44,7 @@ public class QuizResultService {
         int correctCount = score / SCORE_PER_CORRECT;
 
         // 초기 랭크는 0으로 설정
-        return new QuizResultResponse(userId, correctCount, totalQuestions, score, 0, score);
+        return new QuizResultResponse(memberId, correctCount, totalQuestions, score, 0, score);
     }
 
     private List<QuizResultResponse> assignRanks(List<QuizResultResponse> results) {
@@ -56,7 +56,7 @@ public class QuizResultService {
         for (int i = 0; i < sortedResults.size(); i++) {
             QuizResultResponse oldResult = sortedResults.get(i);
             QuizResultResponse newResult = new QuizResultResponse(
-                    oldResult.userId(),
+                    oldResult.memberId(),
                     oldResult.correctCount(),
                     oldResult.totalQuestions(),
                     oldResult.score(),
@@ -78,6 +78,8 @@ public class QuizResultService {
         if (submissions != null) {
             for (Object submission : submissions) {
                 String[] tokens = submission.toString().split(":");
+                // 유효한 제출 문자열 형식은 " 질문ID:답변:상태"
+                // token[0] : 질문ID , token[1] : 제출한 답 , token[2] : 제출한 상태 ( correct)
                 if (tokens.length == 3 && "correct".equals(tokens[2])) {
                     correctCount++;
                 }
