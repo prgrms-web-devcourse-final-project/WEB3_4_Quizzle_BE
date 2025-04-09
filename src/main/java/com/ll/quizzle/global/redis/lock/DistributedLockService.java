@@ -1,8 +1,5 @@
 package com.ll.quizzle.global.redis.lock;
 
-/**
- * 테스트 코드에서 RedisLockService 를 Mocking 하기 위해 인터페이스 분리 (그 외 확장성(ex.zookeeper)과 유연성 고려)
- */
 public interface DistributedLockService {
 
     /**
