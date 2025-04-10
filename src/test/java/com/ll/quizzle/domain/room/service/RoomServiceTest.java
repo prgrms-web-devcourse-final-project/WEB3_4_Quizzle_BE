@@ -1,17 +1,14 @@
 package com.ll.quizzle.domain.room.service;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.anyString;
+import static org.assertj.core.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-import java.util.HashSet;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -29,6 +26,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 
+import com.ll.quizzle.domain.avatar.entity.Avatar;
 import com.ll.quizzle.domain.member.entity.Member;
 import com.ll.quizzle.domain.member.repository.MemberRepository;
 import com.ll.quizzle.domain.room.dto.request.RoomCreateRequest;
@@ -66,6 +64,9 @@ class RoomServiceTest {
     @Mock
     private ValueOperations<String, String> valueOperations;
 
+    @Mock
+    private Avatar defaultAvatar;
+
 
     @InjectMocks
     private RoomService roomService;
@@ -80,7 +81,7 @@ class RoomServiceTest {
         mockedTransactionManager.when(() -> TransactionSynchronizationManager.registerSynchronization(any(TransactionSynchronization.class)))
                 .thenAnswer(invocation -> null);
 
-        testOwner = Member.create("테스트유저", "test@example.com");
+        testOwner = Member.create("테스트유저", "test@example.com", defaultAvatar);
         ReflectionTestUtils.setField(testOwner, "id", 1L);
 
         Room roomTemp = Room.builder()
@@ -194,7 +195,7 @@ class RoomServiceTest {
     @DisplayName("방 입장 테스트 - 성공 (비밀번호 있다고 가정)")
     void joinRoomSuccessTest() {
         // given
-        Member normalMember = Member.create("일반유저", "user@example.com");
+        Member normalMember = Member.create("일반유저", "user@example.com", defaultAvatar);
         ReflectionTestUtils.setField(normalMember, "id", 2L);
 
         when(roomRepository.findRoomById(1L)).thenReturn(Optional.of(testRoom));
@@ -263,7 +264,7 @@ class RoomServiceTest {
     @DisplayName("방 퇴장 테스트 - 일반 유저")
     void leaveRoomNormalUserTest() {
         // given
-        Member normalMember = Member.create("일반유저", "user@example.com");
+        Member normalMember = Member.create("일반유저", "user@example.com", defaultAvatar);
         ReflectionTestUtils.setField(normalMember, "id", 2L);
 
         Set<Long> emptySet = new HashSet<>();
@@ -316,7 +317,7 @@ class RoomServiceTest {
         Set<Long> playerSet = new HashSet<>();
         playerSet.add(2L);
         
-        Member newOwner = Member.create("새방장", "newowner@example.com");
+        Member newOwner = Member.create("새방장", "newowner@example.com", defaultAvatar);
         ReflectionTestUtils.setField(newOwner, "id", 2L);
         
         when(roomRepository.findRoomById(1L)).thenReturn(Optional.of(testRoom));
@@ -343,7 +344,7 @@ class RoomServiceTest {
     @DisplayName("준비 상태 토글 테스트")
     void toggleReadyTest() {
         // given
-        Member normalMember = Member.create("일반유저", "user@example.com");
+        Member normalMember = Member.create("일반유저", "user@example.com", defaultAvatar);
         ReflectionTestUtils.setField(normalMember, "id", 2L);
 
         Set<Long> readyPlayers = new HashSet<>();

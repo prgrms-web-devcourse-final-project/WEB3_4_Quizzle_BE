@@ -1,6 +1,6 @@
 package com.ll.quizzle.domain.room.service;
 
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
@@ -23,8 +23,8 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 
+import com.ll.quizzle.domain.avatar.entity.Avatar;
 import com.ll.quizzle.domain.member.entity.Member;
-import com.ll.quizzle.domain.member.repository.MemberRepository;
 import com.ll.quizzle.domain.room.entity.Room;
 import com.ll.quizzle.domain.room.repository.RoomRepository;
 import com.ll.quizzle.domain.room.type.AnswerType;
@@ -47,6 +47,8 @@ class RoomServiceGameStartConcurrencyTest {
     private RedisTemplate<String, String> redisTemplate;
     @Mock
     private ValueOperations<String, String> valueOperations;
+    @Mock
+    private Avatar defaultAvatar;
 
     @InjectMocks
     private RoomService roomService;
@@ -61,7 +63,7 @@ class RoomServiceGameStartConcurrencyTest {
         mockedTransactionManager.when(() -> TransactionSynchronizationManager.registerSynchronization(any()))
                 .thenAnswer(invocation -> null);
 
-        testOwner = Member.create("방장", "owner@example.com");
+        testOwner = Member.create("방장", "owner@example.com", defaultAvatar);
         ReflectionTestUtils.setField(testOwner, "id", 1L);
 
         testRoom = Room.builder()

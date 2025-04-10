@@ -1,5 +1,21 @@
 package com.ll.quizzle.domain.friend.service;
 
+import static com.ll.quizzle.global.exceptions.ErrorCode.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.AssertionsForClassTypes.tuple;
+
+import java.util.List;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.ll.quizzle.domain.avatar.entity.Avatar;
+import com.ll.quizzle.domain.avatar.repository.AvatarRepository;
 import com.ll.quizzle.domain.friend.dto.response.FriendListResponse;
 import com.ll.quizzle.domain.friend.dto.response.FriendOfferListResponse;
 import com.ll.quizzle.domain.friend.dto.response.FriendOfferResponse;
@@ -11,18 +27,6 @@ import com.ll.quizzle.factory.TestMemberFactory;
 import com.ll.quizzle.global.exceptions.ErrorCode;
 import com.ll.quizzle.global.exceptions.ServiceException;
 import com.ll.quizzle.global.security.oauth2.repository.OAuthRepository;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.transaction.annotation.Transactional;
-
-import java.util.List;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.assertj.core.api.AssertionsForClassTypes.tuple;
 
 @SpringBootTest
 @Transactional
@@ -36,25 +40,32 @@ public class FriendServiceTest {
     @Autowired
     private OAuthRepository oAuthRepository;
 
+    @Autowired
+    private AvatarRepository avatarRepository;
+
     private Member testMember;
     private Member secondMember;
     private Member thirdMember;
 
     @BeforeEach
     void setUp() {
+
+        Avatar defaultAvatar = avatarRepository.findByFileName("새콩이")
+            .orElseThrow(AVATAR_NOT_FOUND::throwServiceException);
+
         testMember = TestMemberFactory.createOAuthMember(
                 "테스트유저1", "test1@email.com", "google", "1234",
-                memberRepository, oAuthRepository
+                memberRepository, oAuthRepository, defaultAvatar
         );
 
         secondMember = TestMemberFactory.createOAuthMember(
                 "테스트유저2", "test2@email.com", "google", "2345",
-                memberRepository, oAuthRepository
+                memberRepository, oAuthRepository, defaultAvatar
         );
 
         thirdMember = TestMemberFactory.createOAuthMember(
                 "테스트유저3", "test3@email.com", "google", "3456",
-                memberRepository, oAuthRepository
+                memberRepository, oAuthRepository, defaultAvatar
         );
     }
 

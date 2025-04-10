@@ -1,6 +1,6 @@
 package com.ll.quizzle.domain.room.service;
 
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
@@ -26,6 +26,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 
+import com.ll.quizzle.domain.avatar.entity.Avatar;
 import com.ll.quizzle.domain.member.entity.Member;
 import com.ll.quizzle.domain.member.repository.MemberRepository;
 import com.ll.quizzle.domain.room.entity.Room;
@@ -37,7 +38,6 @@ import com.ll.quizzle.domain.room.type.RoomStatus;
 import com.ll.quizzle.domain.room.type.SubCategory;
 import com.ll.quizzle.global.exceptions.ServiceException;
 import com.ll.quizzle.global.redis.lock.DistributedLockService;
-import com.ll.quizzle.global.socket.service.WebSocketRoomMessageService;
 
 @ExtendWith(MockitoExtension.class)
 @ActiveProfiles("test")
@@ -55,6 +55,8 @@ class RoomServiceConcurrencyTest {
     private RedisTemplate<String, String> redisTemplate;
     @Mock
     private ValueOperations<String, String> valueOperations;
+    @Mock
+    private Avatar defaultAvatar;
 
     @InjectMocks
     private RoomService roomService;
@@ -70,7 +72,7 @@ class RoomServiceConcurrencyTest {
         mockedTransactionManager.when(() -> TransactionSynchronizationManager.registerSynchronization(any(TransactionSynchronization.class)))
                 .thenAnswer(invocation -> null);
 
-        testOwner = Member.create("방장", "owner@example.com");
+        testOwner = Member.create("방장", "owner@example.com", defaultAvatar);
         ReflectionTestUtils.setField(testOwner, "id", 1L);
 
         testRoom = Room.builder()
@@ -88,7 +90,7 @@ class RoomServiceConcurrencyTest {
 
         testMembers = new ArrayList<>();
         for (int i = 2; i <= 4; i++) {
-            Member member = Member.create("유저" + i, "user" + i + "@example.com");
+            Member member = Member.create("유저" + i, "user" + i + "@example.com", defaultAvatar);
             ReflectionTestUtils.setField(member, "id", (long) i);
             testMembers.add(member);
         }

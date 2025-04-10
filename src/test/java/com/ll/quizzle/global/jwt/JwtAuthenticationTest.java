@@ -94,7 +94,6 @@ public class JwtAuthenticationTest {
                 .level(0)
                 .role(Role.MEMBER)
                 .exp(0)
-                .profilePath("test")
                 .pointBalance(0)
                 .build();
 
