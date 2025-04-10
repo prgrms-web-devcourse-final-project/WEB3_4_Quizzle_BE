@@ -161,7 +161,7 @@ public class RoomService {
                 .difficulty(request.difficulty())
                 .mainCategory(request.mainCategory())
                 .subCategory(request.subCategory())
-                .password(request.isPrivate() ? request.password() : null)
+                .password(request.isPrivate() ? request.password() : "")
                 .build();
 
         Room savedRoom = roomRepository.save(room);
@@ -441,7 +441,7 @@ public class RoomService {
             request.difficulty(),
             request.mainCategory(),
             request.subCategory(),
-            request.isPrivate() ? request.password() : null,
+            request.isPrivate() ? request.password() : "",
             request.isPrivate() ? Boolean.TRUE : Boolean.FALSE
         );
     }
