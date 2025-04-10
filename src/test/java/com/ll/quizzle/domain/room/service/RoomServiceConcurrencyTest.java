@@ -200,8 +200,8 @@ class RoomServiceConcurrencyTest {
         roomService.toggleReady(1L, 2L);
 
         // then
-        verify(spyRoom, times(1)).playerReady(2L);    // 첫 번째 호출
-        verify(spyRoom, times(1)).playerUnready(2L);  // 두 번째 호출
+        verify(spyRoom, times(1)).playerReady(2L);
+        verify(spyRoom, times(1)).playerUnready(2L);
     }
 
     @Test
