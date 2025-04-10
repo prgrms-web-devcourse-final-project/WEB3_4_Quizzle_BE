@@ -1,5 +1,16 @@
 package com.ll.quizzle.domain.room.service;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Isolation;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
+
 import com.ll.quizzle.domain.member.entity.Member;
 import com.ll.quizzle.domain.member.repository.MemberRepository;
 import com.ll.quizzle.domain.room.dto.request.RoomCreateRequest;
@@ -7,21 +18,24 @@ import com.ll.quizzle.domain.room.dto.response.RoomResponse;
 import com.ll.quizzle.domain.room.entity.Room;
 import com.ll.quizzle.domain.room.repository.RoomRepository;
 import com.ll.quizzle.domain.room.type.RoomStatus;
-import com.ll.quizzle.global.exceptions.ServiceException;
-import com.ll.quizzle.global.socket.core.MessageService;
-import com.ll.quizzle.global.socket.core.MessageServiceFactory;
-import com.ll.quizzle.global.socket.dto.response.WebSocketRoomMessageResponse;
+import static com.ll.quizzle.global.exceptions.ErrorCode.GAME_ALREADY_STARTED;
+import static com.ll.quizzle.global.exceptions.ErrorCode.INVALID_PASSWORD;
+import static com.ll.quizzle.global.exceptions.ErrorCode.MEMBER_NOT_FOUND;
+import static com.ll.quizzle.global.exceptions.ErrorCode.MIN_PLAYER_COUNT_NOT_MET;
+import static com.ll.quizzle.global.exceptions.ErrorCode.ROOM_ENTRY_RESTRICTED;
+import static com.ll.quizzle.global.exceptions.ErrorCode.ROOM_IS_FULL;
+import static com.ll.quizzle.global.exceptions.ErrorCode.ROOM_NOT_FOUND;
+import static com.ll.quizzle.global.exceptions.ErrorCode.NOT_ROOM_OWNER;
+import static com.ll.quizzle.global.exceptions.ErrorCode.NOT_ALL_PLAYERS_READY;
+import com.ll.quizzle.global.redis.lock.DistributedLock;
+import com.ll.quizzle.global.redis.lock.DistributedLockService;
+import com.ll.quizzle.global.socket.service.WebSocketRoomMessageService;
 import com.ll.quizzle.global.socket.type.RoomMessageType;
+
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
+import lombok.extern.slf4j.Slf4j;
 
-import java.util.List;
-import java.util.stream.Collectors;
-
-import static com.ll.quizzle.global.exceptions.ErrorCode.*;
-
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -29,14 +43,99 @@ public class RoomService {
 
     private final RoomRepository roomRepository;
     private final MemberRepository memberRepository;
-    private final MessageServiceFactory messageServiceFactory;
     private final RoomBlacklistService blacklistService;
+    private final DistributedLockService redisLockService;
+    private final RedisTemplate<String, String> redisTemplate;
+    private final WebSocketRoomMessageService roomMessageService;
 
-    @Transactional
+    @Transactional(isolation = Isolation.SERIALIZABLE)
     public RoomResponse createRoom(Long ownerId, RoomCreateRequest request) {
-        Member owner = memberRepository.findById(ownerId)
-                .orElseThrow(MEMBER_NOT_FOUND::throwServiceException);
+        Member owner = findMemberOrThrow(ownerId);
+        return createRoomWithLock(owner, request);
+    }
 
+    public List<RoomResponse> getActiveRooms() {
+        List<Room> rooms = roomRepository.findByStatusNot(RoomStatus.FINISHED);
+        return rooms.stream()
+                .map(RoomResponse::from)
+                .collect(Collectors.toList());
+    }
+
+    @Transactional(isolation = Isolation.REPEATABLE_READ)
+    public void joinRoom(Long roomId, Long memberId, String password) {
+        Room room = findRoomOrThrow(roomId);
+        Member member = findMemberOrThrow(memberId);
+
+        validate(roomId, memberId, password, room);
+        joinRoomWithLock(room, member);
+    }
+
+    @Transactional(isolation = Isolation.REPEATABLE_READ)
+    public void leaveRoom(Long roomId, Long memberId) {
+        Room room = findRoomOrThrow(roomId);
+        Member member = findMemberOrThrow(memberId);
+
+        leaveRoomWithLock(room, member);
+    }
+
+    @Transactional(isolation = Isolation.REPEATABLE_READ)
+    public void handleDisconnect(Long memberId) {
+        List<Room> rooms = roomRepository.findRoomsByPlayerId(memberId);
+
+        if (rooms.isEmpty()) {
+            return;
+        }
+
+        for (Room room : rooms) {
+            try {
+                String lockKey = "lock:room:" + room.getId();
+                boolean locked = redisLockService.acquireLock(lockKey, 5000, 10000);
+
+                if (locked) {
+                    try {
+                        Room lockedRoom = roomRepository.findById(room.getId())
+                                .orElseThrow(ROOM_NOT_FOUND::throwServiceException);
+
+                        if (lockedRoom.hasPlayer(memberId)) {
+                            leaveRoomInternal(lockedRoom, memberId);
+                        }
+                    } finally {
+                        redisLockService.releaseLock(lockKey);
+                    }
+                } else {
+                    log.debug("연결 해제 처리 중 락 획득 실패: 방ID={}, 멤버ID={}", room.getId(), memberId);
+                }
+            } catch (Exception e) {
+                log.error("연결 해제 처리 중 오류 발생 - 방ID: {}, 멤버ID: {}, 오류: {}",
+                        room.getId(), memberId, e.getMessage());
+            }
+        }
+    }
+
+    @Transactional(isolation = Isolation.REPEATABLE_READ)
+    public void toggleReady(Long roomId, Long memberId) {
+        Room room = findRoomOrThrow(roomId);
+
+        if (room.isOwner(memberId)) {
+            return;
+        }
+
+        boolean isCurrentlyReady = room.getReadyPlayers().contains(memberId);
+
+        setReadyWithLock(room, memberId, !isCurrentlyReady);
+    }
+
+    @Transactional(isolation = Isolation.REPEATABLE_READ)
+    public void startGame(Long roomId, Long memberId) {
+        Room room = roomRepository.findById(roomId)
+                .orElseThrow(ROOM_NOT_FOUND::throwServiceException);
+
+        startGameWithLock(room, memberId);
+    }
+
+    @DistributedLock(key = "'room:' + #owner.id", leaseTime = 10000)
+    @Transactional(propagation = Propagation.REQUIRES_NEW, isolation = Isolation.SERIALIZABLE)
+    protected RoomResponse createRoomWithLock(Member owner, RoomCreateRequest request) {
         Room room = Room.builder()
                 .title(request.title())
                 .owner(owner)
@@ -51,18 +150,7 @@ public class RoomService {
         return RoomResponse.from(savedRoom);
     }
 
-    public List<RoomResponse> getActiveRooms() {
-        List<Room> rooms = roomRepository.findByStatusNot(RoomStatus.FINISHED);
-        return rooms.stream()
-                .map(RoomResponse::from)
-                .collect(Collectors.toList());
-    }
-
-    @Transactional
-    public void joinRoom(Long roomId, Long memberId, String password) {
-        Room room = roomRepository.findById(roomId)
-                .orElseThrow(ROOM_NOT_FOUND::throwServiceException);
-
+    private void validate(Long roomId, Long memberId, String password, Room room) {
         if (blacklistService.isBlacklisted(roomId, memberId)) {
             throw ROOM_ENTRY_RESTRICTED.throwServiceException();
         }
@@ -74,164 +162,226 @@ public class RoomService {
         if (room.isFull()) {
             ROOM_IS_FULL.throwServiceException();
         }
+    }
 
-        if (!room.hasPlayer(memberId)) {
-            room.addPlayer(memberId);
+    @DistributedLock(key = "'room:' + #room.id", leaseTime = 10000)
+    @Transactional(propagation = Propagation.REQUIRES_NEW, isolation = Isolation.REPEATABLE_READ)
+    protected void joinRoomWithLock(Room room, Member member) {
+        if (!room.hasPlayer(member.getId())) {
+            room.addPlayer(member.getId());
 
-            MessageService messageService = messageServiceFactory.getRoomService();
-            String nickName = memberRepository.findById(memberId)
-                    .map(Member::getNickname)
-                    .orElse("Unknown");
-            WebSocketRoomMessageResponse message = WebSocketRoomMessageResponse.of(
-                    RoomMessageType.JOIN,
-                    null,
-                    memberId.toString(),
-                    nickName,
-                    nickName,
-                    System.currentTimeMillis(),
-                    roomId.toString()
-            );
-            messageService.send("/topic/room/" + roomId, message);
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    roomMessageService.sendJoin(room, member);
+                }
+            });
         }
     }
 
-    @Transactional
-    public void leaveRoom(Long roomId, Long memberId) {
-        Room room = roomRepository.findById(roomId)
-                .orElseThrow(ROOM_NOT_FOUND::throwServiceException);
+    private void handleGameEnd(Room room, String roomGameStateKey) {
+        room.endGame();
+        redisTemplate.opsForValue().set(roomGameStateKey, "ENDED");
+    }
 
-        Member member = memberRepository.findById(memberId)
-                .orElseThrow(MEMBER_NOT_FOUND::throwServiceException);
+    private void deleteRoom(Room room) {
+        String roomStateKey = "room:state:" + room.getId();
+        redisTemplate.opsForValue().set(roomStateKey, "DELETING");
+
+        roomRepository.delete(room);
+
+        redisTemplate.opsForValue().set(roomStateKey, "DELETED");
+
+        roomMessageService.sendRoomDeleted(room.getId());
+    }
+
+    private void changeRoomOwner(Room room, Member currentOwner, Long newOwnerId) {
+        Member newOwner = findMemberOrThrow(newOwnerId);
+        room.changeOwner(newOwner);
+
+        roomMessageService.sendOwnerChanged(room, currentOwner, newOwner);
+    }
+
+    @DistributedLock(key = "'room:' + #room.id", leaseTime = 10000)
+    @Transactional(propagation = Propagation.REQUIRES_NEW, isolation = Isolation.REPEATABLE_READ)
+    protected void leaveRoomWithLock(Room room, Member member) {
+        boolean isOwner = room.isOwner(member.getId());
+
+        room.removePlayer(member.getId());
+
+        String roomGameStateKey = "room:game-state:" + room.getId();
+        String gameState = redisTemplate.opsForValue().get(roomGameStateKey);
+
+        boolean shouldEndGame = "IN_GAME".equals(gameState) && room.getPlayers().isEmpty();
+
+        if (shouldEndGame) {
+            handleGameEnd(room, roomGameStateKey);
+        }
+
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                if (shouldEndGame) {
+                    roomMessageService.sendGameEnd(room);
+                }
+
+                if (isOwner) {
+                    if (room.getPlayers().isEmpty()) {
+                        deleteRoom(room);
+                    } else {
+                        Long newOwnerId = room.getPlayers().iterator().next();
+                        changeRoomOwner(room, member, newOwnerId);
+                    }
+                } else {
+                    roomMessageService.sendLeave(room, member);
+                }
+            }
+        });
+    }
+
+    protected void leaveRoomInternal(Room room, Long memberId) {
+        Member member = findMemberOrThrow(memberId);
 
         boolean isOwner = room.isOwner(memberId);
 
         room.removePlayer(memberId);
 
-        MessageService roomService = messageServiceFactory.getRoomService();
-        WebSocketRoomMessageResponse message;
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                if (isOwner) {
+                    if (room.getPlayers().isEmpty()) {
+                        String roomStateKey = "room:state:" + room.getId();
+                        redisTemplate.opsForValue().set(roomStateKey, "DELETING");
 
-        if (isOwner) {
-            if (room.getPlayers().isEmpty()) {
-                roomRepository.delete(room);
-                message = WebSocketRoomMessageResponse.of(
-                        RoomMessageType.SYSTEM,
-                        "방장이 퇴장하여 방이 삭제되었습니다.",
-                        null,
-                        "SYSTEM",
-                        "SYSTEM",
-                        System.currentTimeMillis(),
-                        roomId.toString()
-                );
-            } else {
-                Long newOwnerId = room.getPlayers().iterator().next();
-                Member newOwner = memberRepository.findById(newOwnerId)
-                        .orElseThrow(MEMBER_NOT_FOUND::throwServiceException);
+                        roomRepository.delete(room);
 
-                room.changeOwner(newOwner);
+                        redisTemplate.opsForValue().set(roomStateKey, "DELETED");
 
-                message = WebSocketRoomMessageResponse.of(
-                        RoomMessageType.SYSTEM,
-                        member.getNickname() + "님이 퇴장하여 " + newOwner.getNickname() + "님이 새로운 방장이 되었습니다.",
-                        null,
-                        "SYSTEM",
-                        "SYSTEM",
-                        System.currentTimeMillis(),
-                        roomId.toString()
-                );
+                        roomMessageService.sendRoomDeleted(room.getId());
+                    } else {
+                        Long newOwnerId = room.getPlayers().iterator().next();
+                        Member newOwner = findMemberOrThrow(newOwnerId);
+
+                        room.changeOwner(newOwner);
+
+                        roomMessageService.sendOwnerChanged(room, member, newOwner);
+                    }
+                } else {
+                    roomMessageService.sendLeave(room, member);
+                }
             }
-            roomService.send("/topic/room/" + roomId, message);
+        });
+    }
+
+    @DistributedLock(key = "'room:' + #room.id", leaseTime = 10000)
+    @Transactional(propagation = Propagation.REQUIRES_NEW, isolation = Isolation.REPEATABLE_READ)
+    protected void setReadyWithLock(Room room, Long memberId, boolean isReady) {
+        Member member = findMemberOrThrow(memberId);
+
+        if (isReady) {
+            room.playerReady(memberId);
         } else {
-            message = WebSocketRoomMessageResponse.of(
-                    RoomMessageType.LEAVE,
-                    member.getNickname() + "님이 퇴장하셨습니다.",
-                    null,
-                    memberId.toString(),
-                    member.getNickname(),
-                    System.currentTimeMillis(),
-                    roomId.toString()
-            );
-            roomService.send("/topic/room/" + roomId, message);
+            room.playerUnready(memberId);
+        }
+
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                roomMessageService.sendReadyStatusChange(
+                        room,
+                        member,
+                        isReady ? RoomMessageType.READY : RoomMessageType.UNREADY);
+            }
+        });
+    }
+
+    @DistributedLock(key = "'room:' + #room.id", leaseTime = 10000)
+    @Transactional(propagation = Propagation.REQUIRES_NEW, isolation = Isolation.REPEATABLE_READ)
+    protected void startGameWithLock(Room room, Long memberId) {
+        int initialPlayerCount = room.getPlayers().size();
+        log.debug("게임 시작 요청 - 방ID: {}, 방장ID: {}, 초기 플레이어 수: {}", room.getId(), memberId, initialPlayerCount);
+
+        validateGameStart(room, memberId);
+
+        String roomStateKey = validateGameState(room);
+
+        try {
+            processGameStart(room, memberId, initialPlayerCount, roomStateKey);
+
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    roomMessageService.sendGameStart(room);
+                }
+            });
+        } catch (Exception e) {
+            redisTemplate.opsForValue().set(roomStateKey, "WAITING");
+            log.error("게임 시작 중 오류 발생 - 방ID: {}, 오류: {}", room.getId(), e.getMessage());
+            throw e;
         }
     }
 
-    @Transactional
-    public void toggleReady(Long roomId, Long memberId) {
-        Room room = roomRepository.findById(roomId)
-                .orElseThrow(ROOM_NOT_FOUND::throwServiceException);
 
-        Member member = memberRepository.findById(memberId)
-                .orElseThrow(MEMBER_NOT_FOUND::throwServiceException);
+    private void processGameStart(Room room, Long memberId, int initialPlayerCount, String roomStateKey) {
+        room.startGame(memberId);
+        log.debug("게임 시작 처리 완료 - 방ID: {}", room.getId());
 
-        if (room.hasPlayer(memberId)) {
-            if (room.getReadyPlayers().contains(memberId)) {
-                room.playerUnready(memberId);
-                sendReadyMessage(room, member, false);
-            } else {
-                room.playerReady(memberId);
-                sendReadyMessage(room, member, true);
+        if (room.getPlayers().size() < initialPlayerCount) {
+            log.debug("게임 시작 중 플레이어 수 변경 감지 - 방ID: {}, 초기: {}, 현재: {}",
+                    room.getId(), initialPlayerCount, room.getPlayers().size());
+
+            if (room.getPlayers().isEmpty()) {
+                log.error("게임 시작 실패 - 최종 플레이어 수 미달 - 방ID: {}, 현재 플레이어 수: {}",
+                        room.getId(), 0);
+                throw MIN_PLAYER_COUNT_NOT_MET.throwServiceException();
             }
         }
+
+        redisTemplate.opsForValue().set(roomStateKey, "IN_GAME");
+        log.debug("게임 시작 상태 저장 완료 (Redis) - 방ID: {}, 상태: IN_GAME", room.getId());
     }
 
-    private void sendReadyMessage(Room room, Member member, boolean isReady) {
-        MessageService roomService = messageServiceFactory.getRoomService();
-        WebSocketRoomMessageResponse message = WebSocketRoomMessageResponse.of(
-                isReady ? RoomMessageType.READY : RoomMessageType.UNREADY,
-                member.getNickname() + "님이 " + (isReady ? "준비" : "준비 해제") + "하셨습니다.",
-                null,
-                member.getId().toString(),
-                member.getNickname(),
-                System.currentTimeMillis(),
-                room.getId().toString()
-        );
-        roomService.send("/topic/room/" + room.getId(), message);
+    private String validateGameState(Room room) {
+        if (RoomStatus.IN_GAME.equals(room.getStatus())) {
+            log.debug("게임 시작 실패 - 이미 게임이 시작된 상태 (DB) - 방ID: {}", room.getId());
+            throw GAME_ALREADY_STARTED.throwServiceException();
+        }
+
+        String roomStateKey = "room:game-state:" + room.getId();
+        String currentState = redisTemplate.opsForValue().get(roomStateKey);
+        log.debug("방 상태 확인 (Redis) - 방ID: {}, 상태: {}", room.getId(), currentState);
+
+        if ("IN_GAME".equals(currentState)) {
+            log.debug("게임 시작 실패 - 이미 게임이 시작된 상태 (Redis) - 방ID: {}", room.getId());
+            throw GAME_ALREADY_STARTED.throwServiceException();
+        }
+
+        redisTemplate.opsForValue().set(roomStateKey, "STARTING");
+        log.debug("게임 시작 임시 상태 설정 - 방ID: {}, 상태: STARTING", room.getId());
+
+        return roomStateKey;
     }
 
-    @Transactional
-    public void startGame(Long roomId, Long memberId) {
-        Room room = roomRepository.findById(roomId)
+    protected Room findRoomOrThrow(Long roomId) {
+        return roomRepository.findRoomById(roomId)
                 .orElseThrow(ROOM_NOT_FOUND::throwServiceException);
+    }
 
+    protected Member findMemberOrThrow(Long memberId) {
+        return memberRepository.findById(memberId)
+                .orElseThrow(MEMBER_NOT_FOUND::throwServiceException);
+    }
+
+    private void validateGameStart(Room room, Long memberId) {
         if (!room.isOwner(memberId)) {
+            log.error("게임 시작 중 오류 발생 - 방ID: {}, 오류: 403 FORBIDDEN : 방장만 이 작업을 수행할 수 있습니다.", room.getId());
             throw NOT_ROOM_OWNER.throwServiceException();
         }
 
         if (!room.isAllPlayersReady()) {
+            log.error("게임 시작 중 오류 발생 - 방ID: {}, 오류: 모든 플레이어가 준비되지 않았습니다.", room.getId());
             throw NOT_ALL_PLAYERS_READY.throwServiceException();
         }
-
-        room.startGame(memberId);
-
-        MessageService roomService = messageServiceFactory.getRoomService();
-        WebSocketRoomMessageResponse message = WebSocketRoomMessageResponse.of(
-                RoomMessageType.GAME_START,
-                "게임이 시작되었습니다!",
-                null,
-                "SYSTEM",
-                "SYSTEM",
-                System.currentTimeMillis(),
-                roomId.toString()
-        );
-        roomService.send("/topic/room/" + roomId, message);
-    }
-
-    @Transactional
-    public void endGame(Long roomId) {
-        Room room = roomRepository.findById(roomId)
-                .orElseThrow(ROOM_NOT_FOUND::throwServiceException);
-
-        room.endGame();
-
-        MessageService roomService = messageServiceFactory.getRoomService();
-        WebSocketRoomMessageResponse message = WebSocketRoomMessageResponse.of(
-                RoomMessageType.GAME_END,
-                "게임이 종료되었습니다.",
-                null,
-                "SYSTEM",
-                "SYSTEM",
-                System.currentTimeMillis(),
-                roomId.toString()
-        );
-        roomService.send("/topic/room/" + roomId, message);
     }
 }

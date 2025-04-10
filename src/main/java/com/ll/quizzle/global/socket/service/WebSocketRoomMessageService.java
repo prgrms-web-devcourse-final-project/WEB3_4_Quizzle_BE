@@ -28,7 +28,7 @@ import java.util.Map;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-public class RoomMessageService {
+public class WebSocketRoomMessageService {
 
     private final ObjectMapper objectMapper;
     private final MessageServiceFactory messageServiceFactory;

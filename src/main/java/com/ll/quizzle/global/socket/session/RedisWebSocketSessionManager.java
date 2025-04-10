@@ -5,6 +5,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Primary;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
 
 import java.util.HashMap;
@@ -19,7 +20,7 @@ import java.util.function.BiConsumer;
  */
 @Primary
 @Slf4j
-@Service("redisWebSocketSessionManager")
+@Component
 @RequiredArgsConstructor
 public class RedisWebSocketSessionManager implements WebSocketSessionManager {
 
