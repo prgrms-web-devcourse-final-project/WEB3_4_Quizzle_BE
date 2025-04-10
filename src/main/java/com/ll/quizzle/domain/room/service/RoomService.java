@@ -31,6 +31,10 @@ import com.ll.quizzle.global.redis.lock.DistributedLock;
 import com.ll.quizzle.global.redis.lock.DistributedLockService;
 import com.ll.quizzle.global.socket.service.WebSocketRoomMessageService;
 import com.ll.quizzle.global.socket.type.RoomMessageType;
+import com.ll.quizzle.global.socket.core.MessageService;
+import com.ll.quizzle.global.socket.core.MessageServiceFactory;
+import com.ll.quizzle.global.exceptions.ServiceException;
+import com.ll.quizzle.global.exceptions.ErrorCode;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -47,6 +51,7 @@ public class RoomService {
     private final DistributedLockService redisLockService;
     private final RedisTemplate<String, String> redisTemplate;
     private final WebSocketRoomMessageService roomMessageService;
+    private final MessageServiceFactory messageServiceFactory;
 
     @Transactional(isolation = Isolation.SERIALIZABLE)
     public RoomResponse createRoom(Long ownerId, RoomCreateRequest request) {
@@ -133,6 +138,11 @@ public class RoomService {
         startGameWithLock(room, memberId);
     }
 
+    public RoomResponse getRoom(Long roomId) {
+        Room room = findRoomOrThrow(roomId);
+        return RoomResponse.from(room);
+    }
+
     @DistributedLock(key = "'room:' + #owner.id", leaseTime = 10000)
     @Transactional(propagation = Propagation.REQUIRES_NEW, isolation = Isolation.SERIALIZABLE)
     protected RoomResponse createRoomWithLock(Member owner, RoomCreateRequest request) {
@@ -147,6 +157,16 @@ public class RoomService {
                 .build();
 
         Room savedRoom = roomRepository.save(room);
+
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                MessageService roomService = messageServiceFactory.getRoomService();
+                roomService.send("/topic/lobby", "ROOM_CREATED:" + savedRoom.getId());
+                log.debug("로비에 방 생성 알림 전송: 방ID={}", savedRoom.getId());
+            }
+        });
+
         return RoomResponse.from(savedRoom);
     }
 
@@ -193,6 +213,10 @@ public class RoomService {
         redisTemplate.opsForValue().set(roomStateKey, "DELETED");
 
         roomMessageService.sendRoomDeleted(room.getId());
+
+        MessageService roomService = messageServiceFactory.getRoomService();
+        roomService.send("/topic/lobby", "ROOM_DELETED:" + room.getId());
+        log.debug("로비에 방 삭제 알림 전송: 방ID={}", room.getId());
     }
 
     private void changeRoomOwner(Room room, Member currentOwner, Long newOwnerId) {
