@@ -2,7 +2,6 @@ package com.ll.quizzle.domain.room.controller;
 
 import com.ll.quizzle.domain.room.dto.request.RoomCreateRequest;
 import com.ll.quizzle.domain.room.dto.response.RoomResponse;
-import com.ll.quizzle.domain.room.entity.Room;
 import com.ll.quizzle.domain.room.service.RoomService;
 import com.ll.quizzle.global.response.RsData;
 import com.ll.quizzle.global.request.Rq;
@@ -42,9 +41,8 @@ public class RoomController {
     @GetMapping("/{roomId}")
     @Operation(summary = "특정 방 정보 조회", description = "특정 방의 상세 정보를 조회합니다. 로비에서 부분 갱신을 위해 사용됩니다.")
     public RsData<RoomResponse> getRoom(@PathVariable Long roomId) {
-        Room room = roomService.findRoomOrThrow(roomId);
-        RoomResponse response = RoomResponse.from(room);
-
+        RoomResponse response = roomService.getRoom(roomId);
+        
         return RsData.success(HttpStatus.OK, response);
     }
 
