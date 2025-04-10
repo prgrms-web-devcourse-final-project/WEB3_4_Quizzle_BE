@@ -11,6 +11,8 @@ import org.springframework.stereotype.Controller;
 
 import com.ll.quizzle.global.socket.core.MessageService;
 import com.ll.quizzle.global.socket.core.MessageServiceFactory;
+import com.ll.quizzle.global.socket.dto.response.WebSocketChatMessageResponse;
+import com.ll.quizzle.global.socket.type.MessageType;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -28,7 +30,17 @@ public class WebSocketChatController {
     public void handleLobbyChatMessage(@Payload String message, SimpMessageHeaderAccessor headerAccessor) {
         String username = Objects.requireNonNull(headerAccessor.getUser()).getName();
         log.debug("로비 채팅 메시지 수신: {}, 사용자: {}", message, username);
-        chatService.send("/topic/lobby/chat", message);
+        
+        WebSocketChatMessageResponse response = WebSocketChatMessageResponse.of(
+            MessageType.CHAT,
+            message,
+            headerAccessor.getUser().getName(),
+            username,
+            System.currentTimeMillis(),
+            "lobby"
+        );
+        
+        chatService.send("/topic/lobby/chat", response);
     }
 
     @MessageMapping("/room/chat/{roomId}")
@@ -39,7 +51,17 @@ public class WebSocketChatController {
     ) {
         String username = Objects.requireNonNull(headerAccessor.getUser()).getName();
         log.debug("방 채팅 메시지 수신: {}, 방: {}, 사용자: {}", message, roomId, username);
-        chatService.send("/topic/room/chat/" + roomId, message);
+        
+        WebSocketChatMessageResponse response = WebSocketChatMessageResponse.of(
+            MessageType.CHAT,
+            message,
+            headerAccessor.getUser().getName(),
+            username,
+            System.currentTimeMillis(),
+            roomId
+        );
+        
+        chatService.send("/topic/room/chat/" + roomId, response);
     }
 
     @MessageMapping("/game/chat/{roomId}")
@@ -50,6 +72,16 @@ public class WebSocketChatController {
     ) {
         String username = Objects.requireNonNull(headerAccessor.getUser()).getName();
         log.debug("게임 채팅 메시지 수신: {}, 방: {}, 사용자: {}", message, roomId, username);
-        chatService.send("/topic/game/chat/" + roomId, message);
+        
+        WebSocketChatMessageResponse response = WebSocketChatMessageResponse.of(
+            MessageType.CHAT,
+            message,
+            headerAccessor.getUser().getName(),
+            username,
+            System.currentTimeMillis(),
+            roomId
+        );
+        
+        chatService.send("/topic/game/chat/" + roomId, response);
     }
 } 
