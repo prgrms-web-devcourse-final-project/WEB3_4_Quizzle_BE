@@ -103,6 +103,10 @@ public class WebSocketRoomMessageService {
         }
     }
 
+    public void sendRoomUpdated(Room room) {
+        String content = "방 정보가 업데이트되었습니다.";
+        sendSystemWithPlayersList(room, RoomMessageType.ROOM_UPDATED, content);
+    }
 
     private String buildPlayersListJson(Room room) throws JsonProcessingException {
         List<Map<String, Object>> playersList = new ArrayList<>();
