@@ -27,6 +27,24 @@ public enum ErrorCode {
 	INVALID_POINT_REASON(HttpStatus.BAD_REQUEST, "유효하지 않은 포인트 사유입니다."),
 	POINT_POLICY_NOT_FOUND(HttpStatus.INTERNAL_SERVER_ERROR, "포인트 정책이 정의되지 않았습니다."),
 
+	// Avatar 관련 오류 코드
+	AVATAR_NOT_FOUND(HttpStatus.NOT_FOUND, "해당 아바타를 찾을 수 없습니다."),
+	AVATAR_ALREADY_OWNED(HttpStatus.BAD_REQUEST, "이미 소유한 아바타입니다."),
+	AVATAR_NOT_OWNED(HttpStatus.FORBIDDEN, "해당 아바타를 소유하고 있지 않습니다."),
+	AVATAR_PURCHASE_FAILED(HttpStatus.BAD_REQUEST, "아바타 구매에 실패했습니다."),
+	AVATAR_ALREADY_APPLIED(HttpStatus.BAD_REQUEST, "이미 해당 아바타가 적용되어 있습니다."),
+	AVATAR_APPLY_FAILED(HttpStatus.BAD_REQUEST, "아바타 적용에 실패했습니다."),
+	AVATAR_DELETE_FAILED(HttpStatus.BAD_REQUEST, "아바타 삭제에 실패했습니다."),
+	AVATAR_PRICE_MISMATCH(HttpStatus.BAD_REQUEST, "구매 요청의 가격과 실제 아바타 가격이 일치하지 않습니다."),
+
+
+	// S3 관련 오류 코드
+	S3_UPLOAD_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "S3 파일 업로드에 실패했습니다."),
+	S3_DELETE_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "S3 파일 삭제에 실패했습니다."),
+	S3_CONNECTION_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "S3 서버 연결에 실패했습니다."),
+	S3_FILE_NOT_FOUND(HttpStatus.NOT_FOUND, "S3에서 파일을 찾을 수 없습니다."),
+
+
 	// jwt
 	TOKEN_EXPIRED(HttpStatus.UNAUTHORIZED, "토큰이 만료되었습니다."),
 	TOKEN_INVALID(HttpStatus.UNAUTHORIZED, "유효하지 않은 토큰입니다."),
