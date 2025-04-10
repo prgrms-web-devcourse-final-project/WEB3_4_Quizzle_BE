@@ -1,5 +1,6 @@
 package com.ll.quizzle.domain.room.dto.request;
 
+import com.ll.quizzle.domain.room.type.AnswerType;
 import com.ll.quizzle.domain.room.type.MainCategory;
 import com.ll.quizzle.domain.room.type.SubCategory;
 import com.ll.quizzle.domain.room.type.Difficulty;
@@ -11,6 +12,8 @@ public record RoomCreateRequest(
     Difficulty difficulty,
     MainCategory mainCategory,
     SubCategory subCategory,
+    AnswerType answerType,
+    int problemCount,
     String password,
     boolean isPrivate
 ) {
@@ -32,6 +35,12 @@ public record RoomCreateRequest(
         }
         if (subCategory == null) {
             ErrorCode.ROOM_SUB_CATEGORY_REQUIRED.throwServiceException();
+        }
+        if (answerType == null) {
+            ErrorCode.ROOM_ANSWER_TYPE_REQUIRED.throwServiceException();
+        }
+        if (problemCount < 10 || problemCount > 50) {
+            ErrorCode.ROOM_PROBLEM_COUNT_INVALID.throwServiceException();
         }
         if (isPrivate && password == null) {
             ErrorCode.ROOM_PRIVATE_PASSWORD_REQUIRED.throwServiceException();
