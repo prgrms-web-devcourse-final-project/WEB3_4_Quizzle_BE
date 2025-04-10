@@ -1,21 +1,30 @@
 package com.ll.quizzle.domain.member.controller;
 
+import static com.ll.quizzle.global.exceptions.ErrorCode.*;
+
+import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.bind.annotation.RestController;
+
 import com.ll.quizzle.domain.member.dto.request.MemberProfileEditRequest;
 import com.ll.quizzle.domain.member.dto.response.MemberProfileEditResponse;
 import com.ll.quizzle.domain.member.dto.response.UserProfileResponse;
 import com.ll.quizzle.domain.member.entity.Member;
 import com.ll.quizzle.domain.member.service.MemberService;
 import com.ll.quizzle.global.response.RsData;
+
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
-import org.springframework.web.bind.annotation.*;
-
-import static com.ll.quizzle.global.exceptions.ErrorCode.MEMBER_NOT_FOUND;
 
 @RestController
 @RequiredArgsConstructor
@@ -31,14 +40,24 @@ public class MemberController {
         return RsData.success(HttpStatus.OK, UserProfileResponse.of(member));
     }
 
-    @PatchMapping("/{memberId}")
-    @Operation(summary = "회원 프로필 수정", description = "회원의 프로필 정보를 수정합니다.")
-    public RsData<MemberProfileEditResponse> updateProfile(
+    @PatchMapping("/{memberId}/nickname")
+    @Operation(summary = "닉네임 수정", description = "닉네임 정보를 수정합니다.")
+    public RsData<MemberProfileEditResponse> editNickname(
         @PathVariable Long memberId,
         @RequestBody @Valid MemberProfileEditRequest request
     ) {
-        MemberProfileEditResponse response = memberService.updateProfile(memberId, request.nickname());
+        MemberProfileEditResponse response = memberService.editNickname(memberId, request.nickname());
         return RsData.success(HttpStatus.OK, response);
+    }
+
+    @PatchMapping("/{memberId}/avatars/{avatarId}")
+    @Operation(summary = "아바타 수정", description = "아바타 정보를 수정합니다.")
+    public RsData<String> editAvatar(
+        @PathVariable Long memberId,
+        @PathVariable Long avatarId
+    ) {
+        memberService.editAvatar(memberId, avatarId);
+        return RsData.success(HttpStatus.OK, "아바타 수정이 완료되었습니다.");
     }
 
     @DeleteMapping
