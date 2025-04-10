@@ -450,14 +450,17 @@ public class RoomService {
 
 
     private void updateRoomProperties(Room room, RoomUpdateRequest request) {
+        String password = request.isPrivate() ? request.password() : null;
+        Boolean isPrivate = request.isPrivate();
+        
         room.updateRoom(
             request.title(),
             request.capacity() > 0 ? request.capacity() : null,
             request.difficulty(),
             request.mainCategory(),
             request.subCategory(),
-            request.isPrivate() ? request.password() : null,
-            request.isPrivate() ? Boolean.TRUE : Boolean.FALSE
+            password,
+            isPrivate
         );
     }
 
