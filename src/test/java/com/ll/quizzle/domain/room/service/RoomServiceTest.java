@@ -32,6 +32,7 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 import com.ll.quizzle.domain.member.entity.Member;
 import com.ll.quizzle.domain.member.repository.MemberRepository;
 import com.ll.quizzle.domain.room.dto.request.RoomCreateRequest;
+import com.ll.quizzle.domain.room.dto.request.RoomUpdateRequest;
 import com.ll.quizzle.domain.room.dto.response.RoomResponse;
 import com.ll.quizzle.domain.room.entity.Room;
 import com.ll.quizzle.domain.room.repository.RoomRepository;
@@ -415,5 +416,136 @@ class RoomServiceTest {
         verify(testRoom).isOwner(1L);
         verify(testRoom, atLeastOnce()).isAllPlayersReady();
         verify(testRoom, never()).startGame(anyLong());
+    }
+
+    @Test
+    @DisplayName("방 업데이트 테스트 - 성공")
+    void updateRoomSuccessTest() {
+        // given
+        RoomUpdateRequest request = new RoomUpdateRequest(
+                "업데이트된 방 제목",
+                5,
+                Difficulty.HARD,
+                MainCategory.HISTORY,
+                SubCategory.WORLD_HISTORY,
+                null,
+                false
+        );
+
+        when(roomRepository.findRoomById(1L)).thenReturn(Optional.of(testRoom));
+        when(testRoom.isOwner(1L)).thenReturn(true);
+        when(testRoom.getStatus()).thenReturn(RoomStatus.WAITING);
+        when(roomRepository.save(any(Room.class))).thenReturn(testRoom);
+
+        // when
+        RoomResponse response = roomService.updateRoom(1L, 1L, request);
+
+        // then
+        assertThat(response).isNotNull();
+        
+        verify(testRoom).updateRoom(
+                eq("업데이트된 방 제목"),
+                eq(5),
+                eq(Difficulty.HARD),
+                eq(MainCategory.HISTORY),
+                eq(SubCategory.WORLD_HISTORY),
+                eq(""),
+                eq(Boolean.FALSE)
+        );
+        
+        verify(roomRepository).save(testRoom);
+    }
+
+    @Test
+    @DisplayName("방 업데이트 테스트 - 비공개 방으로 변경")
+    void updateRoomToPrivateTest() {
+        // given
+        RoomUpdateRequest request = new RoomUpdateRequest(
+                "비공개 방",
+                4,
+                Difficulty.NORMAL,
+                MainCategory.GENERAL_KNOWLEDGE,
+                SubCategory.CULTURE,
+                "5678",
+                true
+        );
+
+        when(roomRepository.findRoomById(1L)).thenReturn(Optional.of(testRoom));
+        when(testRoom.isOwner(1L)).thenReturn(true);
+        when(testRoom.getStatus()).thenReturn(RoomStatus.WAITING);
+        when(roomRepository.save(any(Room.class))).thenReturn(testRoom);
+
+        // when
+        RoomResponse response = roomService.updateRoom(1L, 1L, request);
+
+        // then
+        assertThat(response).isNotNull();
+        
+        verify(testRoom).updateRoom(
+                eq("비공개 방"),
+                eq(4),
+                eq(Difficulty.NORMAL),
+                eq(MainCategory.GENERAL_KNOWLEDGE),
+                eq(SubCategory.CULTURE),
+                eq("5678"),
+                eq(Boolean.TRUE)
+        );
+        
+        verify(roomRepository).save(testRoom);
+    }
+
+    @Test
+    @DisplayName("방 업데이트 테스트 - 방장이 아닌 경우 실패")
+    void updateRoomNotOwnerTest() {
+        // given
+        RoomUpdateRequest request = new RoomUpdateRequest(
+                "업데이트 실패할 제목",
+                4,
+                Difficulty.NORMAL,
+                MainCategory.GENERAL_KNOWLEDGE,
+                SubCategory.CULTURE,
+                null,
+                false
+        );
+
+        when(roomRepository.findRoomById(1L)).thenReturn(Optional.of(testRoom));
+        when(testRoom.isOwner(2L)).thenReturn(false);
+
+        // when & then
+        assertThatThrownBy(() -> roomService.updateRoom(1L, 2L, request))
+                .isInstanceOf(ServiceException.class);
+        
+        verify(testRoom, never()).updateRoom(
+                any(), any(), any(), any(), any(), any(), any()
+        );
+        verify(roomRepository, never()).save(any(Room.class));
+    }
+
+    @Test
+    @DisplayName("방 업데이트 테스트 - 게임 중인 경우 실패")
+    void updateRoomDuringGameTest() {
+        // given
+        RoomUpdateRequest request = new RoomUpdateRequest(
+                "게임 중 업데이트 실패",
+                4,
+                Difficulty.NORMAL,
+                MainCategory.GENERAL_KNOWLEDGE,
+                SubCategory.CULTURE,
+                null,
+                false
+        );
+
+        when(roomRepository.findRoomById(1L)).thenReturn(Optional.of(testRoom));
+        when(testRoom.isOwner(1L)).thenReturn(true);
+        when(testRoom.getStatus()).thenReturn(RoomStatus.IN_GAME);
+
+        // when & then
+        assertThatThrownBy(() -> roomService.updateRoom(1L, 1L, request))
+                .isInstanceOf(ServiceException.class);
+        
+        verify(testRoom, never()).updateRoom(
+                any(), any(), any(), any(), any(), any(), any()
+        );
+        verify(roomRepository, never()).save(any(Room.class));
     }
 }

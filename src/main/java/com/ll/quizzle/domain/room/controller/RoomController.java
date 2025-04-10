@@ -1,6 +1,7 @@
 package com.ll.quizzle.domain.room.controller;
 
 import com.ll.quizzle.domain.room.dto.request.RoomCreateRequest;
+import com.ll.quizzle.domain.room.dto.request.RoomUpdateRequest;
 import com.ll.quizzle.domain.room.dto.response.RoomResponse;
 import com.ll.quizzle.domain.room.service.RoomService;
 import com.ll.quizzle.global.response.RsData;
@@ -37,7 +38,15 @@ public class RoomController {
         List<RoomResponse> responses = roomService.getActiveRooms();
         return RsData.success(HttpStatus.OK, responses);
     }
-    
+
+    @GetMapping("/{roomId}")
+    @Operation(summary = "특정 방 정보 조회", description = "특정 방의 상세 정보를 조회합니다. 로비에서 부분 갱신을 위해 사용됩니다.")
+    public RsData<RoomResponse> getRoom(@PathVariable Long roomId) {
+        RoomResponse response = roomService.getRoom(roomId);
+        
+        return RsData.success(HttpStatus.OK, response);
+    }
+
     @PostMapping("/{roomId}/join")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     @Operation(summary = "방 입장", description = "특정 방에 입장합니다. 비공개 방인 경우 비밀번호가 필요합니다.")
@@ -73,5 +82,15 @@ public class RoomController {
             @PathVariable Long roomId
     ) {
         roomService.startGame(roomId, rq.getActor().getId());
+    }
+
+    @PutMapping("/{roomId}")
+    @Operation(summary = "방 정보 업데이트", description = "방 정보를 업데이트합니다. 방장만 수행할 수 있습니다.")
+    public RsData<RoomResponse> updateRoom(
+            @PathVariable Long roomId,
+            @RequestBody RoomUpdateRequest request
+    ) {
+        RoomResponse response = roomService.updateRoom(roomId, rq.getActor().getId(), request);
+        return RsData.success(HttpStatus.OK, response);
     }
 }
