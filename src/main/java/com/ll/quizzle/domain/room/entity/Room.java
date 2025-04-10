@@ -108,7 +108,7 @@ public class Room extends BaseTime {
         this.problemCount = problemCount;
         this.difficulty = difficulty;
         
-        if (password != null) {
+        if (password != null && !password.isEmpty()) {
             this.passwordHash = passwordEncoder.encode(password);
             this.isPrivate = true;
         } else {
@@ -123,7 +123,7 @@ public class Room extends BaseTime {
     public boolean validatePassword(String inputPassword) {
         if (!isPrivate) return true;
         if (passwordHash == null) return true;
-        if (inputPassword == null) return false;
+        if (inputPassword == null || inputPassword.isEmpty()) return false;
         
         return passwordEncoder.matches(inputPassword, passwordHash);
     }
@@ -231,6 +231,44 @@ public class Room extends BaseTime {
         this.owner = newOwner;
         
         readyPlayers.remove(newOwner.getId());
+    }
+    
+    public void updateRoom(String title, Integer capacity, Difficulty difficulty, 
+                         MainCategory mainCategory, SubCategory subCategory, 
+                         String password, Boolean isPrivate) {
+        if (title != null && !title.trim().isEmpty()) {
+            this.title = title;
+        }
+        
+        if (capacity != null && capacity > 0 && capacity <= 8) {
+            this.capacity = capacity;
+        }
+        
+        if (difficulty != null) {
+            this.difficulty = difficulty;
+        }
+        
+        if (mainCategory != null) {
+            this.mainCategory = mainCategory;
+        }
+        
+        if (subCategory != null) {
+            this.subCategory = subCategory;
+        }
+        
+        if (isPrivate != null) {
+            this.isPrivate = isPrivate;
+            
+            if (isPrivate) {
+                if (password != null && !password.isEmpty()) {
+                    this.passwordHash = passwordEncoder.encode(password);
+                }
+            } else {
+                this.passwordHash = null;
+            }
+        } else if (password != null && !password.isEmpty() && this.isPrivate) {
+            this.passwordHash = passwordEncoder.encode(password);
+        }
     }
 }
 
