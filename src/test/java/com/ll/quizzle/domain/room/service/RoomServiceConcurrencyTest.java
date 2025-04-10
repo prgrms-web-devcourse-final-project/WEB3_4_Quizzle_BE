@@ -171,7 +171,6 @@ class RoomServiceConcurrencyTest {
 
         // then
         verify(spyRoom).removePlayer(1L);
-        // 음, findById(2L)는 실제로 호출되지 않으므로 검증에서 제거
     }
 
     @Test
