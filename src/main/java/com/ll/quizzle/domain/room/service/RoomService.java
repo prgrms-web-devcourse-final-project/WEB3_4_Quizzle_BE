@@ -3,6 +3,7 @@ package com.ll.quizzle.domain.room.service;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import com.ll.quizzle.domain.room.dto.request.RoomUpdateRequest;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Isolation;
@@ -44,8 +45,8 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class RoomService {
-
     private final RoomRepository roomRepository;
+
     private final MemberRepository memberRepository;
     private final RoomBlacklistService blacklistService;
     private final DistributedLockService redisLockService;
@@ -57,6 +58,13 @@ public class RoomService {
     public RoomResponse createRoom(Long ownerId, RoomCreateRequest request) {
         Member owner = findMemberOrThrow(ownerId);
         return createRoomWithLock(owner, request);
+    }
+
+    @Transactional(propagation = Propagation.REQUIRES_NEW, isolation = Isolation.REPEATABLE_READ)
+    public RoomResponse updateRoom(Long roomId, Long ownerId, RoomUpdateRequest request) {
+        Room room = validateRoomForUpdate(roomId, ownerId);
+
+        return updateRoomWithLock(room, request);
     }
 
     public List<RoomResponse> getActiveRooms() {
@@ -158,14 +166,7 @@ public class RoomService {
 
         Room savedRoom = roomRepository.save(room);
 
-        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
-            @Override
-            public void afterCommit() {
-                MessageService roomService = messageServiceFactory.getRoomService();
-                roomService.send("/topic/lobby", "ROOM_CREATED:" + savedRoom.getId());
-                log.debug("로비에 방 생성 알림 전송: 방ID={}", savedRoom.getId());
-            }
-        });
+        scheduleRoomCreatedNotification(savedRoom);
 
         return RoomResponse.from(savedRoom);
     }
@@ -214,9 +215,7 @@ public class RoomService {
 
         roomMessageService.sendRoomDeleted(room.getId());
 
-        MessageService roomService = messageServiceFactory.getRoomService();
-        roomService.send("/topic/lobby", "ROOM_DELETED:" + room.getId());
-        log.debug("로비에 방 삭제 알림 전송: 방ID={}", room.getId());
+        scheduleRoomDeletedNotification(room.getId());
     }
 
     private void changeRoomOwner(Room room, Member currentOwner, Long newOwnerId) {
@@ -407,5 +406,73 @@ public class RoomService {
             log.error("게임 시작 중 오류 발생 - 방ID: {}, 오류: 모든 플레이어가 준비되지 않았습니다.", room.getId());
             throw NOT_ALL_PLAYERS_READY.throwServiceException();
         }
+    }
+
+    private Room validateRoomForUpdate(Long roomId, Long ownerId) {
+        Room room = findRoomOrThrow(roomId);
+
+        if (!room.isOwner(ownerId)) {
+            throw NOT_ROOM_OWNER.throwServiceException();
+        }
+
+        if (RoomStatus.IN_GAME.equals(room.getStatus())) {
+            throw GAME_ALREADY_STARTED.throwServiceException();
+        }
+
+        return room;
+    }
+
+    @DistributedLock(key = "'room:' + #room.id", leaseTime = 10000)
+    @Transactional(propagation = Propagation.REQUIRES_NEW, isolation = Isolation.REPEATABLE_READ)
+    protected RoomResponse updateRoomWithLock(Room room, RoomUpdateRequest request) {
+        updateRoomProperties(room, request);
+
+        Room updatedRoom = roomRepository.save(room);
+        scheduleNotifications(updatedRoom);
+
+        return RoomResponse.from(updatedRoom);
+    }
+
+
+    private void updateRoomProperties(Room room, RoomUpdateRequest request) {
+        room.updateRoom(
+            request.title(),
+            request.capacity() > 0 ? request.capacity() : null,
+            request.difficulty(),
+            request.mainCategory(),
+            request.subCategory(),
+            request.isPrivate() ? request.password() : null,
+            request.isPrivate() ? Boolean.TRUE : Boolean.FALSE
+        );
+    }
+
+    private void scheduleRoomCreatedNotification(Room savedRoom) {
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                MessageService roomService = messageServiceFactory.getRoomService();
+                roomService.send("/topic/lobby", "ROOM_CREATED:" + savedRoom.getId());
+                log.debug("로비에 방 생성 알림 전송: 방ID={}", savedRoom.getId());
+            }
+        });
+    }
+
+    private void scheduleRoomDeletedNotification(Long roomId) {
+        MessageService roomService = messageServiceFactory.getRoomService();
+        roomService.send("/topic/lobby", "ROOM_DELETED:" + roomId);
+        log.debug("로비에 방 삭제 알림 전송: 방ID={}", roomId);
+    }
+
+    private void scheduleNotifications(Room updatedRoom) {
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                roomMessageService.sendRoomUpdated(updatedRoom);
+
+                MessageService roomService = messageServiceFactory.getRoomService();
+                roomService.send("/topic/lobby", "ROOM_UPDATED:" + updatedRoom.getId());
+                log.debug("로비에 방 업데이트 알림 전송: 방ID={}", updatedRoom.getId());
+            }
+        });
     }
 }
