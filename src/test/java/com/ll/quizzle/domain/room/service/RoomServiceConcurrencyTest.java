@@ -76,7 +76,7 @@ class RoomServiceConcurrencyTest {
         testRoom = Room.builder()
                 .title("테스트 방")
                 .owner(testOwner)
-                .capacity(2) // 정원 2명
+                .capacity(2)
                 .difficulty(Difficulty.NORMAL)
                 .mainCategory(MainCategory.GENERAL_KNOWLEDGE)
                 .subCategory(SubCategory.CULTURE)
@@ -167,7 +167,7 @@ class RoomServiceConcurrencyTest {
         when(spyRoom.getPlayers()).thenReturn(players);
 
         // when
-        roomService.leaveRoom(1L, 1L); // 방장 퇴장
+        roomService.leaveRoom(1L, 1L);
 
         // then
         verify(spyRoom).removePlayer(1L);
