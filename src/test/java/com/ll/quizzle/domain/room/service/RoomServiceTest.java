@@ -123,6 +123,8 @@ class RoomServiceTest {
                 Difficulty.NORMAL,
                 MainCategory.GENERAL_KNOWLEDGE,
                 SubCategory.CULTURE,
+                AnswerType.MULTIPLE_CHOICE,
+                10,
                 null,
                 false
         );
@@ -154,6 +156,8 @@ class RoomServiceTest {
                 Difficulty.NORMAL,
                 MainCategory.GENERAL_KNOWLEDGE,
                 SubCategory.CULTURE,
+                AnswerType.MULTIPLE_CHOICE,
+                10,
                 "1234",
                 true
         );

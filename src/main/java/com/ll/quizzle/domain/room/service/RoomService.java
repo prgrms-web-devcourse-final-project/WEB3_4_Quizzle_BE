@@ -161,6 +161,8 @@ public class RoomService {
                 .difficulty(request.difficulty())
                 .mainCategory(request.mainCategory())
                 .subCategory(request.subCategory())
+                .answerType(request.answerType())
+                .problemCount(request.problemCount())
                 .password(request.isPrivate() ? request.password() : "")
                 .build();
 
