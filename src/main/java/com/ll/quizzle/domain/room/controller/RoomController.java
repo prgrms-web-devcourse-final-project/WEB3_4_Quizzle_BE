@@ -1,6 +1,7 @@
 package com.ll.quizzle.domain.room.controller;
 
 import com.ll.quizzle.domain.room.dto.request.RoomCreateRequest;
+import com.ll.quizzle.domain.room.dto.request.RoomUpdateRequest;
 import com.ll.quizzle.domain.room.dto.response.RoomResponse;
 import com.ll.quizzle.domain.room.service.RoomService;
 import com.ll.quizzle.global.response.RsData;
@@ -81,5 +82,15 @@ public class RoomController {
             @PathVariable Long roomId
     ) {
         roomService.startGame(roomId, rq.getActor().getId());
+    }
+
+    @PutMapping("/{roomId}")
+    @Operation(summary = "방 정보 업데이트", description = "방 정보를 업데이트합니다. 방장만 수행할 수 있습니다.")
+    public RsData<RoomResponse> updateRoom(
+            @PathVariable Long roomId,
+            @RequestBody RoomUpdateRequest request
+    ) {
+        RoomResponse response = roomService.updateRoom(roomId, rq.getActor().getId(), request);
+        return RsData.success(HttpStatus.OK, response);
     }
 }
