@@ -122,8 +122,12 @@ public class Room extends BaseTime {
     
     public boolean validatePassword(String inputPassword) {
         if (!isPrivate) return true;
+        
         if (passwordHash == null) return true;
-        if (inputPassword == null || inputPassword.isEmpty()) return false;
+        
+        if (inputPassword == null || inputPassword.isEmpty()) {
+            return false;
+        }
         
         return passwordEncoder.matches(inputPassword, passwordHash);
     }
