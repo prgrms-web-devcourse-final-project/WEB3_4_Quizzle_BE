@@ -135,8 +135,8 @@ public class Room extends BaseTime {
         }
         
         if (passwordHash == null) {
-            log.debug("결과: 비공개방이지만 비밀번호 해시가 null이므로 통과");
-            return true;
+            log.debug("결과: 비공개방이지만 비밀번호 해시가 null이므로 검증 실패");
+            return false;
         }
         
         if (inputPassword == null || inputPassword.isEmpty()) {
