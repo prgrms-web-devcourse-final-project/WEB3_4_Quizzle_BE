@@ -13,6 +13,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 import java.time.format.DateTimeParseException;
@@ -23,6 +24,7 @@ import java.time.format.DateTimeParseException;
 public class GlobalExceptionHandler {
 
     @ExceptionHandler(ServiceException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ResponseEntity<RsData<?>> handle(ServiceException ex) {
         log.error("ServiceException: {}", ex.getMessage());
         

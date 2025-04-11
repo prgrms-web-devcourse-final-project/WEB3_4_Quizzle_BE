@@ -64,7 +64,6 @@ openai:
 
 springdoc:
   default-produces-media-type: application/json;charset=UTF-8
-
 cloud:
   aws:
     region:
