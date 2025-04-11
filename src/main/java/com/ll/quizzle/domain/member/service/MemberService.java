@@ -1,13 +1,13 @@
 package com.ll.quizzle.domain.member.service;
 
-import static com.ll.quizzle.global.exceptions.ErrorCode.*;
-
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
@@ -16,10 +16,18 @@ import org.springframework.transaction.annotation.Transactional;
 import com.ll.quizzle.domain.avatar.entity.Avatar;
 import com.ll.quizzle.domain.avatar.repository.AvatarRepository;
 import com.ll.quizzle.domain.member.dto.response.MemberProfileEditResponse;
+import com.ll.quizzle.domain.member.dto.response.MemberRankingResponse;
 import com.ll.quizzle.domain.member.entity.Member;
 import com.ll.quizzle.domain.member.repository.MemberRepository;
 import com.ll.quizzle.domain.point.service.PointService;
 import com.ll.quizzle.domain.point.type.PointReason;
+import static com.ll.quizzle.global.exceptions.ErrorCode.AVATAR_ALREADY_APPLIED;
+import static com.ll.quizzle.global.exceptions.ErrorCode.AVATAR_NOT_FOUND;
+import static com.ll.quizzle.global.exceptions.ErrorCode.AVATAR_NOT_OWNED;
+import static com.ll.quizzle.global.exceptions.ErrorCode.OAUTH_NOT_FOUND;
+import static com.ll.quizzle.global.exceptions.ErrorCode.TOKEN_INVALID;
+import static com.ll.quizzle.global.exceptions.ErrorCode.TOKEN_LOGGED_OUT;
+import static com.ll.quizzle.global.exceptions.ErrorCode.UNAUTHORIZED;
 import com.ll.quizzle.global.jwt.dto.GeneratedToken;
 import com.ll.quizzle.global.jwt.dto.JwtProperties;
 import com.ll.quizzle.global.request.Rq;
@@ -232,6 +240,19 @@ public class MemberService {
 
 		member.changeAvatar(avatar);
 		memberRepository.save(member);
+	}
+
+	@Transactional(readOnly = true)
+	public List<Member> getRankingByExp() {
+		return memberRepository.findAllByOrderByExpDesc();
+	}
+
+	@Transactional(readOnly = true)
+	public List<MemberRankingResponse> getMemberRankings() {
+		List<Member> rankedMembers = getRankingByExp();
+		return rankedMembers.stream()
+			.map(MemberRankingResponse::of)
+			.collect(Collectors.toList());
 	}
 
 }
