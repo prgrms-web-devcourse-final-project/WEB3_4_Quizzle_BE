@@ -127,7 +127,9 @@ jobs:
               # app1_1이 실행 중이면 app1_2로 배포
               docker stop app1_2 2>/dev/null
               docker rm app1_2 2>/dev/null
-              docker run -d --network common --network-alias app --name app1_2 -p 8081:8080 ghcr.io/${{ env.OWNER_LC }}/${{ env.DOCKER_IMAGE_NAME }}:latest
+              # .env 파일 생성
+              echo "${{ secrets.ENV_SECRETS }}" > .env
+              docker run -d --network common --network-alias app --name app1_2 -p 8081:8080 --env-file .env ghcr.io/${{ env.OWNER_LC }}/${{ env.DOCKER_IMAGE_NAME }}:latest
               sleep 10
               docker stop app1_1 2>/dev/null
               docker rm app1_1 2>/dev/null
@@ -135,7 +137,9 @@ jobs:
               # app1_2가 실행 중이면 app1_1로 배포
               docker stop app1_1 2>/dev/null
               docker rm app1_1 2>/dev/null
-              docker run -d --network common --network-alias app --name app1_1 -p 8080:8080 ghcr.io/${{ env.OWNER_LC }}/${{ env.DOCKER_IMAGE_NAME }}:latest
+              # .env 파일 생성
+              echo "${{ secrets.ENV_SECRETS }}" > .env
+              docker run -d --network common --network-alias app --name app1_1 -p 8080:8080 --env-file .env ghcr.io/${{ env.OWNER_LC }}/${{ env.DOCKER_IMAGE_NAME }}:latest
               sleep 10
               docker stop app1_2 2>/dev/null
               docker rm app1_2 2>/dev/null
