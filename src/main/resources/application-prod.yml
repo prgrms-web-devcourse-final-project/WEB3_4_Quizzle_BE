@@ -2,9 +2,8 @@ spring:
   websocket:
     endpoint: /ws
     allowed-origins:
-      - https://quizzle.com
-      - https://www.quizzle.com
-      - https://api.quizzle.com
+      - https://secret-fe.vercel.app
+      - https://quizzle.p-e.kr
 
   jpa:
     hibernate:
@@ -27,15 +26,14 @@ server:
 
 custom:
   site:
-    cookieDomain: quizzle.com
-    frontUrl: "https://www.quizzle.com"
-    backUrl: "https://api.quizzle.com"
+    cookieDomain: quizzle.p-e.kr
+    frontUrl: "https://secret-fe.vercel.app"
+    backUrl: "https://quizzle.p-e.kr"
     name: Quizzle
   cors:
     allowed-origins:
-      - https://quizzle.com
-      - https://www.quizzle.com
-      - https://api.quizzle.com
+      - https://secret-fe.vercel.app
+      - https://quizzle.p-e.kr
 
 app:
   websocket:
