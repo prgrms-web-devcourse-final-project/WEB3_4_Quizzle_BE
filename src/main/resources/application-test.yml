@@ -48,3 +48,13 @@ system:
   systemPasswordHash: $2a$10$yNOvzUXqY3HzYzQk1QbZBeYqeZMaGGZ3h4M4YBxzwHwMAQVbDXcXi
   secondaryPasswordHash: $2a$10$yNOvzUXqY3HzYzQk1QbZBeYqeZMaGGZ3h4M4YBxzwHwMAQVbDXcXi
 
+
+
+cloud:
+  aws:
+    s3:
+      bucket: test-bucket
+    region:
+      static: ap-northeast-2
+    stack:
+      auto: false

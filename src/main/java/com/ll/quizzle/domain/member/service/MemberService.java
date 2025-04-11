@@ -13,6 +13,8 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.ll.quizzle.domain.avatar.entity.Avatar;
+import com.ll.quizzle.domain.avatar.repository.AvatarRepository;
 import com.ll.quizzle.domain.member.dto.response.MemberProfileEditResponse;
 import com.ll.quizzle.domain.member.entity.Member;
 import com.ll.quizzle.domain.member.repository.MemberRepository;
@@ -35,6 +37,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class MemberService {
 	private final MemberRepository memberRepository;
+	private final AvatarRepository avatarRepository;
 	private final PointService pointService;
 	private final OAuthRepository oAuthRepository;
 	private final RefreshTokenService refreshTokenService;
@@ -86,7 +89,6 @@ public class MemberService {
 		return authTokenService.getEmail(token);
 	}
 
-
 	public Long getTokenExpiryTime(String token) {
 		return authTokenService.getTokenExpiryTime(token);
 	}
@@ -97,6 +99,18 @@ public class MemberService {
 
 	@Transactional
 	public void oAuth2Login(Member member, HttpServletResponse response) {
+		// 기본 아바타 없으면 할당
+		if (member.getAvatar() == null) {
+
+			Avatar defaultAvatar = avatarRepository.findAll().stream()
+				.filter(a -> a.getFileName().trim().equalsIgnoreCase("새콩이"))
+				.findFirst()
+				.orElseThrow(AVATAR_NOT_FOUND::throwServiceException);
+
+			member.changeAvatar(defaultAvatar);
+			memberRepository.save(member);
+		}
+
 		GeneratedToken tokens = authTokenService.generateToken(
 			member.getEmail(),
 			member.getUserRole()
@@ -111,7 +125,7 @@ public class MemberService {
 			response,
 			"access_token",
 			tokens.accessToken(),
-			(int) jwtProperties.getAccessTokenExpiration(),
+			(int)jwtProperties.getAccessTokenExpiration(),
 			true,
 			true
 		);
@@ -121,7 +135,7 @@ public class MemberService {
 			response,
 			"refresh_token",
 			tokens.refreshToken(),
-			(int) jwtProperties.getRefreshTokenExpiration(),
+			(int)jwtProperties.getRefreshTokenExpiration(),
 			true,
 			true
 		);
@@ -134,7 +148,7 @@ public class MemberService {
 			response,
 			"role",
 			URLEncoder.encode(Ut.json.toString(roleData), StandardCharsets.UTF_8),
-			(int) jwtProperties.getAccessTokenExpiration(),
+			(int)jwtProperties.getAccessTokenExpiration(),
 			false,
 			true
 		);
@@ -187,7 +201,7 @@ public class MemberService {
 	}
 
 	@Transactional
-	public MemberProfileEditResponse updateProfile(Long memberId, String newNickname) {
+	public MemberProfileEditResponse editNickname(Long memberId, String newNickname) {
 		Member member = rq.assertIsOwner(memberId);
 
 		validateNickname(newNickname);
@@ -195,6 +209,25 @@ public class MemberService {
 		pointService.applyPointPolicy(member, PointReason.NICKNAME_CHANGE);
 		memberRepository.save(member);
 		return MemberProfileEditResponse.from(member);
+	}
+
+	@Transactional
+	public void editAvatar(Long memberId, Long avatarId) {
+		Member member = rq.assertIsOwner(memberId);
+
+		Avatar avatar = avatarRepository.findById(avatarId)
+			.orElseThrow(AVATAR_NOT_FOUND::throwServiceException);
+
+		if (!avatar.isOwned() || !avatar.getMember().getId().equals(memberId)) {
+			throw AVATAR_NOT_OWNED.throwServiceException();
+		}
+
+		if (member.getAvatar() != null && member.getAvatar().getId().equals(avatarId)) {
+			throw AVATAR_ALREADY_APPLIED.throwServiceException();
+		}
+
+		member.changeAvatar(avatar);
+		memberRepository.save(member);
 	}
 
 	public void validateNickname(String nickname) {
@@ -211,5 +244,4 @@ public class MemberService {
 			NICKNAME_ALREADY_EXISTS.throwServiceException();
 		}
 	}
-
 }

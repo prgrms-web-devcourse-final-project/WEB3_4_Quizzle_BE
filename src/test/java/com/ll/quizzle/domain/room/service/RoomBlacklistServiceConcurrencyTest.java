@@ -19,6 +19,7 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 
+import com.ll.quizzle.domain.avatar.entity.Avatar;
 import com.ll.quizzle.domain.member.entity.Member;
 import com.ll.quizzle.domain.member.repository.MemberRepository;
 import com.ll.quizzle.domain.room.entity.Room;
@@ -51,28 +52,29 @@ class RoomBlacklistServiceConcurrencyTest {
     private Room testRoom;
     private Member testOwner;
     private Member targetMember;
+    private Avatar defaultAvatar;
     private MockedStatic<TransactionSynchronizationManager> mockedTransactionManager;
 
     @BeforeEach
     void setUp() {
         mockedTransactionManager = mockStatic(TransactionSynchronizationManager.class);
         mockedTransactionManager.when(() -> TransactionSynchronizationManager.registerSynchronization(any()))
-                .thenAnswer(invocation -> null);
+            .thenAnswer(invocation -> null);
 
-        testOwner = Member.create("방장", "owner@example.com");
+        testOwner = Member.create("방장", "owner@example.com", defaultAvatar);
         ReflectionTestUtils.setField(testOwner, "id", 1L);
 
-        targetMember = Member.create("차단대상", "target@example.com");
+        targetMember = Member.create("차단대상", "target@example.com", defaultAvatar);
         ReflectionTestUtils.setField(targetMember, "id", 2L);
 
         testRoom = Room.builder()
-                .title("테스트 방")
-                .owner(testOwner)
-                .capacity(10)
-                .difficulty(Difficulty.NORMAL)
-                .mainCategory(MainCategory.GENERAL_KNOWLEDGE)
-                .subCategory(SubCategory.CULTURE)
-                .build();
+            .title("테스트 방")
+            .owner(testOwner)
+            .capacity(10)
+            .difficulty(Difficulty.NORMAL)
+            .mainCategory(MainCategory.GENERAL_KNOWLEDGE)
+            .subCategory(SubCategory.CULTURE)
+            .build();
         ReflectionTestUtils.setField(testRoom, "id", 1L);
     }
 
@@ -93,15 +95,15 @@ class RoomBlacklistServiceConcurrencyTest {
         lenient().when(distributedLockService.acquireLock(anyString(), anyLong(), anyLong())).thenReturn(true);
 
         when(blacklistRepository.existsByRoomAndMember(any(Room.class), any(Member.class)))
-                .thenReturn(false)
-                .thenReturn(true);
+            .thenReturn(false)
+            .thenReturn(true);
 
         // when
         blacklistService.addToBlacklist(1L, 2L);
 
         // then
         assertThatThrownBy(() -> blacklistService.addToBlacklist(1L, 2L))
-                .isInstanceOf(ServiceException.class);
+            .isInstanceOf(ServiceException.class);
 
         verify(blacklistRepository, times(1)).save(any(RoomBlacklist.class));
     }
