@@ -1,0 +1,42 @@
+spring:
+  websocket:
+    endpoint: /ws
+    allowed-origins:
+      - https://quizzle.com
+      - https://www.quizzle.com
+      - https://api.quizzle.com
+
+  jpa:
+    hibernate:
+      ddl-auto: none
+
+logging:
+  level:
+    com.ll.quizzle: INFO
+    org.springframework.web.socket: INFO
+
+server:
+  port: ${SERVER_PORT:8080}
+  servlet:
+    context-path: /
+  error:
+    include-stacktrace: never
+    include-message: never
+    whitelabel:
+      enabled: false
+
+custom:
+  site:
+    cookieDomain: quizzle.com
+    frontUrl: "https://www.quizzle.com"
+    backUrl: "https://api.quizzle.com"
+    name: Quizzle
+  cors:
+    allowed-origins:
+      - https://quizzle.com
+      - https://www.quizzle.com
+      - https://api.quizzle.com
+
+app:
+  websocket:
+    use-distributed-sessions: true
