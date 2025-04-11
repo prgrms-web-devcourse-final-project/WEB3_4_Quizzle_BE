@@ -9,6 +9,13 @@ on:
       - "Dockerfile"
     branches:
       - main
+  # 수동 실행 트리거 추가
+  workflow_dispatch:
+    inputs:
+      reason:
+        description: '배포 이유'
+        required: false
+        default: '수동 배포'
 jobs:
   makeTagAndRelease:
     runs-on: ubuntu-latest
