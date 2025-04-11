@@ -2,6 +2,8 @@ package com.ll.quizzle.domain.member.controller;
 
 import static com.ll.quizzle.global.exceptions.ErrorCode.*;
 
+import java.util.List;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -14,6 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.ll.quizzle.domain.member.dto.request.MemberProfileEditRequest;
 import com.ll.quizzle.domain.member.dto.response.MemberProfileEditResponse;
+import com.ll.quizzle.domain.member.dto.response.MemberRankingResponse;
 import com.ll.quizzle.domain.member.dto.response.UserProfileResponse;
 import com.ll.quizzle.domain.member.entity.Member;
 import com.ll.quizzle.domain.member.service.MemberService;
@@ -74,5 +77,12 @@ public class MemberController {
         Member actor = rq.getActor();
         Member member = memberService.findById(actor.getId()).orElseThrow(MEMBER_NOT_FOUND::throwServiceException);
         return RsData.success(HttpStatus.OK, UserProfileResponse.of(member));
+    }
+    
+    @GetMapping("/rankings")
+    @Operation(summary = "경험치 랭킹 조회", description = "모든 회원의 경험치 랭킹을 조회합니다. 경험치 내림차순으로 정렬됩니다.")
+    public RsData<List<MemberRankingResponse>> getRankings() {
+        List<MemberRankingResponse> rankingResponses = memberService.getMemberRankings();
+        return RsData.success(HttpStatus.OK, rankingResponses);
     }
 }
