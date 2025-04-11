@@ -8,6 +8,7 @@ import com.ll.quizzle.domain.quiz.service.RedisQuizAnswerService;
 import com.ll.quizzle.global.response.RsData;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
@@ -25,7 +26,7 @@ public class QuizGenerateController {
 
     @Operation(summary = "퀴즈 생성", description = "GPT를 이용하여 퀴즈를 생성하고, 생성된 퀴즈를 Redis에 저장합니다.")
     @PostMapping("/generate")
-    public RsData<QuizResponse> generateQuiz(@RequestBody QuizGenerationRequest request) {
+    public RsData<QuizResponse> generateQuiz(@Valid @RequestBody QuizGenerationRequest request) {
         String quizId = UUID.randomUUID().toString();
 
         QuizGenerationResponse generationResponse = gptQuizService.generateQuiz(request);
