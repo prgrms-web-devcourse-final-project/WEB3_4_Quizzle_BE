@@ -92,7 +92,7 @@ public enum ErrorCode {
 	NICKNAME_LENGTH_INVALID(HttpStatus.BAD_REQUEST, "닉네임은 2자 이상 20자 이하이어야 합니다."),
 	NICKNAME_FORMAT_INVALID(HttpStatus.BAD_REQUEST, "닉네임은 영문, 숫자, 한글만 사용할 수 있습니다."),
 	NICKNAME_ALREADY_EXISTS(HttpStatus.BAD_REQUEST, "이미 존재하는 닉네임입니다."),
-	NICKNAME_GUEST_PREFIX_FORBIDDEN(HttpStatus.BAD_REQUEST, "'GUEST-'로 시작하는 닉네임은 사용할 수 없습니다."),
+	NICKNAME_GUEST_PREFIX_FORBIDDEN(HttpStatus.BAD_REQUEST, "'GUEST'로 시작하는 닉네임은 사용할 수 없습니다."),
 
     // friend
     FRIEND_ALREADY_EXISTS(HttpStatus.BAD_REQUEST, "이미 친구 관계입니다."),
