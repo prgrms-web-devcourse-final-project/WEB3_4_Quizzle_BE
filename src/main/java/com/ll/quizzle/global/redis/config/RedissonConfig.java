@@ -15,6 +15,9 @@ public class RedissonConfig {
 
     @Value("${spring.data.redis.port:6379}")
     private int redisPort;
+    
+    @Value("${spring.data.redis.password:}")
+    private String redisPassword;
 
     private static final String REDISSON_HOST_PREFIX = "redis://";
 
@@ -23,6 +26,7 @@ public class RedissonConfig {
         Config config = new Config();
         config.useSingleServer()
                 .setAddress(REDISSON_HOST_PREFIX + redisHost + ":" + redisPort)
+                .setPassword(redisPassword.isEmpty() ? null : redisPassword)
                 .setConnectTimeout(5000)
                 .setRetryAttempts(3)
                 .setRetryInterval(1500);
