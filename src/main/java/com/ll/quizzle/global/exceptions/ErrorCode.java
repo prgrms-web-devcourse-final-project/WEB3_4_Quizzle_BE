@@ -99,7 +99,7 @@ public enum ErrorCode {
 	ROOM_PROBLEM_COUNT_INVALID(HttpStatus.BAD_REQUEST, "문제 수는 10개에서 50개 사이여야 합니다."),
 	ROOM_PRIVATE_PASSWORD_REQUIRED(HttpStatus.BAD_REQUEST, "비공개 방의 경우 비밀번호는 필수입니다."),
 	ROOM_PASSWORD_INVALID(HttpStatus.BAD_REQUEST, "방 비밀번호는 4자리 숫자(0000~9999)여야 합니다."),
-	MIN_PLAYER_COUNT_NOT_MET(HttpStatus.BAD_REQUEST, "게임을 시작하려면 최소 1명의 플레이어가 필요합니다."),
+	MIN_PLAYER_COUNT_NOT_MET(HttpStatus.BAD_REQUEST, "방에 플레이어가 없어 게임을 시작할 수 없습니다."),
 	PLAYER_NOT_IN_ROOM(HttpStatus.BAD_REQUEST, "준비된 플레이어가 방에 존재하지 않습니다."),
 	PLAYER_LEFT_DURING_START(HttpStatus.BAD_REQUEST, "게임 시작 중에 플레이어가 퇴장했습니다.");
 

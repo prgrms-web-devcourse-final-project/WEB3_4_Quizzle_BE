@@ -278,17 +278,27 @@ public class Room extends BaseTime {
         }
         
         if (isPrivate != null) {
-            this.isPrivate = isPrivate;
-            
             if (isPrivate) {
                 if (password != null && !password.isEmpty()) {
                     this.passwordHash = passwordEncoder.encode(password);
+                    this.isPrivate = true;
+                } else {
+                    log.debug("비공개 방으로 설정하려 했으나 비밀번호가 없어 공개 방으로 설정됩니다.");
+                    this.passwordHash = null;
+                    this.isPrivate = false;
                 }
             } else {
                 this.passwordHash = null;
+                this.isPrivate = false;
             }
-        } else if (password != null && !password.isEmpty() && this.isPrivate) {
-            this.passwordHash = passwordEncoder.encode(password);
+        } else if (password != null) {
+            if (!password.isEmpty()) {
+                this.passwordHash = passwordEncoder.encode(password);
+                this.isPrivate = true;
+            } else {
+                this.passwordHash = null;
+                this.isPrivate = false;
+            }
         }
     }
 }

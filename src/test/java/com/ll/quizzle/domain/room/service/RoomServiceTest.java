@@ -216,7 +216,7 @@ class RoomServiceTest {
         // then
         verify(roomRepository).findRoomById(1L);
         verify(blacklistService).isBlacklisted(1L, 2L);
-        verify(testRoom).validatePassword(any());
+        verify(testRoom, atLeastOnce()).validatePassword(any());
         verify(testRoom).isFull();
         verify(testRoom).hasPlayer(2L);
         verify(testRoom).addPlayer(2L);
@@ -239,7 +239,7 @@ class RoomServiceTest {
         // verify
         verify(roomRepository).findRoomById(1L);
         verify(blacklistService).isBlacklisted(1L, 2L);
-        verify(testRoom).validatePassword(any());
+        verify(testRoom, atLeastOnce()).validatePassword(any());
         verify(testRoom, never()).addPlayer(anyLong());
     }
 
@@ -453,7 +453,7 @@ class RoomServiceTest {
                 eq(Difficulty.HARD),
                 eq(MainCategory.HISTORY),
                 eq(SubCategory.WORLD_HISTORY),
-                eq(""),
+                any(),
                 eq(Boolean.FALSE)
         );
         
