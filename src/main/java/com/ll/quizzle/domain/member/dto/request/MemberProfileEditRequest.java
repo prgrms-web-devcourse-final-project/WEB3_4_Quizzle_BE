@@ -1,12 +1,21 @@
 package com.ll.quizzle.domain.member.dto.request;
 
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Size;
+import com.ll.quizzle.global.exceptions.ErrorCode;
 
-public record MemberProfileEditRequest(
+public record MemberProfileEditRequest(String nickname) {
 
-	@NotBlank(message = "닉네임은 필수입니다.")
-	@Size(min = 2, max = 20, message = "닉네임은 2자 이상 20자 이하로 입력해주세요.")
-	String nickname
-) {
+	public MemberProfileEditRequest {
+		if (nickname == null || nickname.trim().isEmpty()) {
+			ErrorCode.NICKNAME_INVALID.throwServiceException();
+		}
+		if (nickname.length() < 2 || nickname.length() > 20) {
+			ErrorCode.NICKNAME_LENGTH_INVALID.throwServiceException();
+		}
+		if (!nickname.matches("^[a-zA-Z0-9가-힣]+$")) {
+			ErrorCode.NICKNAME_FORMAT_INVALID.throwServiceException();
+		}
+		if (nickname.toUpperCase().startsWith("GUEST")) {
+			ErrorCode.NICKNAME_GUEST_PREFIX_FORBIDDEN.throwServiceException();
+		}
+	}
 }

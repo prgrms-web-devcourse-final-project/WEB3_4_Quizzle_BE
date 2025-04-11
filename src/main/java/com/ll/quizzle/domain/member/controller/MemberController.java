@@ -24,7 +24,6 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 @RestController
@@ -46,7 +45,7 @@ public class MemberController {
     @Operation(summary = "닉네임 수정", description = "닉네임 정보를 수정합니다.")
     public RsData<MemberProfileEditResponse> editNickname(
         @PathVariable Long memberId,
-        @RequestBody @Valid MemberProfileEditRequest request
+        @RequestBody MemberProfileEditRequest request
     ) {
         MemberProfileEditResponse response = memberService.editNickname(memberId, request.nickname());
         return RsData.success(HttpStatus.OK, response);
