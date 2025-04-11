@@ -77,7 +77,6 @@ public class SystemControllerTest {
 			.email(SYSTEM_EMAIL)
 			.nickname("System")
 			.role(Role.SYSTEM)
-			.profilePath(DEFAULT_PROFILE_PATH)  // 프로필 경로 추가
 			.exp(0)                           // exp 추가
 			.level(1)                         // level 추가
 			.pointBalance(0)                  // pointBalance 추가
@@ -89,7 +88,6 @@ public class SystemControllerTest {
 			.email("admin@quizzle.com")
 			.nickname("Admin")
 			.role(Role.ADMIN)
-			.profilePath(DEFAULT_PROFILE_PATH)  // 프로필 경로 추가
 			.exp(0)
 			.level(1)
 			.pointBalance(0)
@@ -101,7 +99,6 @@ public class SystemControllerTest {
 			.email("member@quizzle.com")
 			.nickname("Member")
 			.role(Role.MEMBER)
-			.profilePath(DEFAULT_PROFILE_PATH)  // 프로필 경로 추가
 			.exp(0)
 			.level(1)
 			.pointBalance(0)

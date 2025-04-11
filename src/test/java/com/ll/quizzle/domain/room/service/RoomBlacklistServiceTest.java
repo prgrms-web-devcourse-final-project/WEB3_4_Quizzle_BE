@@ -1,8 +1,7 @@
 package com.ll.quizzle.domain.room.service;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
+import static org.assertj.core.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 import java.util.Arrays;
@@ -19,6 +18,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import com.ll.quizzle.domain.avatar.entity.Avatar;
 import com.ll.quizzle.domain.member.entity.Member;
 import com.ll.quizzle.domain.member.repository.MemberRepository;
 import com.ll.quizzle.domain.room.entity.Room;
@@ -40,6 +40,9 @@ class RoomBlacklistServiceTest {
     
     @Mock
     private MemberRepository memberRepository;
+
+    @Mock
+    private Avatar defaultAvatar;
     
     @InjectMocks
     private RoomBlacklistService blacklistService;
@@ -51,8 +54,8 @@ class RoomBlacklistServiceTest {
     
     @BeforeEach
     void setUp() {
-        testOwner = Member.create("테스트방장", "owner@example.com");
-        testUser = Member.create("테스트유저", "user@example.com");
+        testOwner = Member.create("테스트방장", "owner@example.com", defaultAvatar);
+        testUser = Member.create("테스트유저", "user@example.com", defaultAvatar);
         
         ReflectionTestUtils.setField(testOwner, "id", 1L);
         ReflectionTestUtils.setField(testUser, "id", 2L);

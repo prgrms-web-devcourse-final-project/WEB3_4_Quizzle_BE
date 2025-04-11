@@ -1,22 +1,27 @@
 package com.ll.quizzle.global.security.oauth2;
 
-import com.ll.quizzle.domain.member.entity.Member;
-import com.ll.quizzle.domain.member.repository.MemberRepository;
-import com.ll.quizzle.domain.member.service.MemberService;
-import com.ll.quizzle.global.security.oauth2.dto.SecurityUser;
-import com.ll.quizzle.global.security.oauth2.entity.OAuth;
-import com.ll.quizzle.global.security.oauth2.repository.OAuthRepository;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import java.util.Map;
+import java.util.Optional;
+import java.util.UUID;
+
 import org.springframework.security.oauth2.client.userinfo.DefaultOAuth2UserService;
 import org.springframework.security.oauth2.client.userinfo.OAuth2UserRequest;
 import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
 
-import java.util.Map;
-import java.util.Optional;
-import java.util.UUID;
+import com.ll.quizzle.domain.avatar.entity.Avatar;
+import com.ll.quizzle.domain.avatar.repository.AvatarRepository;
+import com.ll.quizzle.domain.member.entity.Member;
+import com.ll.quizzle.domain.member.repository.MemberRepository;
+import com.ll.quizzle.domain.member.service.MemberService;
+import com.ll.quizzle.global.exceptions.ErrorCode;
+import com.ll.quizzle.global.security.oauth2.dto.SecurityUser;
+import com.ll.quizzle.global.security.oauth2.entity.OAuth;
+import com.ll.quizzle.global.security.oauth2.repository.OAuthRepository;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Service
@@ -25,6 +30,7 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
     private final MemberService memberService;
     private final OAuthRepository oAuthRepository;
     private final MemberRepository memberRepository;
+    private final AvatarRepository avatarRepository;
 
     @Override
     public OAuth2User loadUser(OAuth2UserRequest userRequest) throws OAuth2AuthenticationException {
@@ -79,10 +85,15 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
         if (existingMember.isPresent()) {
             member = existingMember.get();
         } else {
-            // 새로운 사용자 생성
+            // 기본 아바타 조회
+            Avatar defaultAvatar = avatarRepository.findByFileName("새콩이")
+                .orElseThrow(ErrorCode.AVATAR_NOT_FOUND::throwServiceException);
+
+            // 새로운 사용자 생성 (기본 아바타 포함)
             member = Member.create(
-                    "GUEST-" + UUID.randomUUID().toString().substring(0, 6),
-                    email
+                "GUEST-" + UUID.randomUUID().toString().substring(0, 6),
+                email,
+                defaultAvatar
             );
             memberRepository.save(member);
 
@@ -90,13 +101,13 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
         }
 
         return new SecurityUser(
-                email,
-                name,
-                registrationId,
-                isNewUser,
-                oauth2User.getAttributes(),
-                oauth2User.getAuthorities(),
-                oauthId
+            email,
+            name,
+            registrationId,
+            isNewUser,
+            oauth2User.getAttributes(),
+            oauth2User.getAuthorities(),
+            oauthId
         );
     }
 }

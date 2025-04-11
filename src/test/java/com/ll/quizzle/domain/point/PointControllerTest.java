@@ -1,5 +1,6 @@
 package com.ll.quizzle.domain.point;
 
+import static com.ll.quizzle.global.exceptions.ErrorCode.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -12,6 +13,8 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.ll.quizzle.domain.avatar.entity.Avatar;
+import com.ll.quizzle.domain.avatar.repository.AvatarRepository;
 import com.ll.quizzle.domain.member.entity.Member;
 import com.ll.quizzle.domain.member.repository.MemberRepository;
 import com.ll.quizzle.domain.member.service.AuthTokenService;
@@ -47,17 +50,23 @@ class PointControllerTest {
 	private Member other;
 	private Cookie accessTokenCookie;
 
+	@Autowired
+	private AvatarRepository avatarRepository;
+
 	@BeforeEach
 	void setUp() {
+
+		Avatar defaultAvatar = avatarRepository.findByFileName("새콩이")
+			.orElseThrow(AVATAR_NOT_FOUND::throwServiceException);
 		// 테스트 유저 생성
 		member = TestMemberFactory.createOAuthMember(
 			"테스트유저", "test@email.com", "google", "1234",
-			memberRepository, oAuthRepository
+			memberRepository, oAuthRepository, defaultAvatar
 		);
 
 		other = TestMemberFactory.createOAuthMember(
 			"다른유저", "other@email.com", "google", "5678",
-			memberRepository, oAuthRepository
+			memberRepository, oAuthRepository, defaultAvatar
 		);
 
 		// 포인트 내역 생성

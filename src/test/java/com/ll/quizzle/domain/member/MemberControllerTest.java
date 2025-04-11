@@ -1,9 +1,9 @@
 package com.ll.quizzle.domain.member;
 
-import com.ll.quizzle.domain.member.entity.Member;
-import com.ll.quizzle.domain.member.repository.MemberRepository;
-import com.ll.quizzle.factory.TestMemberFactory;
-import com.ll.quizzle.global.security.oauth2.repository.OAuthRepository;
+import static com.ll.quizzle.global.exceptions.ErrorCode.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -13,9 +13,12 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import com.ll.quizzle.domain.avatar.entity.Avatar;
+import com.ll.quizzle.domain.avatar.repository.AvatarRepository;
+import com.ll.quizzle.domain.member.entity.Member;
+import com.ll.quizzle.domain.member.repository.MemberRepository;
+import com.ll.quizzle.factory.TestMemberFactory;
+import com.ll.quizzle.global.security.oauth2.repository.OAuthRepository;
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -30,14 +33,20 @@ class MemberControllerTest {
     @Autowired
     private OAuthRepository oAuthRepository;
 
+    @Autowired
+    private AvatarRepository avatarRepository;
+
     private Member member;
 
     @BeforeEach
     void setUp() {
+
+        Avatar defaultAvatar = avatarRepository.findByFileName("새콩이")
+            .orElseThrow(AVATAR_NOT_FOUND::throwServiceException);
         // 테스트 유저 생성
         member = TestMemberFactory.createOAuthMember(
                 "테스트유저", "test@email.com", "google", "1234",
-                memberRepository, oAuthRepository
+                memberRepository, oAuthRepository, defaultAvatar
         );
     }
 
