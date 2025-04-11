@@ -159,6 +159,11 @@ public class WebSocketEventHandler {
             Map<String, Object> userInfo = new HashMap<>();
             userInfo.put("email", email);
 
+            memberService.findByEmail(email).ifPresent(member -> {
+                userInfo.put("nickname", member.getNickname());
+                userInfo.put("id", member.getId());
+            });
+
             List<String> sessionIds = new ArrayList<>(entry.getValue().keySet());
             userInfo.put("sessions", sessionIds);
 
