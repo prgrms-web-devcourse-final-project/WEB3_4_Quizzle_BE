@@ -1,4 +1,14 @@
 package com.ll.quizzle.domain.member.repository;
 
-public class MemberRepository {
+import java.util.Optional;
+
+import org.springframework.data.jpa.repository.JpaRepository;
+
+import com.ll.quizzle.domain.member.entity.Member;
+
+public interface MemberRepository extends JpaRepository<Member, Long> {
+    Optional<Member> findByEmail(String memberEmail);
+    Optional<Member> findById(Long id);
+
+    boolean existsByNickname(String nickname);
 }
