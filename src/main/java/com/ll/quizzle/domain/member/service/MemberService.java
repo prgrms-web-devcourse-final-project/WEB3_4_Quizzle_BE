@@ -205,8 +205,14 @@ public class MemberService {
 		Member member = rq.assertIsOwner(memberId);
 
 		validateNickname(newNickname);
+
+		boolean isFirstNicknameSet = member.getNickname().startsWith("GUEST-");
+
+		if (!isFirstNicknameSet) {
+			pointService.applyPointPolicy(member, PointReason.NICKNAME_CHANGE);
+		}
+
 		member.changeNickname(newNickname);
-		pointService.applyPointPolicy(member, PointReason.NICKNAME_CHANGE);
 		memberRepository.save(member);
 		return MemberProfileEditResponse.from(member);
 	}
