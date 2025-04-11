@@ -4,6 +4,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
 import com.ll.quizzle.domain.member.entity.Member;
@@ -37,6 +38,7 @@ import lombok.NoArgsConstructor;
 
 @Entity
 @Getter
+@Slf4j
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Room extends BaseTime {
     
@@ -121,11 +123,30 @@ public class Room extends BaseTime {
     }
     
     public boolean validatePassword(String inputPassword) {
-        if (!isPrivate) return true;
-        if (passwordHash == null) return true;
-        if (inputPassword == null || inputPassword.isEmpty()) return false;
+        log.debug("=== 비밀번호 검증 디버깅 ===");
+        log.debug("방 ID: {}, isPrivate: {}, passwordHash: {}", 
+                 this.getId(), isPrivate, (passwordHash != null ? "있음" : "null"));
+        log.debug("입력된 비밀번호: {}", 
+                 (inputPassword != null ? (inputPassword.isEmpty() ? "빈 문자열" : "입력됨") : "null"));
+
+        if (!isPrivate) {
+            log.debug("결과: 공개방이므로 비밀번호 검증 통과");
+            return true;
+        }
         
-        return passwordEncoder.matches(inputPassword, passwordHash);
+        if (passwordHash == null) {
+            log.debug("결과: 비공개방이지만 비밀번호 해시가 null이므로 검증 실패");
+            return false;
+        }
+        
+        if (inputPassword == null || inputPassword.isEmpty()) {
+            log.debug("결과: 비밀번호가 없거나 빈 문자열이므로 검증 실패");
+            return false;
+        }
+        
+        boolean matches = passwordEncoder.matches(inputPassword, passwordHash);
+        log.debug("결과: 비밀번호 일치 여부: {}", matches);
+        return matches;
     }
     
     public boolean isOwner(Long memberId) {
@@ -257,17 +278,27 @@ public class Room extends BaseTime {
         }
         
         if (isPrivate != null) {
-            this.isPrivate = isPrivate;
-            
             if (isPrivate) {
                 if (password != null && !password.isEmpty()) {
                     this.passwordHash = passwordEncoder.encode(password);
+                    this.isPrivate = true;
+                } else {
+                    log.debug("비공개 방으로 설정하려 했으나 비밀번호가 없어 공개 방으로 설정됩니다.");
+                    this.passwordHash = null;
+                    this.isPrivate = false;
                 }
             } else {
                 this.passwordHash = null;
+                this.isPrivate = false;
             }
-        } else if (password != null && !password.isEmpty() && this.isPrivate) {
-            this.passwordHash = passwordEncoder.encode(password);
+        } else if (password != null) {
+            if (!password.isEmpty()) {
+                this.passwordHash = passwordEncoder.encode(password);
+                this.isPrivate = true;
+            } else {
+                this.passwordHash = null;
+                this.isPrivate = false;
+            }
         }
     }
 }

@@ -17,6 +17,7 @@ import com.ll.quizzle.domain.member.dto.response.MemberProfileEditResponse;
 import com.ll.quizzle.domain.member.dto.response.UserProfileResponse;
 import com.ll.quizzle.domain.member.entity.Member;
 import com.ll.quizzle.domain.member.service.MemberService;
+import com.ll.quizzle.global.request.Rq;
 import com.ll.quizzle.global.response.RsData;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -32,6 +33,7 @@ import lombok.RequiredArgsConstructor;
 @Tag(name = "MemberController", description = "회원 관련 API")
 public class MemberController {
     private final MemberService memberService;
+    private final Rq rq;
 
     @GetMapping("/{memberId}")
     @Operation(summary = "회원 프로필 조회", description = "회원의 프로필 정보를 조회합니다.")
@@ -65,5 +67,13 @@ public class MemberController {
     @Operation(summary = "로그아웃", description = "로그아웃 처리합니다.")
     public void logout(HttpServletRequest request, HttpServletResponse response) {
         memberService.logout(request, response);
+    }
+
+    @GetMapping("/me")
+    @Operation(summary = "내 정보 조회", description = "내 정보를 조회합니다.")
+    public RsData<UserProfileResponse> getMyProfile() {
+        Member actor = rq.getActor();
+        Member member = memberService.findById(actor.getId()).orElseThrow(MEMBER_NOT_FOUND::throwServiceException);
+        return RsData.success(HttpStatus.OK, UserProfileResponse.of(member));
     }
 }

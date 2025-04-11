@@ -6,6 +6,7 @@ import com.ll.quizzle.domain.avatar.entity.Avatar;
 import com.ll.quizzle.domain.member.type.Role;
 import com.ll.quizzle.global.jpa.entity.BaseTime;
 import com.ll.quizzle.global.security.oauth2.entity.OAuth;
+import jakarta.persistence.*;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
@@ -20,6 +21,8 @@ import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+
+import static com.ll.quizzle.global.exceptions.ErrorCode.*;
 
 @Entity
 @Getter
@@ -98,7 +101,7 @@ public class Member extends BaseTime {
         return Member.builder()
             .nickname(nickname)
             .email(email)
-            .level(0)
+            .level(1)
             .role(Role.MEMBER)
             .exp(0)
             .pointBalance(0)

@@ -161,7 +161,9 @@ public class RoomService {
                 .difficulty(request.difficulty())
                 .mainCategory(request.mainCategory())
                 .subCategory(request.subCategory())
-                .password(request.isPrivate() ? request.password() : "")
+                .answerType(request.answerType())
+                .problemCount(request.problemCount())
+                .password(request.isPrivate() ? request.password() : null)
                 .build();
 
         Room savedRoom = roomRepository.save(room);
@@ -205,7 +207,8 @@ public class RoomService {
         redisTemplate.opsForValue().set(roomGameStateKey, "ENDED");
     }
 
-    private void deleteRoom(Room room) {
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void deleteRoom(Room room) {
         String roomStateKey = "room:state:" + room.getId();
         redisTemplate.opsForValue().set(roomStateKey, "DELETING");
 
@@ -241,6 +244,22 @@ public class RoomService {
             handleGameEnd(room, roomGameStateKey);
         }
 
+        if (isOwner && room.getPlayers().isEmpty()) {
+            log.debug("방장이 나가고 방에 더 이상 플레이어가 없어 방을 즉시 삭제합니다. 방ID: {}", room.getId());
+            roomRepository.delete(room);
+            String roomStateKey = "room:state:" + room.getId();
+            redisTemplate.opsForValue().set(roomStateKey, "DELETED");
+            
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    roomMessageService.sendRoomDeleted(room.getId());
+                    scheduleRoomDeletedNotification(room.getId());
+                }
+            });
+            return;
+        }
+
         TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
             @Override
             public void afterCommit() {
@@ -250,7 +269,10 @@ public class RoomService {
 
                 if (isOwner) {
                     if (room.getPlayers().isEmpty()) {
-                        deleteRoom(room);
+                        if (!room.getPlayers().isEmpty()) {
+                            Long newOwnerId = room.getPlayers().iterator().next();
+                            changeRoomOwner(room, member, newOwnerId);
+                        }
                     } else {
                         Long newOwnerId = room.getPlayers().iterator().next();
                         changeRoomOwner(room, member, newOwnerId);
@@ -274,14 +296,7 @@ public class RoomService {
             public void afterCommit() {
                 if (isOwner) {
                     if (room.getPlayers().isEmpty()) {
-                        String roomStateKey = "room:state:" + room.getId();
-                        redisTemplate.opsForValue().set(roomStateKey, "DELETING");
-
-                        roomRepository.delete(room);
-
-                        redisTemplate.opsForValue().set(roomStateKey, "DELETED");
-
-                        roomMessageService.sendRoomDeleted(room.getId());
+                        deleteRoom(room);
                     } else {
                         Long newOwnerId = room.getPlayers().iterator().next();
                         Member newOwner = findMemberOrThrow(newOwnerId);
@@ -435,14 +450,17 @@ public class RoomService {
 
 
     private void updateRoomProperties(Room room, RoomUpdateRequest request) {
+        String password = request.isPrivate() ? request.password() : null;
+        Boolean isPrivate = request.isPrivate();
+        
         room.updateRoom(
             request.title(),
             request.capacity() > 0 ? request.capacity() : null,
             request.difficulty(),
             request.mainCategory(),
             request.subCategory(),
-            request.isPrivate() ? request.password() : "",
-            request.isPrivate() ? Boolean.TRUE : Boolean.FALSE
+            password,
+            isPrivate
         );
     }
 
