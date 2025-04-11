@@ -52,10 +52,10 @@ server:
 custom:
   site:
     cookieDomain: localhost
-    frontUrl: "http://localhost:5173"
+    frontUrl: "http://localhost:3000"
     backUrl: "http://localhost:8080"
     name: Quizzle
   cors:
     allowed-origins:
-      - http://localhost:5173
+      - http://localhost:3000
       - http://localhost:8080
