@@ -1,31 +1,56 @@
 package com.ll.quizzle.domain.member;
 
-import static com.ll.quizzle.global.exceptions.ErrorCode.*;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
-
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.transaction.annotation.Transactional;
-
 import com.ll.quizzle.domain.avatar.entity.Avatar;
 import com.ll.quizzle.domain.avatar.repository.AvatarRepository;
 import com.ll.quizzle.domain.member.entity.Member;
 import com.ll.quizzle.domain.member.repository.MemberRepository;
+import com.ll.quizzle.domain.member.service.AuthTokenService;
+import com.ll.quizzle.domain.member.service.MemberService;
 import com.ll.quizzle.factory.TestMemberFactory;
+import com.ll.quizzle.global.jwt.JwtAuthFilter;
+import com.ll.quizzle.global.jwt.dto.GeneratedToken;
+import com.ll.quizzle.global.request.Rq;
 import com.ll.quizzle.global.security.oauth2.repository.OAuthRepository;
+import jakarta.servlet.http.Cookie;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.mockito.Mock;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.test.annotation.DirtiesContext;
+import org.springframework.test.util.ReflectionTestUtils;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.context.WebApplicationContext;
+
+import static com.ll.quizzle.global.exceptions.ErrorCode.AVATAR_NOT_FOUND;
+import static org.mockito.Mockito.when;
+import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @SpringBootTest
 @AutoConfigureMockMvc
 @Transactional
+@DirtiesContext
 class MemberControllerTest {
     @Autowired
     private MockMvc mockMvc;
+
+    @Autowired
+    private WebApplicationContext context;
+
+    @Autowired
+    private JwtAuthFilter jwtAuthFilter;
+
+    @Autowired
+    private AuthTokenService authTokenService;
 
     @Autowired
     private MemberRepository memberRepository;
@@ -36,7 +61,14 @@ class MemberControllerTest {
     @Autowired
     private AvatarRepository avatarRepository;
 
+    @Autowired
+    private MemberService memberService;
+
+    @Mock
+    private Rq rq;
+
     private Member member;
+    private GeneratedToken generatedTokens;
 
     @BeforeEach
     void setUp() {
@@ -48,6 +80,27 @@ class MemberControllerTest {
                 "테스트유저", "test@email.com", "google", "1234",
                 memberRepository, oAuthRepository, defaultAvatar
         );
+
+        mockMvc = MockMvcBuilders
+                .webAppContextSetup(context)
+                .addFilter(jwtAuthFilter)
+                .apply(springSecurity())
+                .alwaysDo(print())
+                .build();
+
+        memberRepository.save(member);
+
+        // 토큰 생성
+        generatedTokens = authTokenService.generateToken(
+                member.getEmail(),
+                member.getRole().toString()
+        );
+
+        ReflectionTestUtils.setField(memberService, "rq", rq);
+
+        when(rq.getActor()).thenReturn(member);
+
+        SecurityContextHolder.clearContext();
     }
 
     @Test
@@ -64,5 +117,19 @@ class MemberControllerTest {
     void testGetProfileWithNoMember() throws Exception {
         mockMvc.perform(get("/api/v1/members/99999999"))
                 .andExpect(status().isNotFound());
+    }
+
+    @Test
+    @DisplayName("내 정보 조회")
+    void testGetMyProfile() throws Exception {
+        Cookie accessTokenCookie = new Cookie("access_token", generatedTokens.accessToken());
+        accessTokenCookie.setPath("/");
+        accessTokenCookie.setHttpOnly(true);
+
+        mockMvc.perform(get("/api/v1/members/me")
+                        .cookie(accessTokenCookie))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.id").value(member.getId()))
+                .andExpect(jsonPath("$.data.nickname").value(member.getNickname()));
     }
 }
