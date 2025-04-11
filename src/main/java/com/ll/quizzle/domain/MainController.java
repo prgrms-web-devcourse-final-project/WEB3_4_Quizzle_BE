@@ -8,6 +8,6 @@ public class MainController {
 
     @GetMapping("/")
     public String main() {
-        return "EC2 서버에 배포 테스트";
+        return "EC2 서버에 배포 테스트!";
     }
 }
