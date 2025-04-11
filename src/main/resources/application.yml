@@ -2,7 +2,7 @@ spring:
   application:
     name: Quizzle
   profiles:
-    active: dev
+    active: prod
     include:
       - secret
   config:
