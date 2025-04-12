@@ -9,8 +9,7 @@ import com.ll.quizzle.domain.member.entity.Member;
 
 public interface MemberRepository extends JpaRepository<Member, Long> {
     Optional<Member> findByEmail(String memberEmail);
-    Optional<Member> findById(Long id);
-
+    List<Member> findByNicknameContainingIgnoreCase(String keyword);
     boolean existsByNickname(String nickname);
     
     List<Member> findAllByOrderByExpDesc();

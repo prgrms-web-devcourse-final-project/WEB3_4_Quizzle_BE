@@ -4,10 +4,12 @@ import com.ll.quizzle.domain.avatar.entity.Avatar;
 import com.ll.quizzle.domain.avatar.repository.AvatarRepository;
 import com.ll.quizzle.domain.member.dto.response.MemberProfileEditResponse;
 import com.ll.quizzle.domain.member.dto.response.MemberRankingResponse;
+import com.ll.quizzle.domain.member.dto.response.UserProfileResponse;
 import com.ll.quizzle.domain.member.entity.Member;
 import com.ll.quizzle.domain.member.repository.MemberRepository;
 import com.ll.quizzle.domain.point.service.PointService;
 import com.ll.quizzle.domain.point.type.PointReason;
+import com.ll.quizzle.global.exceptions.ErrorCode;
 import com.ll.quizzle.global.jwt.dto.GeneratedToken;
 import com.ll.quizzle.global.jwt.dto.JwtProperties;
 import com.ll.quizzle.global.request.Rq;
@@ -62,6 +64,13 @@ public class MemberService {
 
 	public Optional<Member> findByEmail(String email) {
 		return memberRepository.findByEmail(email);
+	}
+
+	@Transactional(readOnly = true)
+	public List<UserProfileResponse> searchUserProfilesByNickname(String nickname) {
+		return memberRepository.findByNicknameContainingIgnoreCase(nickname).stream()
+			.map(UserProfileResponse::of)
+			.toList();
 	}
 
 	public String generateRefreshToken(String email) {
@@ -213,6 +222,10 @@ public class MemberService {
 	@Transactional
 	public MemberProfileEditResponse editNickname(Long memberId, String newNickname) {
 		Member member = rq.assertIsOwner(memberId);
+
+		if (memberRepository.existsByNickname(newNickname)) {
+			ErrorCode.NICKNAME_ALREADY_EXISTS.throwServiceException();
+		}
 
 		boolean isFirstNicknameSet = member.getNickname().startsWith("GUEST-");
 
