@@ -23,6 +23,7 @@ import com.ll.quizzle.domain.member.entity.Member;
 import com.ll.quizzle.domain.member.repository.MemberRepository;
 import com.ll.quizzle.domain.point.service.PointService;
 import com.ll.quizzle.domain.point.type.PointReason;
+import com.ll.quizzle.global.exceptions.ErrorCode;
 import com.ll.quizzle.global.jwt.dto.GeneratedToken;
 import com.ll.quizzle.global.jwt.dto.JwtProperties;
 import com.ll.quizzle.global.request.Rq;
@@ -102,36 +103,30 @@ public class MemberService {
 
 	@Transactional
 	public void oAuth2Login(Member member, HttpServletResponse response) {
-		// 기본 아바타가 설정되어 있지 않다면
 		if (member.getAvatar() == null) {
 			Avatar defaultAvatar = avatarRepository.findByFileName("새콩이")
 				.orElseThrow(AVATAR_NOT_FOUND::throwServiceException);
 
-			boolean alreadyOwned = avatarRepository.existsByMemberAndFileName(member, "새콩이");
+			boolean alreadyOwned = avatarRepository.existsByOwnerAndFileName(member, "새콩이");
 
 			if (!alreadyOwned) {
 				defaultAvatar.purchase(member);
 				avatarRepository.save(defaultAvatar);
 			}
 
-			// 구매(소유) 완료 후, 프로필에 아바타 할당
 			member.changeAvatar(defaultAvatar);
 			memberRepository.save(member);
 		}
 
-		// 로그인 토큰 발급
 		GeneratedToken tokens = authTokenService.generateToken(
 			member.getEmail(),
 			member.getUserRole()
 		);
 
-		// 쿠키 설정
 		addAuthCookies(response, tokens, member);
 	}
 
-
 	private void addAuthCookies(HttpServletResponse response, GeneratedToken tokens, Member member) {
-		// Access Token 쿠키
 		CookieUtil.addCookie(
 			response,
 			"access_token",
@@ -141,7 +136,6 @@ public class MemberService {
 			true
 		);
 
-		// Refresh Token 쿠키
 		CookieUtil.addCookie(
 			response,
 			"refresh_token",
@@ -151,7 +145,6 @@ public class MemberService {
 			true
 		);
 
-		// Role 쿠키
 		Map<String, Object> roleData = new HashMap<>();
 		roleData.put("role", member.getUserRole());
 
@@ -180,7 +173,6 @@ public class MemberService {
 			}
 		}
 
-		// 액세스 토큰이 만료되었다면 리프레시 토큰으로 처리
 		if (accessToken == null && refreshToken != null) {
 			RsData<String> refreshResult = refreshAccessToken(refreshToken);
 			if (refreshResult.isSuccess()) {
@@ -194,7 +186,6 @@ public class MemberService {
 
 		String email = authTokenService.getEmail(accessToken);
 
-		// Redis에서 토큰 무효화
 		redisTemplate.opsForValue().set(
 			LOGOUT_PREFIX + accessToken,
 			email,
@@ -202,7 +193,6 @@ public class MemberService {
 			TimeUnit.MILLISECONDS
 		);
 
-		// Refresh 토큰 삭제
 		refreshTokenService.removeRefreshToken(email);
 
 		CookieUtil.deleteCookie(request, response, "access_token");
@@ -214,6 +204,10 @@ public class MemberService {
 	@Transactional
 	public MemberProfileEditResponse editNickname(Long memberId, String newNickname) {
 		Member member = rq.assertIsOwner(memberId);
+
+		if (memberRepository.existsByNickname(newNickname)) {
+			ErrorCode.NICKNAME_ALREADY_EXISTS.throwServiceException();
+		}
 
 		boolean isFirstNicknameSet = member.getNickname().startsWith("GUEST-");
 
@@ -233,7 +227,7 @@ public class MemberService {
 		Avatar avatar = avatarRepository.findById(avatarId)
 			.orElseThrow(AVATAR_NOT_FOUND::throwServiceException);
 
-		if (!avatar.isOwned() || !avatar.getMember().getId().equals(memberId)) {
+		if (!avatar.isOwned() || !avatar.getOwner().getId().equals(memberId)) {
 			throw AVATAR_NOT_OWNED.throwServiceException();
 		}
 
@@ -257,5 +251,4 @@ public class MemberService {
 			.map(MemberRankingResponse::of)
 			.collect(Collectors.toList());
 	}
-
 }
