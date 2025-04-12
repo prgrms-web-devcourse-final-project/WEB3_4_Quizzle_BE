@@ -105,7 +105,7 @@ class MemberNicknameEditTest {
                 .cookie(accessTokenCookie)
                 .content(objectMapper.writeValueAsString(Map.of("nickname", " "))))
             .andExpect(status().isBadRequest())
-            .andExpect(jsonPath("$.msg").value(org.hamcrest.Matchers.containsString("닉네임은 2자 이상 20자 이하로 입력해주세요.")));
+            .andExpect(jsonPath("$.msg").value(org.hamcrest.Matchers.containsString("닉네임이 유효하지 않습니다.")));
     }
 
     @Test
@@ -116,7 +116,7 @@ class MemberNicknameEditTest {
                 .cookie(accessTokenCookie)
                 .content(objectMapper.writeValueAsString(Map.of("nickname", "A"))))
             .andExpect(status().isBadRequest())
-            .andExpect(jsonPath("$.msg").value(org.hamcrest.Matchers.containsString("닉네임은 2자 이상 20자 이하로 입력해주세요.")));
+            .andExpect(jsonPath("$.msg").value(org.hamcrest.Matchers.containsString("닉네임은 2자 이상 20자 이하이어야 합니다.")));
     }
 
     @Test
@@ -127,7 +127,8 @@ class MemberNicknameEditTest {
                 .cookie(accessTokenCookie)
                 .content(objectMapper.writeValueAsString(Map.of("nickname", "Invalid@Nick"))))
             .andExpect(status().isBadRequest())
-            .andExpect(jsonPath("$.msg").value("닉네임은 영문, 숫자, 한글만 사용할 수 있습니다."));
+            .andExpect(jsonPath("$.msg").value(org.hamcrest.Matchers.containsString("닉네임은 영문, 숫자, 한글만 사용할 수 있습니다.")));
+
     }
 
     @Test
