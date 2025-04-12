@@ -1,9 +1,5 @@
 package com.ll.quizzle.global.socket.controller;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -72,42 +68,5 @@ public class WebSocketRoomController {
     public void handleLobbyUsersRequest(@Payload String message, SimpMessageHeaderAccessor headerAccessor) {
         String username = Objects.requireNonNull(headerAccessor.getUser()).getName();
         log.debug("로비 접속자 목록 요청: {}, 사용자: {}", message, username);
-        
-        try {
-            Map<String, Map<String, SessionInfo>> activeSessions = sessionRegistry.getSessionManager().getActiveUserSessions();
-            List<Map<String, Object>> activeUsers = convertToUsersList(activeSessions);
-
-            String usersJson = objectMapper.writeValueAsString(activeUsers);
-            roomService.send("/topic/lobby/users", usersJson);
-            
-            log.debug("접속자 목록 요청에 응답 전송 완료: {} 명", activeUsers.size());
-        } catch (Exception e) {
-            log.error("접속자 목록 요청 처리 중 오류: {}", e.getMessage(), e);
-        }
-    }
-    
-    private List<Map<String, Object>> convertToUsersList(Map<String, Map<String, SessionInfo>> activeSessions) {
-        List<Map<String, Object>> result = new ArrayList<>();
-
-        for (Map.Entry<String, Map<String, SessionInfo>> entry : activeSessions.entrySet()) {
-            String email = entry.getKey();
-
-            Map<String, Object> userInfo = new HashMap<>();
-            userInfo.put("email", email);
-
-            memberService.findByEmail(email).ifPresent(member -> {
-                userInfo.put("nickname", member.getNickname());
-                userInfo.put("id", member.getId());
-            });
-
-            List<String> sessionIds = new ArrayList<>(entry.getValue().keySet());
-            userInfo.put("sessions", sessionIds);
-            userInfo.put("lastActive", System.currentTimeMillis());
-            userInfo.put("status", "online");
-
-            result.add(userInfo);
-        }
-
-        return result;
     }
 } 
