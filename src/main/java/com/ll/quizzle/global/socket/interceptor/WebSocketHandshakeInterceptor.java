@@ -78,7 +78,17 @@ public class WebSocketHandshakeInterceptor implements HandshakeInterceptor {
             attributes.put("memberId", member.getId());
             attributes.put("accessToken", accessToken);
             attributes.put("tokenExpiryTime", tokenExpiryTime);
-            attributes.put("sessionId", httpServletRequest.getSession().getId());
+            
+            String sessionId = null;
+            jakarta.servlet.http.HttpSession session = httpServletRequest.getSession(false);
+            if (session != null) {
+                sessionId = session.getId();
+                log.debug("WebSocket 연결 시도 - 기존 세션 사용: {}", sessionId);
+            } else {
+                sessionId = "token-" + email + "-" + System.currentTimeMillis();
+                log.debug("WebSocket 연결 시도 - 세션 없음, 토큰 기반 식별자 생성: {}", sessionId);
+            }
+            attributes.put("sessionId", sessionId);
             
             String sessionData = email + ":" + member.getId() + ":" + tokenExpiryTime;
             String signature = securityService.generateSignature(sessionData);
