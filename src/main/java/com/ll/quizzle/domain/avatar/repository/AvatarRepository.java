@@ -13,5 +13,6 @@ public interface AvatarRepository extends JpaRepository<Avatar, Long> {
     List<Avatar> findByStatus(AvatarStatus status);
     List<Avatar> findByMemberAndStatus(Member member, AvatarStatus status);
     Optional<Avatar> findByFileName(String fileName);
+    boolean existsByFileName(String fileName);
 
 }
