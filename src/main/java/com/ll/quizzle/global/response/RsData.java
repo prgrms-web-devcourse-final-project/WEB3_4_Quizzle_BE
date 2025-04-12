@@ -19,7 +19,7 @@ public class RsData<T> {
     private final String msg;
     private final T data;
 
-    @JsonIgnore
+	@JsonIgnore
     public boolean isSuccess() { return !resultCode.isError(); }
 
     @JsonIgnore

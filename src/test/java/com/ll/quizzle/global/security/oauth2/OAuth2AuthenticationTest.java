@@ -1,13 +1,13 @@
 package com.ll.quizzle.global.security.oauth2;
 
-import com.ll.quizzle.domain.member.entity.Member;
-import com.ll.quizzle.domain.member.repository.MemberRepository;
-import com.ll.quizzle.domain.member.service.MemberService;
-import com.ll.quizzle.domain.member.type.Role;
-import com.ll.quizzle.global.request.Rq;
-import com.ll.quizzle.global.security.oauth2.entity.OAuth;
-import com.ll.quizzle.global.security.oauth2.repository.OAuthRepository;
-import jakarta.servlet.http.Cookie;
+import static org.assertj.core.api.Assertions.*;
+import static org.mockito.Mockito.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+
+import java.util.Collections;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -26,13 +26,18 @@ import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Collections;
+import com.ll.quizzle.domain.avatar.entity.Avatar;
+import com.ll.quizzle.domain.avatar.repository.AvatarRepository;
+import com.ll.quizzle.domain.avatar.type.AvatarStatus;
+import com.ll.quizzle.domain.member.entity.Member;
+import com.ll.quizzle.domain.member.repository.MemberRepository;
+import com.ll.quizzle.domain.member.service.MemberService;
+import com.ll.quizzle.domain.member.type.Role;
+import com.ll.quizzle.global.request.Rq;
+import com.ll.quizzle.global.security.oauth2.entity.OAuth;
+import com.ll.quizzle.global.security.oauth2.repository.OAuthRepository;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.when;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import jakarta.servlet.http.Cookie;
 
 @SpringBootTest
 @ActiveProfiles("test")
@@ -48,6 +53,9 @@ public class OAuth2AuthenticationTest {
 
     @Autowired
     private MemberService memberService;
+
+    @Autowired
+    private AvatarRepository avatarRepository;
 
     @Autowired
     private MockMvc mockMvc;
@@ -67,16 +75,22 @@ public class OAuth2AuthenticationTest {
         // Rq 모킹 설정
         ReflectionTestUtils.setField(memberService, "rq", rq);
 
-        // 테스트용 회원 생성
+        Avatar defaultAvatar = avatarRepository.save(Avatar.builder()
+            .fileName("새콩이")
+            .url("https://quizzle-avatars.s3.ap-northeast-2.amazonaws.com/%EA%B8%B0%EB%B3%B8+%EC%95%84%EB%B0%94%ED%83%80.png")
+            .price(0)
+            .status(AvatarStatus.OWNED)
+            .build());
+
         testMember = Member.builder()
-                .nickname("OAuth2 테스트")
-                .email("oauth2test@example.com")
-                .level(0)
-                .role(Role.MEMBER)
-                .exp(0)
-                .profilePath("test")
-                .pointBalance(0)
-                .build();
+            .nickname("OAuth2 테스트")
+            .email("oauth2test@example.com")
+            .level(0)
+            .role(Role.MEMBER)
+            .exp(0)
+            .pointBalance(0)
+            .avatar(defaultAvatar)
+            .build();
 
         memberRepository.save(testMember);
 

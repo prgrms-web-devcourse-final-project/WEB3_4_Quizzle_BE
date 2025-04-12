@@ -21,8 +21,8 @@ public class MemberExpService {
     }
 
     @Transactional
-    public void updateMemberExp(String userId, int score) {
-        Member member = memberRepository.findByNickname(userId)
+    public void updateMemberExp(Long memberId, int score) {
+        Member member = memberRepository.findById(memberId)
                 .orElseThrow(() -> new ServiceException(
                         ErrorCode.MEMBER_NOT_FOUND.getHttpStatus(),
                         ErrorCode.MEMBER_NOT_FOUND.getMessage()

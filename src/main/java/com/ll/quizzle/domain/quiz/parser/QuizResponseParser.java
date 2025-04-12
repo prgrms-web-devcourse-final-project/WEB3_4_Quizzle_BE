@@ -23,44 +23,76 @@ public class QuizResponseParser {
 
     public QuizGenerationResponse parse(String responseBody) {
         try {
-            JsonNode root = objectMapper.readTree(responseBody);
-            String content = root.path("choices").get(0).path("message").path("content").asText();
-
-            Map<Integer, String> questionMap = new LinkedHashMap<>();
-            Map<Integer, String> answerMap = new LinkedHashMap<>();
-            int currentQuestion = 0;
-            StringBuilder currentQuestionText = new StringBuilder();
-
-            for (String line : content.split("\\r?\\n")) {
-                Matcher qm = QUESTION_PATTERN.matcher(line.trim());
-                if (qm.find()) {
-                    // 이전 질문이 있다면 저장
-                    if (currentQuestion != 0) {
-                        questionMap.put(currentQuestion, currentQuestionText.toString().trim());
-                    }
-                    currentQuestion = Integer.parseInt(qm.group(1));
-                    currentQuestionText = new StringBuilder();
-                    String questionLine = line.replaceFirst("^\\d+\\.\\s*", "");
-                    currentQuestionText.append(questionLine).append("\n");
-                    continue;
-                }
-                Matcher am = ANSWER_PATTERN.matcher(line.trim());
-                if (am.find() && currentQuestion > 0) {
-                    answerMap.put(currentQuestion, am.group(1).toLowerCase());
-                    continue;
-                }
-                if (currentQuestion != 0) {
-                    currentQuestionText.append(line).append("\n");
-                }
-            }
-            if (currentQuestion != 0) {
-                questionMap.put(currentQuestion, currentQuestionText.toString().trim());
-            }
-
-            return new QuizGenerationResponse(questionMap, answerMap);
+            String content = extractContent(responseBody);
+            return parseContent(content);
         } catch (IOException e) {
             ErrorCode.INTERNAL_SERVER_ERROR.throwServiceException(e);
             return null; // Unreachable
         }
+    }
+
+    private String extractContent(String responseBody) throws IOException {
+        JsonNode root = objectMapper.readTree(responseBody);
+        return root.path("choices")
+                .get(0)
+                .path("message")
+                .path("content")
+                .asText();
+    }
+
+    private QuizGenerationResponse parseContent(String content) {
+        Map<Integer, String> questionMap = new LinkedHashMap<>();
+        Map<Integer, String> answerMap = new LinkedHashMap<>();
+        int currentQuestion = 0;
+        StringBuilder currentQuestionText = new StringBuilder();
+
+        for (String line : content.split("\\r?\\n")) {
+            String trimmedLine = line.trim();
+            if (trimmedLine.isEmpty()) {
+                continue;
+            }
+
+            if (processQuestionLine(trimmedLine, questionMap, currentQuestionText)) {
+                // 새로운 질문 라인 발견 시, 이전 질문 저장 및 현재 질문 번호 업데이트
+                if (currentQuestion != 0) {
+                    questionMap.put(currentQuestion, currentQuestionText.toString().trim());
+                }
+                Matcher qm = QUESTION_PATTERN.matcher(trimmedLine);
+                qm.find(); // 반드시 매칭됨
+                currentQuestion = Integer.parseInt(qm.group(1));
+                currentQuestionText = new StringBuilder();
+                String questionText = trimmedLine.replaceFirst("^\\d+\\.\\s*", "");
+                currentQuestionText.append(questionText).append("\n");
+                continue;
+            }
+
+            if (processAnswerLine(trimmedLine, answerMap, currentQuestion)) {
+                continue;
+            }
+
+            // 질문 내용 추가 (질문 시작 이후의 일반 라인)
+            if (currentQuestion != 0) {
+                currentQuestionText.append(line).append("\n");
+            }
+        }
+
+        if (currentQuestion != 0) {
+            questionMap.put(currentQuestion, currentQuestionText.toString().trim());
+        }
+
+        return new QuizGenerationResponse(questionMap, answerMap);
+    }
+
+    private boolean processQuestionLine(String line, Map<Integer, String> questionMap, StringBuilder currentQuestionText) {
+        return QUESTION_PATTERN.matcher(line).find();
+    }
+
+    private boolean processAnswerLine(String line, Map<Integer, String> answerMap, int currentQuestion) {
+        Matcher am = ANSWER_PATTERN.matcher(line);
+        if (am.find() && currentQuestion > 0) {
+            answerMap.put(currentQuestion, am.group(1).toLowerCase());
+            return true;
+        }
+        return false;
     }
 }

@@ -1,8 +1,23 @@
 package com.ll.quizzle.global.security;
 
+import java.util.Arrays;
+
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import com.ll.quizzle.domain.member.repository.MemberRepository;
 import com.ll.quizzle.domain.member.service.MemberService;
+import com.ll.quizzle.global.config.SystemProperties;
 import com.ll.quizzle.global.jwt.JwtAuthFilter;
 import com.ll.quizzle.global.jwt.exception.JwtExceptionFilter;
 import com.ll.quizzle.global.security.cors.CorsProperties;
@@ -10,21 +25,9 @@ import com.ll.quizzle.global.security.oauth2.CustomOAuth2AuthenticationSuccessHa
 import com.ll.quizzle.global.security.oauth2.CustomOAuth2AuthorizationRequestRepository;
 import com.ll.quizzle.global.security.oauth2.CustomOAuth2FailureHandler;
 import com.ll.quizzle.global.security.oauth2.CustomOAuth2UserService;
+
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.http.HttpMethod;
-import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import org.springframework.web.cors.CorsConfiguration;
-import org.springframework.web.cors.CorsConfigurationSource;
-import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
-
-import java.util.Arrays;
 
 @Configuration
 @EnableWebSecurity
@@ -37,6 +40,7 @@ public class SecurityConfig {
     private final MemberRepository memberRepository;
     private final CustomOAuth2AuthorizationRequestRepository customOAuth2AuthorizationRequestRepository;
     private final CorsProperties corsProperties;
+    private final SystemProperties systemProperties;
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
@@ -49,7 +53,7 @@ public class SecurityConfig {
                         )
                 )
                 .authorizeHttpRequests(authorizeHttpRequests -> authorizeHttpRequests
-                        .requestMatchers(
+                    .requestMatchers(
                                 "/",
                                 "/h2-console/**",
                                 "/oauth2/authorization/**",
@@ -57,7 +61,8 @@ public class SecurityConfig {
                                 "/api/*/oauth2/callback",
                                 "/error",
                                 "/favicon.ico",
-                                "/api/v1/quiz/**"   // 퀴즈 관련 API는 인증 없이 접근 허용
+                                "/api/v1/quiz/**",    // 퀴즈 관련 API는 인증 없이 접근 허용
+                                "/api/v1/system/login"
 
                         ).permitAll()
                         .requestMatchers(
@@ -67,6 +72,7 @@ public class SecurityConfig {
 
                         // 관리자 전용
                         .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
+                        .requestMatchers("/api/v1/system/**").hasRole("SYSTEM")
 
                         // 애플리케이션에만 나머지 인증 요구
                         .requestMatchers("/api/v1/**").authenticated()
@@ -93,7 +99,8 @@ public class SecurityConfig {
                         })
                 )
                 .sessionManagement(session -> session
-                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                    .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+                )
                 .oauth2Login(oauth2Login -> oauth2Login
                         .authorizationEndpoint(endpoint -> endpoint
                                 .authorizationRequestRepository(customOAuth2AuthorizationRequestRepository)
@@ -121,5 +128,10 @@ public class SecurityConfig {
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
         return source;
+    }
+
+    @Bean
+    public BCryptPasswordEncoder bCryptPasswordEncoder() {
+        return new BCryptPasswordEncoder();
     }
 }

@@ -63,4 +63,10 @@ public class WebSocketRoomController {
         log.debug("게임 시작 메시지 수신: {}, 방: {}, 사용자: {}", message, roomId, username);
         roomService.send("/topic/game/start/" + roomId, message);
     }
+
+    @MessageMapping("/lobby/users")
+    public void handleLobbyUsersRequest(@Payload String message, SimpMessageHeaderAccessor headerAccessor) {
+        String username = Objects.requireNonNull(headerAccessor.getUser()).getName();
+        log.debug("로비 접속자 목록 요청: {}, 사용자: {}", message, username);
+    }
 } 

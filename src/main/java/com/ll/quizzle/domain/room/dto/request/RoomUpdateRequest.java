@@ -24,7 +24,7 @@ public record RoomUpdateRequest(
             }
         }
         
-        if (capacity != 0 && (capacity < 2 || capacity > 8)) {
+        if (capacity != 0 && (capacity < 1 || capacity > 8)) {
             ErrorCode.ROOM_CAPACITY_INVALID.throwServiceException();
         }
         

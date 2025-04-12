@@ -3,6 +3,7 @@ package com.ll.quizzle.domain.point.entity;
 import java.time.LocalDateTime;
 
 import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import com.ll.quizzle.domain.member.entity.Member;
 import com.ll.quizzle.domain.point.type.PointReason;
@@ -18,6 +19,7 @@ import lombok.NoArgsConstructor;
 @Entity
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@EntityListeners(AuditingEntityListener.class)
 public class Point extends BaseEntity {
 
 	@ManyToOne(fetch = FetchType.LAZY)

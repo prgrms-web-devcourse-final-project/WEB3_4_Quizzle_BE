@@ -19,7 +19,8 @@ public enum RoomMessageType {
     TIMER("타이머 업데이트"),
     ROUND_START("라운드 시작"),
     ROUND_END("라운드 종료"),
-    SYSTEM("시스템 메시지");
+    SYSTEM("시스템 메시지"),
+    ROOM_UPDATED("방 정보 업데이트");
     
     private final String description;
 } 

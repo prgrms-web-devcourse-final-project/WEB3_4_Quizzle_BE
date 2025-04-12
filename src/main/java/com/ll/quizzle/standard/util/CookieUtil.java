@@ -37,7 +37,22 @@ public class CookieUtil {
         cookie.setMaxAge(maxAge);
         cookie.setHttpOnly(isHttpOnly); // 자바스크립트에서 쿠키에 접근할 수 없도록 설정 (XSS 방지)
         cookie.setSecure(isSecure); // HTTPS에서만 쿠키를 전송하도록 설정 (CSRF 방지)
-        cookie.setAttribute("SameSite", "Lax"); // SameSite 속성 설정
+        cookie.setAttribute("SameSite", "None"); // SameSite 속성 설정
+        response.addCookie(cookie);
+    }
+
+    public static void addSystemCookie(
+        HttpServletResponse response,
+        String name,
+        String value,
+        int maxAge
+    ) {
+        Cookie cookie = new Cookie(name, value);
+        cookie.setPath("/");
+        cookie.setHttpOnly(true);
+        cookie.setSecure(true);
+        cookie.setAttribute("SameSite", "Strict");
+        cookie.setMaxAge(maxAge);
         response.addCookie(cookie);
     }
 

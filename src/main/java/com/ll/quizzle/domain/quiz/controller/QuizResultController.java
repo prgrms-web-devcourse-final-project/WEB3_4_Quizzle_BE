@@ -26,7 +26,8 @@ public class QuizResultController {
     public RsData<List<QuizResultResponse>> getQuizResults(@PathVariable("quizId") String quizId) {
 
         List<QuizResultResponse> results = quizResultService.getQuizResults(quizId);
-        results.forEach(result -> memberExpService.updateMemberExp(result.userId(), result.score()));
+        // memberExpService.updateMemberExp가 Long 타입의 memberId를 기대하므로 String을 Long으로 변환함.
+        results.forEach(result -> memberExpService.updateMemberExp(Long.parseLong(result.memberId()), result.score()));
 
         return RsData.success(HttpStatus.OK, results);
     }

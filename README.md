@@ -1,67 +1,6 @@
 # WEB3_4_Quizzle_BE
 
-## Websocket 설정 및 message
-```
-### 필수 요구사항
-
-- Java 17 이상
-
-- Redis
-
-- H2
-### Redis 설치
-
-#### Windows
-
-1. [Redis for Windows](https://github.com/microsoftarchive/redis/releases) 에서 최신 버전 다운로드
-
-2. Redis 서버 실행:
-
-```bash
-
-redis-server
-
-```
-  
-#### Mac
-
-```bash
-
-brew install redis
-
-brew services start redis
-
-```
-#### Linux (Ubuntu)
-
-```bash
-
-sudo apt-get update
-
-sudo apt-get install redis-server
-
-sudo systemctl start redis
-
-```
-
-### 프로젝트 설정
-
-1. 프로젝트 클론
-
-```bash
-
-git clone https://github.com/prgrms-web-devcourse-final-project/WEB3_4_Quizzle_BE.git
-
-```
-
-2. 환경 설정 파일 추가
-
-- 프로젝트 루트 디렉토리에 `.env` 파일 생성 (슬랙 PR 채널 탭)
-
-- `src/main/resources/` 디렉토리에 `application-secret.yml` 파일 추가 (슬랙 PR 채널 탭)
-
-2. 애플리케이션 실행
-##  WebSocket API
+## WebSocket API
 
 ### 연결 정보
 
@@ -75,11 +14,15 @@ git clone https://github.com/prgrms-web-devcourse-final-project/WEB3_4_Quizzle_B
 - `/app/lobby`: 로비 상태 메시지 전송
 
 - `/app/lobby/chat`: 로비 채팅 메시지 전송
+
+- `/app/lobby/users`: 로비 접속자 목록 요청
+
 #### 방
 
 - `/app/room/{roomId}`: 방 상태 메시지 전송
 
 - `/app/room/chat/{roomId}`: 방 채팅 메시지 전송
+
 #### 게임
 
 - `/app/game/{roomId}`: 게임 상태 메시지 전송
@@ -87,17 +30,26 @@ git clone https://github.com/prgrms-web-devcourse-final-project/WEB3_4_Quizzle_B
 - `/app/game/start/{roomId}`: 게임 시작 메시지 전송
 
 - `/app/game/chat/{roomId}`: 게임 채팅 메시지 전송
+
+#### 퀴즈
+- `/app/quiz/{quizId}/submit` : 퀴즈 답안 제출 메시지 전송
+
 ### 구독 주제
+
 #### 로비
 
 - `/topic/lobby`: 로비 상태 업데이트 수신
 
 - `/topic/lobby/chat`: 로비 채팅 메시지 수신
+
+- `/topic/lobby/users`: 로비 접속자 목록 수신
+
 #### 방
 
 - `/topic/room/{roomId}`: 방 상태 업데이트 수신
 
 - `/topic/room/chat/{roomId}`: 방 채팅 메시지 수신
+
 #### 게임
 
 - `/topic/game/{roomId}`: 게임 상태 업데이트 수신
@@ -105,34 +57,34 @@ git clone https://github.com/prgrms-web-devcourse-final-project/WEB3_4_Quizzle_B
 - `/topic/game/start/{roomId}`: 게임 시작 이벤트 수신
 
 - `/topic/game/chat/{roomId}`: 게임 채팅 메시지 수신
-### 메시지 형식
-#### ChatMessageDTO
 
+#### 퀴즈
+
+- `/topic/quiz/{quizId}/updates`: 퀴즈 제출 결과 및 상태 업데이트 수신
+### 메시지 형식
+
+#### ChatMessageDTO
 ```typescript
 
 {
+    type: 'CHAT' | 'JOIN' | 'LEAVE' | 'SYSTEM' | 'WHISPER',
 
-  type: 'CHAT' | 'JOIN' | 'LEAVE' | 'SYSTEM' | 'WHISPER',
+        content: string,
 
-  content: string,
+    senderId: string,
 
-  senderId: string,
+    senderName: string,
 
-  senderName: string,
+    timestamp: number,
 
-  timestamp: number,
-
-  roomId?: string  // 방/게임 채팅에만 필요
+    roomId?: string  // 방/게임 채팅에만 필요
 
 }
-
 ```
+
 #### RoomMessageDTO
-
 ```typescript
-
 {
-
   type: 'JOIN' | 'LEAVE' | 'READY' | 'UNREADY' | 'GAME_START' | 'GAME_END'
 
       | 'ANSWER_SUBMIT' | 'TIMER' | 'ROUND_START' | 'ROUND_END' | 'SYSTEM',
@@ -143,21 +95,70 @@ git clone https://github.com/prgrms-web-devcourse-final-project/WEB3_4_Quizzle_B
 
   content?: string,
 
-  data?: string,  // JSON 형식의 추가 데이터 (예: 참가자 목록, 준비 상태 등)
+  data?: string,  // id,name,isReady,isOwner 포함
+  {
+    "id": "1",
+    "name": "홍길동",
+    "isReady": false,
+    "isOwner": true,
+    "isSubmitted": false
+  },
+  {
+    "id": "2",
+    "name": "김철수",
+    "isReady": true,
+    "isOwner": false,
+    "isSubmitted": true
+  },
+  ...
 
   timestamp: number,
 
   roomId: string
-
 }
-
 ```
+
+#### ActiveUsersDTO
+```typescript
+[
+  {
+    email: string,       // 사용자 이메일
+    sessions: string[],  // 세션 ID 목록
+    lastActive: number,  // 마지막 활동 시간 (timestamp)
+    // 상태 (현재는 항상 'online', 세션 종료 시 오프라인 표시 필요X)
+    // 이 부분은 로비에서 실시간 접속 중인 플레이어 목록을 확인하는 부분
+    status: string       
+  },
+]
+```
+#### WebSocketQuizSubmitResponse
+```
+{
+  type: 'ANSWER_SUBMIT',
+  questionNumber: number,
+  correct: boolean,
+  correctAnswer: string,
+  memberId: string,
+  nickname: string,
+  isSubmitted: boolean,
+  timestamp: number,
+  quizId: string
+}
+```
+### 이벤트 발생 시점 (후크 메서드로 관리)
+
+- `/topic/lobby/users`: 사용자가 연결될 때, 연결이 끊길 때, 명시적으로 요청할 때 발생
+
 ### 오류 부분은 여기서 체크 해주세요!
 
 1. Redis 연결 오류
+
 - Redis 서버가 실행 중인지 확인
+
 - Redis 기본 포트(6379)가 사용 가능한지 확인
 
 2. JWT 토큰 관련 오류
+
 - 쿠키에 access_token이 제대로 포함되어 있는지 확인
+
 - 토큰이 만료되지 않았는지 확인

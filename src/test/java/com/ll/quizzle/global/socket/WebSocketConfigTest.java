@@ -1,12 +1,9 @@
 package com.ll.quizzle.global.socket;
 
-import com.ll.quizzle.domain.member.entity.Member;
-import com.ll.quizzle.domain.member.service.MemberService;
-import com.ll.quizzle.domain.member.type.Role;
-import com.ll.quizzle.global.socket.config.WebSocketConfig;
-import com.ll.quizzle.global.socket.interceptor.StompChannelInterceptor;
-import com.ll.quizzle.global.socket.interceptor.WebSocketHandshakeInterceptor;
-import com.ll.quizzle.global.socket.service.WebSocketNotificationService;
+import static org.assertj.core.api.Assertions.*;
+
+import java.security.Principal;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -19,9 +16,13 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.web.socket.WebSocketSession;
 
-import java.security.Principal;
-
-import static org.assertj.core.api.Assertions.assertThat;
+import com.ll.quizzle.domain.member.entity.Member;
+import com.ll.quizzle.domain.member.service.MemberService;
+import com.ll.quizzle.domain.member.type.Role;
+import com.ll.quizzle.global.socket.config.WebSocketConfig;
+import com.ll.quizzle.global.socket.interceptor.StompChannelInterceptor;
+import com.ll.quizzle.global.socket.interceptor.WebSocketHandshakeInterceptor;
+import com.ll.quizzle.global.socket.service.WebSocketNotificationService;
 
 @ExtendWith(MockitoExtension.class)
 @ActiveProfiles("test")
@@ -59,7 +60,6 @@ class WebSocketConfigTest {
                 .level(0)
                 .role(Role.MEMBER)
                 .exp(0)
-                .profilePath("test")
                 .pointBalance(0)
                 .build();
     }

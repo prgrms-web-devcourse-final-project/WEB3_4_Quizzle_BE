@@ -1,7 +1,8 @@
 package com.ll.quizzle.global.exceptions;
 
-import lombok.Getter;
 import org.springframework.http.HttpStatus;
+
+import lombok.Getter;
 
 @Getter
 public class ServiceException extends RuntimeException {
