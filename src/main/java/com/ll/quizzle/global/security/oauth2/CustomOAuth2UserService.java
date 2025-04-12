@@ -97,7 +97,7 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
 
             oAuthRepository.save(OAuth.create(member, registrationId, oauthId));
 
-            boolean alreadyOwned = avatarRepository.existsByMemberAndFileName(member, "새콩이");
+            boolean alreadyOwned = avatarRepository.existsByOwnerAndFileName(member, "새콩이");
             if (!alreadyOwned) {
                 defaultAvatar.purchase(member);
                 avatarRepository.save(defaultAvatar);

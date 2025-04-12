@@ -2,7 +2,6 @@ package com.ll.quizzle.domain.avatar.service;
 
 import static com.ll.quizzle.global.exceptions.ErrorCode.*;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import org.springframework.stereotype.Service;
@@ -47,7 +46,6 @@ public class AvatarService {
         avatarRepository.save(avatar);
     }
 
-    // 아바타 구매 메서드
     @Transactional
     public void purchaseAvatar(Long memberId, Long avatarId) {
         Member member = rq.assertIsOwner(memberId);
@@ -59,14 +57,14 @@ public class AvatarService {
             throw AVATAR_ALREADY_OWNED.throwServiceException();
         }
 
-        // 포인트 차감 및 로그 기록
-        pointService.usePoint(member, avatar.getPrice(), PointReason.AVATAR_PURCHASE);
+        int price = avatar.getPrice();
+        if (price > 0) {
+            pointService.applyPointPolicy(member, -price, PointReason.AVATAR_PURCHASE);
+        }
 
-        // 아바타 구매 처리
         avatar.purchase(member);
         avatarRepository.save(avatar);
     }
-
 
     // 구매하지 않은 아바타 목록 조회
     public List<AvatarPurchaseResponse> getAvailableAvatars(Long memberId) {
@@ -79,17 +77,8 @@ public class AvatarService {
     // 소유한 아바타 목록 조회
     public List<AvatarPurchaseResponse> getOwnedAvatars(Long memberId) {
         Member member = rq.assertIsOwner(memberId);
-
-		List<Avatar> ownedAvatars = new ArrayList<>(avatarRepository.findByMemberAndStatus(member, AvatarStatus.OWNED));
-
-        Avatar currentAvatar = member.getAvatar();
-        if (currentAvatar != null && ownedAvatars.stream().noneMatch(a -> a.getId().equals(currentAvatar.getId()))) {
-            ownedAvatars.add(currentAvatar);
-        }
-
-        return ownedAvatars.stream()
+        return member.getOwnedAvatars().stream()
             .map(AvatarPurchaseResponse::from)
             .toList();
     }
-
 }

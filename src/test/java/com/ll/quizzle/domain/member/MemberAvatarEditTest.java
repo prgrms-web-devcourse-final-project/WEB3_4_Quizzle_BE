@@ -63,7 +63,7 @@ class MemberAvatarEditTest {
 			.fileName("소유한 아바타")
 			.url("https://url.com/owned.png")
 			.price(0)
-			.member(member)
+			.owner(member)
 			.status(com.ll.quizzle.domain.avatar.type.AvatarStatus.OWNED)
 			.build();
 		avatarRepository.save(ownedAvatar);

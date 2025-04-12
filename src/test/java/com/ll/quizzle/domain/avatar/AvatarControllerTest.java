@@ -48,10 +48,12 @@ class AvatarControllerTest {
 	private Member member;
 	private Cookie accessTokenCookie;
 	private Avatar availableAvatar;
+	private Avatar defaultAvatar;
+
 
 	@BeforeEach
 	void setUp() {
-		Avatar defaultAvatar = avatarRepository.findByFileName("새콩이")
+		defaultAvatar = avatarRepository.findByFileName("새콩이")
 			.orElseThrow(AVATAR_NOT_FOUND::throwServiceException);
 
 		member = TestMemberFactory.createOAuthMember(
@@ -107,7 +109,13 @@ class AvatarControllerTest {
 	@Test
 	@DisplayName("소유한 아바타 목록 조회 성공")
 	void getOwnedAvatars_success() throws Exception {
-		// 미리 구매한 아바타 등록
+		// 기본 아바타 소유 처리
+		defaultAvatar = avatarRepository.findByFileName("새콩이")
+			.orElseThrow(AVATAR_NOT_FOUND::throwServiceException);
+		defaultAvatar.purchase(member);
+		avatarRepository.save(defaultAvatar);
+
+		// 추가 아바타 소유 처리
 		availableAvatar.purchase(member);
 		avatarRepository.save(availableAvatar);
 
@@ -116,8 +124,12 @@ class AvatarControllerTest {
 				.cookie(accessTokenCookie))
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$.data").isArray())
-			.andExpect(jsonPath("$.data.length()").value(2));
+			.andExpect(jsonPath("$.data.length()").value(2))
+			.andExpect(jsonPath("$.data[*].id").value(org.hamcrest.Matchers.containsInAnyOrder(
+				defaultAvatar.getId().intValue(), availableAvatar.getId().intValue()
+			)));
 	}
+
 
 	@Test
 	@DisplayName("구매 가능한 아바타 목록 조회 성공")
