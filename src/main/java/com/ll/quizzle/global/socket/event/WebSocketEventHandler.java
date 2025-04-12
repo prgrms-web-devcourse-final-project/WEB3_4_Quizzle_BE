@@ -52,15 +52,22 @@ public class WebSocketEventHandler {
             String accessToken = (String) sessionAttributes.get("accessToken");
             String stompSessionId = accessor.getSessionId();
             Long expiryTime = (Long) sessionAttributes.get("tokenExpiryTime");
+            String sessionId = (String) sessionAttributes.get("sessionId");
             
-            log.debug("세션 연결 이벤트: 사용자={}, STOMP 세션={}", email, stompSessionId);
+            log.debug("세션 연결 이벤트: 사용자={}, STOMP 세션={}, HTTP 세션/토큰 ID={}", 
+                email, stompSessionId, sessionId);
             
             sessionRegistry.getSessionManager().registerSession(email, stompSessionId, accessToken, expiryTime);
 
-            int markedSessions = sessionRegistry.getSessionManager().markOtherSessionsForTermination(email, stompSessionId);
-            if (markedSessions > 0) {
-                log.debug("다중 접속 감지 - 이전 세션 종료 처리: 사용자={}, 새 세션={}, 종료할 세션 수={}",
-                        email, stompSessionId, markedSessions);
+            if (sessionId != null && sessionId.startsWith("token-")) {
+                log.debug("토큰 기반 세션 감지 - 다른 세션 종료 처리 스킵: 사용자={}, 세션={}", 
+                    email, stompSessionId);
+            } else {
+                int markedSessions = sessionRegistry.getSessionManager().markOtherSessionsForTermination(email, stompSessionId);
+                if (markedSessions > 0) {
+                    log.debug("다중 접속 감지 - 이전 세션 종료 처리: 사용자={}, 새 세션={}, 종료할 세션 수={}",
+                            email, stompSessionId, markedSessions);
+                }
             }
             
             if (!memberService.verifyToken(accessToken)) {
