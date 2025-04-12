@@ -54,6 +54,8 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
                 .withSockJS()
                 .setWebSocketEnabled(true)
                 .setSessionCookieNeeded(false)
+                .setDisconnectDelay(30 * 1000)
+                .setHeartbeatTime(25000)
                 .setInterceptors(handshakeInterceptor);
     }
 
