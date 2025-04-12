@@ -1,5 +1,7 @@
 package com.ll.quizzle.domain.member.service;
 
+import static com.ll.quizzle.global.exceptions.ErrorCode.*;
+
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
@@ -21,13 +23,6 @@ import com.ll.quizzle.domain.member.entity.Member;
 import com.ll.quizzle.domain.member.repository.MemberRepository;
 import com.ll.quizzle.domain.point.service.PointService;
 import com.ll.quizzle.domain.point.type.PointReason;
-import static com.ll.quizzle.global.exceptions.ErrorCode.AVATAR_ALREADY_APPLIED;
-import static com.ll.quizzle.global.exceptions.ErrorCode.AVATAR_NOT_FOUND;
-import static com.ll.quizzle.global.exceptions.ErrorCode.AVATAR_NOT_OWNED;
-import static com.ll.quizzle.global.exceptions.ErrorCode.OAUTH_NOT_FOUND;
-import static com.ll.quizzle.global.exceptions.ErrorCode.TOKEN_INVALID;
-import static com.ll.quizzle.global.exceptions.ErrorCode.TOKEN_LOGGED_OUT;
-import static com.ll.quizzle.global.exceptions.ErrorCode.UNAUTHORIZED;
 import com.ll.quizzle.global.jwt.dto.GeneratedToken;
 import com.ll.quizzle.global.jwt.dto.JwtProperties;
 import com.ll.quizzle.global.request.Rq;
@@ -107,25 +102,33 @@ public class MemberService {
 
 	@Transactional
 	public void oAuth2Login(Member member, HttpServletResponse response) {
-		// 기본 아바타 없으면 할당
+		// 기본 아바타가 설정되어 있지 않다면
 		if (member.getAvatar() == null) {
-
-			Avatar defaultAvatar = avatarRepository.findAll().stream()
-				.filter(a -> a.getFileName().trim().equalsIgnoreCase("새콩이"))
-				.findFirst()
+			Avatar defaultAvatar = avatarRepository.findByFileName("새콩이")
 				.orElseThrow(AVATAR_NOT_FOUND::throwServiceException);
 
+			boolean alreadyOwned = avatarRepository.existsByMemberAndFileName(member, "새콩이");
+
+			if (!alreadyOwned) {
+				defaultAvatar.purchase(member);
+				avatarRepository.save(defaultAvatar);
+			}
+
+			// 구매(소유) 완료 후, 프로필에 아바타 할당
 			member.changeAvatar(defaultAvatar);
 			memberRepository.save(member);
 		}
 
+		// 로그인 토큰 발급
 		GeneratedToken tokens = authTokenService.generateToken(
 			member.getEmail(),
 			member.getUserRole()
 		);
 
+		// 쿠키 설정
 		addAuthCookies(response, tokens, member);
 	}
+
 
 	private void addAuthCookies(HttpServletResponse response, GeneratedToken tokens, Member member) {
 		// Access Token 쿠키

@@ -31,7 +31,7 @@ public class ProdInitData {
                 .fileName("새콩이")
                 .url("https://quizzle-avatars.s3.ap-northeast-2.amazonaws.com/%EA%B8%B0%EB%B3%B8+%EC%95%84%EB%B0%94%ED%83%80.png")
                 .price(0)
-                .status(AvatarStatus.OWNED)
+                .status(AvatarStatus.AVAILABLE)
                 .build();
 
             avatarRepository.save(saekong);
