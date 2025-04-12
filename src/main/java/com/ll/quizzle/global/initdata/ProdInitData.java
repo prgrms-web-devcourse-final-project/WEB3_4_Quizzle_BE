@@ -26,7 +26,7 @@ public class ProdInitData {
 
     @Transactional
     public void initAvatars() {
-        if (avatarRepository.existsByFileName("새콩이")) {
+        if (!avatarRepository.existsByFileName("새콩이")) {
             Avatar saekong = Avatar.builder()
                 .fileName("새콩이")
                 .url("https://quizzle-avatars.s3.ap-northeast-2.amazonaws.com/%EA%B8%B0%EB%B3%B8+%EC%95%84%EB%B0%94%ED%83%80.png")
@@ -37,7 +37,7 @@ public class ProdInitData {
             avatarRepository.save(saekong);
         }
 
-        if (avatarRepository.existsByFileName("안경쓴 새콩이")) {
+        if (!avatarRepository.existsByFileName("안경쓴 새콩이")) {
             Avatar nerdySaekong = Avatar.builder()
                 .fileName("안경쓴 새콩이")
                 .url("https://quizzle-avatars.s3.ap-northeast-2.amazonaws.com/%EC%95%88%EA%B2%BD%EC%93%B4+%EC%83%88%EC%BD%A9%EC%9D%B4.png")
