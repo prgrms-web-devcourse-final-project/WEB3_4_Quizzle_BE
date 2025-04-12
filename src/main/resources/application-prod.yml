@@ -32,7 +32,7 @@ server:
 custom:
   site:
     cookieDomain: quizzle.p-e.kr
-    frontUrl: "https://secret-fe.vercel.app"
+    frontUrl: "https://quizzle.p-e.kr"
     backUrl: "https://quizzle.p-e.kr"
     name: Quizzle
   cors:
