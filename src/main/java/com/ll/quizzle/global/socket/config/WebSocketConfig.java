@@ -53,6 +53,7 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
                 .setAllowedOriginPatterns(allowedOrigins)
                 .withSockJS()
                 .setWebSocketEnabled(true)
+                .setSessionCookieNeeded(false)
                 .setInterceptors(handshakeInterceptor);
     }
 
