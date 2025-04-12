@@ -16,7 +16,10 @@ spring:
 
 logging:
   level:
-    com.ll.quizzle: DEBUG
+    com.ll.quizzle: TRACE
+    com.ll.quizzle.global.security.oauth2: TRACE
+    com.ll.quizzle.global.jwt: TRACE
+    org.springframework.security: DEBUG
     org.springframework.web.socket: DEBUG
 
 server:
@@ -32,7 +35,7 @@ server:
 custom:
   site:
     cookieDomain: quizzle.p-e.kr
-    frontUrl: "https://quizzle.p-e.kr"
+    frontUrl: "https://secret-fe.vercel.app"
     backUrl: "https://quizzle.p-e.kr"
     name: Quizzle
   cors:
