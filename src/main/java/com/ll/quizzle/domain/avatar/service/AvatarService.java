@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.ll.quizzle.domain.avatar.dto.request.AvatarCreateRequest;
 import com.ll.quizzle.domain.avatar.dto.response.AvatarPurchaseResponse;
@@ -47,6 +48,7 @@ public class AvatarService {
     }
 
     // 아바타 구매 메서드
+    @Transactional
     public void purchaseAvatar(Long memberId, Long avatarId) {
         Member member = rq.assertIsOwner(memberId);
 
