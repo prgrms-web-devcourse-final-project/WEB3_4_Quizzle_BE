@@ -67,17 +67,17 @@
 ```typescript
 
 {
-  type: 'CHAT' | 'JOIN' | 'LEAVE' | 'SYSTEM' | 'WHISPER',
+    type: 'CHAT' | 'JOIN' | 'LEAVE' | 'SYSTEM' | 'WHISPER',
 
-  content: string,
+        content: string,
 
-  senderId: string,
+    senderId: string,
 
-  senderName: string,
+    senderName: string,
 
-  timestamp: number,
+    timestamp: number,
 
-  roomId?: string  // 방/게임 채팅에만 필요
+    roomId?: string  // 방/게임 채팅에만 필요
 
 }
 ```
@@ -100,7 +100,7 @@
     "id": "1",
     "name": "홍길동",
     "isReady": false,
-	"isOwner": true,
+    "isOwner": true,
     "isSubmitted": false
   },
   {
@@ -125,8 +125,8 @@
     email: string,       // 사용자 이메일
     sessions: string[],  // 세션 ID 목록
     lastActive: number,  // 마지막 활동 시간 (timestamp)
-	// 상태 (현재는 항상 'online', 세션 종료 시 오프라인 표시 필요X)
-	// 이 부분은 로비에서 실시간 접속 중인 플레이어 목록을 확인하는 부분
+    // 상태 (현재는 항상 'online', 세션 종료 시 오프라인 표시 필요X)
+    // 이 부분은 로비에서 실시간 접속 중인 플레이어 목록을 확인하는 부분
     status: string       
   },
 ]
