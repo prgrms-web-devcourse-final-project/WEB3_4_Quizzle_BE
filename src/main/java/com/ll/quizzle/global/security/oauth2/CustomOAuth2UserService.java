@@ -85,20 +85,28 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
         if (existingMember.isPresent()) {
             member = existingMember.get();
         } else {
-            // 기본 아바타 조회
             Avatar defaultAvatar = avatarRepository.findByFileName("새콩이")
                 .orElseThrow(ErrorCode.AVATAR_NOT_FOUND::throwServiceException);
 
-            // 새로운 사용자 생성 (기본 아바타 포함)
             member = Member.create(
                 "GUEST-" + UUID.randomUUID().toString().substring(0, 6),
                 email,
-                defaultAvatar
+                null
             );
             memberRepository.save(member);
 
             oAuthRepository.save(OAuth.create(member, registrationId, oauthId));
+
+            boolean alreadyOwned = avatarRepository.existsByOwnerAndFileName(member, "새콩이");
+            if (!alreadyOwned) {
+                defaultAvatar.purchase(member);
+                avatarRepository.save(defaultAvatar);
+            }
+
+            member.changeAvatar(defaultAvatar);
+            memberRepository.save(member);
         }
+
 
         return new SecurityUser(
             email,

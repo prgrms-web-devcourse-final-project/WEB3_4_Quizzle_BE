@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -42,6 +43,13 @@ public class MemberController {
     public RsData<UserProfileResponse> getUserProfile(@PathVariable Long memberId) {
         Member member = memberService.findById(memberId).orElseThrow(MEMBER_NOT_FOUND::throwServiceException);
         return RsData.success(HttpStatus.OK, UserProfileResponse.of(member));
+    }
+
+    @GetMapping("/search")
+    @Operation(summary = "닉네임으로 사용자 검색", description = "닉네임으로 회원을 검색합니다.")
+    public RsData<List<UserProfileResponse>> searchByNickname(@RequestParam String nickname) {
+        List<UserProfileResponse> responses = memberService.searchUserProfilesByNickname(nickname);
+        return RsData.success(HttpStatus.OK, responses);
     }
 
     @PatchMapping("/{memberId}/nickname")

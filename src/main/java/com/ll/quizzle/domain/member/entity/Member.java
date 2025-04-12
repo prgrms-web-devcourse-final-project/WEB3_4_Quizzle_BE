@@ -2,11 +2,13 @@ package com.ll.quizzle.domain.member.entity;
 
 import static com.ll.quizzle.global.exceptions.ErrorCode.*;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import com.ll.quizzle.domain.avatar.entity.Avatar;
 import com.ll.quizzle.domain.member.type.Role;
 import com.ll.quizzle.global.jpa.entity.BaseTime;
 import com.ll.quizzle.global.security.oauth2.entity.OAuth;
-import jakarta.persistence.*;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
@@ -16,19 +18,19 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.OneToOne;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-import static com.ll.quizzle.global.exceptions.ErrorCode.*;
-
 @Entity
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Member extends BaseTime {
-    @Column(nullable = false)
+
+    @Column(nullable = false, unique = true)
     private String nickname;
 
     @Column(nullable = false)
@@ -47,6 +49,9 @@ public class Member extends BaseTime {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "avatar_id")
     private Avatar avatar;
+
+    @OneToMany(mappedBy = "owner", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Avatar> ownedAvatars = new ArrayList<>();
 
     @Column(nullable = false)
     private int pointBalance;
