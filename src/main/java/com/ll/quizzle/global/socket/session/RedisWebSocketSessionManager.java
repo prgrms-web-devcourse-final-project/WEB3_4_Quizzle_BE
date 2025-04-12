@@ -39,18 +39,41 @@ public class RedisWebSocketSessionManager implements WebSocketSessionManager {
         String userSessionsKey = USER_SESSIONS_KEY_PREFIX + email;
         Map<Object, Object> existingSessions = redisTemplate.opsForHash().entries(userSessionsKey);
 
+        boolean isTokenBasedSession = sessionId.startsWith("token-");
+
         if (!existingSessions.isEmpty()) {
             log.debug("기존 세션 감지: 사용자={}, 세션 수={}", email, existingSessions.size());
             
-            existingSessions.keySet().stream()
-                .filter(key -> !sessionId.equals(key))
-                .forEach(oldSessionId -> {
-                    log.debug("다중 접속 감지 - 기존 세션 정보 저장: 사용자={}, 종료 대상 세션={}, 새 세션={}",
+            boolean hasSameTokenSession = false;
+            
+            for (Object oldSessionIdObj : existingSessions.keySet()) {
+                String oldSessionId = (String) oldSessionIdObj;
+                
+                if (sessionId.equals(oldSessionId)) {
+                    continue;
+                }
+                
+                String oldSessionKey = SESSION_KEY_PREFIX + oldSessionId;
+                SessionInfo oldSessionInfo = (SessionInfo) redisTemplate.opsForValue().get(oldSessionKey);
+                
+                if (oldSessionInfo != null && accessToken.equals(oldSessionInfo.accessToken())) {
+                    hasSameTokenSession = true;
+                    log.debug("동일 토큰 세션 감지: 사용자={}, 기존 세션={}, 새 세션={}", 
                             email, oldSessionId, sessionId);
+                    
+                    if (isTokenBasedSession || oldSessionId.startsWith("token-") || 
+                            System.currentTimeMillis() - (Long)existingSessions.get(oldSessionId) < 10000) {
+                        log.debug("최근 연결된 세션으로 판단하여 종료 처리 안 함: {}", oldSessionId);
+                        continue;
+                    }
+                }
+                
+                log.debug("다중 접속 감지 - 기존 세션 정보 저장: 사용자={}, 종료 대상 세션={}, 새 세션={}",
+                        email, oldSessionId, sessionId);
 
-                    String sessionToTerminateKey = SESSION_KEY_PREFIX + oldSessionId + ":terminate";
-                    redisTemplate.opsForValue().set(sessionToTerminateKey, sessionId, SESSION_TERMINATE_EXPIRY, TimeUnit.SECONDS);
-                });
+                String sessionToTerminateKey = SESSION_KEY_PREFIX + oldSessionId + ":terminate";
+                redisTemplate.opsForValue().set(sessionToTerminateKey, sessionId, SESSION_TERMINATE_EXPIRY, TimeUnit.SECONDS);
+            }
         }
 
         String sessionKey = SESSION_KEY_PREFIX + sessionId;
@@ -167,25 +190,49 @@ public class RedisWebSocketSessionManager implements WebSocketSessionManager {
     @Override
     public int markOtherSessionsForTermination(String email, String sessionToKeep) {
         String userSessionsKey = USER_SESSIONS_KEY_PREFIX + email;
-        Map<Object, Object> sessions = redisTemplate.opsForHash().entries(userSessionsKey);
-
-        if (sessions.isEmpty()) {
+        Map<Object, Object> allSessions = redisTemplate.opsForHash().entries(userSessionsKey);
+        
+        if (allSessions.isEmpty()) {
             return 0;
         }
-
+        
         int markedCount = 0;
-        for (Object sessionIdObj : sessions.keySet()) {
+        
+        for (Object sessionIdObj : allSessions.keySet()) {
             String sessionId = (String) sessionIdObj;
-            if (!sessionId.equals(sessionToKeep)) {
-                String terminateKey = SESSION_KEY_PREFIX + sessionId + ":terminate";
-                redisTemplate.opsForValue().set(terminateKey, sessionToKeep, SESSION_TERMINATE_EXPIRY, TimeUnit.SECONDS);
-                markedCount++;
-
-                log.debug("세션 종료 표시: 사용자={}, 종료 대상 세션={}, 유지 세션={}",
-                        email, sessionId, sessionToKeep);
+            
+            if (sessionId.equals(sessionToKeep)) {
+                continue;
             }
+            
+            if (sessionId.startsWith("token-")) {
+                log.debug("토큰 기반 세션 감지 - 종료 처리 제외: 세션={}", sessionId);
+                continue;
+            }
+            
+            String sessionKey = SESSION_KEY_PREFIX + sessionId;
+            SessionInfo sessionInfo = (SessionInfo) redisTemplate.opsForValue().get(sessionKey);
+            
+            if (sessionInfo == null) {
+                continue;
+            }
+            
+            long lastActiveTime = (Long) allSessions.get(sessionId);
+            if (System.currentTimeMillis() - lastActiveTime < 10000) {
+                log.debug("최근 생성된 세션 감지 - 종료 처리 제외: 세션={}, 경과시간={}ms", 
+                    sessionId, System.currentTimeMillis() - lastActiveTime);
+                continue;
+            }
+            
+            String sessionToTerminateKey = SESSION_KEY_PREFIX + sessionId + ":terminate";
+            redisTemplate.opsForValue().set(sessionToTerminateKey, sessionToKeep, SESSION_TERMINATE_EXPIRY, TimeUnit.SECONDS);
+            
+            log.debug("세션 종료 대상으로 표시: 사용자={}, 종료 대상 세션={}, 유지할 세션={}", 
+                email, sessionId, sessionToKeep);
+            
+            markedCount++;
         }
-
+        
         return markedCount;
     }
 
