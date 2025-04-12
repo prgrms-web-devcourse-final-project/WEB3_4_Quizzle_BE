@@ -22,7 +22,7 @@ import com.ll.quizzle.global.security.oauth2.repository.OAuthRepository;
 
 import lombok.RequiredArgsConstructor;
 
-@Profile("prod")
+@Profile("dev")
 @Component
 @RequiredArgsConstructor
 public class BaseInitData {
