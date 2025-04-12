@@ -37,6 +37,22 @@ public class GlobalExceptionHandler {
                 .status(status)
                 .body(new RsData<>(status, message, null));
     }
+    
+    @ExceptionHandler(IllegalStateException.class)
+    public ResponseEntity<RsData<?>> handleIllegalStateException(IllegalStateException ex) {
+        log.error("IllegalStateException: {}", ex.getMessage());
+        
+        if (ex.getMessage() != null && ex.getMessage().contains("Session was invalidated")) {
+            log.warn("세션 무효화 오류 발생 - 클라이언트에게 401 응답 전송");
+            return ResponseEntity
+                    .status(HttpStatus.UNAUTHORIZED)
+                    .body(new RsData<>(HttpStatus.UNAUTHORIZED, "세션이 만료되었습니다. 다시 로그인해주세요.", null));
+        }
+        
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(new RsData<>(HttpStatus.BAD_REQUEST, ex.getMessage(), null));
+    }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<RsData<?>> handleValidationException(MethodArgumentNotValidException ex) {
