@@ -16,6 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.ll.quizzle.domain.avatar.entity.Avatar;
 import com.ll.quizzle.domain.avatar.repository.AvatarRepository;
+import com.ll.quizzle.domain.avatar.repository.OwnedAvatarRepository;
 import com.ll.quizzle.domain.friend.dto.response.FriendListResponse;
 import com.ll.quizzle.domain.friend.dto.response.FriendOfferListResponse;
 import com.ll.quizzle.domain.friend.dto.response.FriendOfferResponse;
@@ -43,6 +44,9 @@ public class FriendServiceTest {
     @Autowired
     private AvatarRepository avatarRepository;
 
+    @Autowired
+    private OwnedAvatarRepository ownedAvatarRepository;
+
     private Member testMember;
     private Member secondMember;
     private Member thirdMember;
@@ -54,18 +58,18 @@ public class FriendServiceTest {
             .orElseThrow(AVATAR_NOT_FOUND::throwServiceException);
 
         testMember = TestMemberFactory.createOAuthMember(
-                "테스트유저1", "test1@email.com", "google", "1234",
-                memberRepository, oAuthRepository, defaultAvatar
+            "테스트유저1", "test1@email.com", "google", "1234",
+            memberRepository, oAuthRepository, avatarRepository, ownedAvatarRepository
         );
 
         secondMember = TestMemberFactory.createOAuthMember(
-                "테스트유저2", "test2@email.com", "google", "2345",
-                memberRepository, oAuthRepository, defaultAvatar
+            "테스트유저2", "test2@email.com", "google", "2345",
+            memberRepository, oAuthRepository, avatarRepository, ownedAvatarRepository
         );
 
         thirdMember = TestMemberFactory.createOAuthMember(
-                "테스트유저3", "test3@email.com", "google", "3456",
-                memberRepository, oAuthRepository, defaultAvatar
+            "테스트유저3", "test3@email.com", "google", "3456",
+            memberRepository, oAuthRepository, avatarRepository, ownedAvatarRepository
         );
     }
 
@@ -81,8 +85,8 @@ public class FriendServiceTest {
 
         // Then
         assertThat(friendResponse)
-                .extracting("fromMemberId", "toMemberId", "status")
-                .containsExactly(testMemberId, secondMemberId, FriendRequestStatus.PENDING.name());
+            .extracting("fromMemberId", "toMemberId", "status")
+            .containsExactly(testMemberId, secondMemberId, FriendRequestStatus.PENDING.name());
     }
 
     @Test
@@ -93,9 +97,9 @@ public class FriendServiceTest {
 
         // When & Then
         assertThatThrownBy(() -> friendService.sendFriendOffer(testMemberId, testMemberId))
-                .isInstanceOf(ServiceException.class)
-                .extracting("msg")
-                .isEqualTo(ErrorCode.FRIEND_REQUEST_NOT_YOURSELF.getMessage());
+            .isInstanceOf(ServiceException.class)
+            .extracting("msg")
+            .isEqualTo(ErrorCode.FRIEND_REQUEST_NOT_YOURSELF.getMessage());
     }
 
     @Test
@@ -111,9 +115,9 @@ public class FriendServiceTest {
 
         // Then
         assertThatThrownBy(() -> friendService.sendFriendOffer(testMemberId, secondMemberId))
-                .isInstanceOf(ServiceException.class)
-                .extracting("msg")
-                .isEqualTo(ErrorCode.FRIEND_ALREADY_EXISTS.getMessage());
+            .isInstanceOf(ServiceException.class)
+            .extracting("msg")
+            .isEqualTo(ErrorCode.FRIEND_ALREADY_EXISTS.getMessage());
     }
 
     @Test
@@ -128,9 +132,9 @@ public class FriendServiceTest {
 
         // Then
         assertThatThrownBy(() -> friendService.sendFriendOffer(testMemberId, secondMemberId))
-                .isInstanceOf(ServiceException.class)
-                .extracting("msg")
-                .isEqualTo(ErrorCode.FRIEND_REQUEST_ALREADY_EXISTS.getMessage());
+            .isInstanceOf(ServiceException.class)
+            .extracting("msg")
+            .isEqualTo(ErrorCode.FRIEND_REQUEST_ALREADY_EXISTS.getMessage());
     }
 
     @Test
@@ -142,12 +146,13 @@ public class FriendServiceTest {
 
         // When
         friendService.sendFriendOffer(testMemberId, secondMemberId);
-        FriendOfferResponse friendOfferResponse = friendService.handleFriendOffer(secondMemberId, testMemberId, FriendRequestStatus.ACCEPTED);
+        FriendOfferResponse friendOfferResponse = friendService.handleFriendOffer(secondMemberId, testMemberId,
+            FriendRequestStatus.ACCEPTED);
 
         // Then
         assertThat(friendOfferResponse)
-                .extracting("memberId", "nickname", "status")
-                .containsExactly(testMemberId, testMember.getNickname(), FriendRequestStatus.ACCEPTED.name());
+            .extracting("memberId", "nickname", "status")
+            .containsExactly(testMemberId, testMember.getNickname(), FriendRequestStatus.ACCEPTED.name());
     }
 
     @Test
@@ -158,10 +163,11 @@ public class FriendServiceTest {
         long secondMemberId = secondMember.getId();
 
         // When & Then
-        assertThatThrownBy(() -> friendService.handleFriendOffer(secondMemberId, testMemberId, FriendRequestStatus.ACCEPTED))
-                .isInstanceOf(ServiceException.class)
-                .extracting("msg")
-                .isEqualTo(ErrorCode.FRIEND_REQUEST_NOT_FOUND.getMessage());
+        assertThatThrownBy(
+            () -> friendService.handleFriendOffer(secondMemberId, testMemberId, FriendRequestStatus.ACCEPTED))
+            .isInstanceOf(ServiceException.class)
+            .extracting("msg")
+            .isEqualTo(ErrorCode.FRIEND_REQUEST_NOT_FOUND.getMessage());
     }
 
     @Test
@@ -183,16 +189,16 @@ public class FriendServiceTest {
         assertThat(targetFriendList).hasSize(1);
 
         assertThat(friendList.get(0))
-                .extracting("memberId", "nickname", "level")
-                .containsExactly(
-                        secondMemberId, secondMember.getNickname(), secondMember.getLevel()
-                );
+            .extracting("memberId", "nickname", "level")
+            .containsExactly(
+                secondMemberId, secondMember.getNickname(), secondMember.getLevel()
+            );
 
         assertThat(targetFriendList.get(0))
-                .extracting("memberId", "nickname", "level")
-                .containsExactly(
-                        testMemberId, testMember.getNickname(), testMember.getLevel()
-                );
+            .extracting("memberId", "nickname", "level")
+            .containsExactly(
+                testMemberId, testMember.getNickname(), testMember.getLevel()
+            );
     }
 
     @Test
@@ -204,12 +210,13 @@ public class FriendServiceTest {
 
         // When
         friendService.sendFriendOffer(testMemberId, secondMemberId);
-        FriendOfferResponse friendOfferResponse = friendService.handleFriendOffer(secondMemberId, testMemberId, FriendRequestStatus.REJECTED);
+        FriendOfferResponse friendOfferResponse = friendService.handleFriendOffer(secondMemberId, testMemberId,
+            FriendRequestStatus.REJECTED);
 
         // Then
         assertThat(friendOfferResponse)
-                .extracting("memberId", "nickname", "status")
-                .containsExactly(testMemberId, testMember.getNickname(), FriendRequestStatus.REJECTED.name());
+            .extracting("memberId", "nickname", "status")
+            .containsExactly(testMemberId, testMember.getNickname(), FriendRequestStatus.REJECTED.name());
     }
 
     @Test
@@ -220,10 +227,11 @@ public class FriendServiceTest {
         long secondMemberId = secondMember.getId();
 
         // When & Then
-        assertThatThrownBy(() -> friendService.handleFriendOffer(secondMemberId, testMemberId, FriendRequestStatus.REJECTED))
-                .isInstanceOf(ServiceException.class)
-                .extracting("msg")
-                .isEqualTo(ErrorCode.FRIEND_REQUEST_NOT_FOUND.getMessage());
+        assertThatThrownBy(
+            () -> friendService.handleFriendOffer(secondMemberId, testMemberId, FriendRequestStatus.REJECTED))
+            .isInstanceOf(ServiceException.class)
+            .extracting("msg")
+            .isEqualTo(ErrorCode.FRIEND_REQUEST_NOT_FOUND.getMessage());
     }
 
     @Test
@@ -241,8 +249,8 @@ public class FriendServiceTest {
 
         // Then
         assertThat(friendResponse)
-                .extracting("fromMemberId", "toMemberId", "status")
-                .containsExactly(testMemberId, secondMemberId, FriendRequestStatus.PENDING.name());
+            .extracting("fromMemberId", "toMemberId", "status")
+            .containsExactly(testMemberId, secondMemberId, FriendRequestStatus.PENDING.name());
     }
 
     @Test
@@ -258,11 +266,11 @@ public class FriendServiceTest {
 
         // Then
         assertThat(friendOfferList)
-                .hasSize(1)
-                .extracting("memberId", "nickname")
-                .containsExactly(
-                        tuple(testMemberId, testMember.getNickname())
-                );
+            .hasSize(1)
+            .extracting("memberId", "nickname")
+            .containsExactly(
+                tuple(testMemberId, testMember.getNickname())
+            );
     }
 
     @Test
@@ -280,12 +288,12 @@ public class FriendServiceTest {
 
         // Then
         assertThat(friendOfferList)
-                .hasSize(2)
-                .extracting("memberId", "nickname")
-                .containsExactlyInAnyOrder(
-                        tuple(testMemberId, testMember.getNickname()),
-                        tuple(thirdMemberId, thirdMember.getNickname())
-                );
+            .hasSize(2)
+            .extracting("memberId", "nickname")
+            .containsExactlyInAnyOrder(
+                tuple(testMemberId, testMember.getNickname()),
+                tuple(thirdMemberId, thirdMember.getNickname())
+            );
     }
 
     @Test
@@ -303,18 +311,18 @@ public class FriendServiceTest {
 
         // Then
         assertThat(friendList)
-                .hasSize(1)
-                .extracting("memberId", "nickname", "level")
-                .containsExactly(
-                        tuple(secondMemberId, secondMember.getNickname(), secondMember.getLevel())
-                );
+            .hasSize(1)
+            .extracting("memberId", "nickname", "level")
+            .containsExactly(
+                tuple(secondMemberId, secondMember.getNickname(), secondMember.getLevel())
+            );
 
         assertThat(targetFriendList)
-                .hasSize(1)
-                .extracting("memberId", "nickname", "level")
-                .containsExactly(
-                        tuple(testMemberId, testMember.getNickname(), testMember.getLevel())
-                );
+            .hasSize(1)
+            .extracting("memberId", "nickname", "level")
+            .containsExactly(
+                tuple(testMemberId, testMember.getNickname(), testMember.getLevel())
+            );
     }
 
     @Test
@@ -349,12 +357,12 @@ public class FriendServiceTest {
 
         // Then
         assertThat(friendList)
-                .hasSize(2)
-                .extracting("memberId", "nickname")
-                .containsExactlyInAnyOrder(
-                        tuple(secondMemberId, secondMember.getNickname()),
-                        tuple(thirdMemberId, thirdMember.getNickname())
-                );
+            .hasSize(2)
+            .extracting("memberId", "nickname")
+            .containsExactlyInAnyOrder(
+                tuple(secondMemberId, secondMember.getNickname()),
+                tuple(thirdMemberId, thirdMember.getNickname())
+            );
     }
 
     @Test
@@ -397,8 +405,8 @@ public class FriendServiceTest {
 
         // Then
         assertThat(response)
-                .extracting("fromMemberId", "toMemberId", "status")
-                .containsExactly(testMemberId, secondMemberId, FriendRequestStatus.PENDING.name());
+            .extracting("fromMemberId", "toMemberId", "status")
+            .containsExactly(testMemberId, secondMemberId, FriendRequestStatus.PENDING.name());
     }
 
     @Test
@@ -410,8 +418,8 @@ public class FriendServiceTest {
 
         // When & Then
         assertThatThrownBy(() -> friendService.deleteFriend(testMemberId, secondMemberId))
-                .isInstanceOf(ServiceException.class)
-                .extracting("msg")
-                .isEqualTo(ErrorCode.FRIEND_NOT_FOUND.getMessage());
+            .isInstanceOf(ServiceException.class)
+            .extracting("msg")
+            .isEqualTo(ErrorCode.FRIEND_NOT_FOUND.getMessage());
     }
 }

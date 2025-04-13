@@ -79,7 +79,6 @@ public class OAuth2AuthenticationTest {
             .fileName("새콩이")
             .url("https://quizzle-avatars.s3.ap-northeast-2.amazonaws.com/%EA%B8%B0%EB%B3%B8+%EC%95%84%EB%B0%94%ED%83%80.png")
             .price(0)
-            .status(AvatarStatus.OWNED)
             .build());
 
         testMember = Member.builder()
@@ -96,10 +95,10 @@ public class OAuth2AuthenticationTest {
 
         // 테스트용 OAuth 정보 생성
         testOAuth = OAuth.builder()
-                .provider("google")
-                .oauthId("123456789")
-                .member(testMember)
-                .build();
+            .provider("google")
+            .oauthId("123456789")
+            .member(testMember)
+            .build();
 
         oAuthRepository.save(testOAuth);
         memberRepository.save(testMember);
@@ -134,9 +133,9 @@ public class OAuth2AuthenticationTest {
 
         // when & then
         mockMvc.perform(get("/api/v1/members/{memberId}/points", testMember.getId())
-                        .cookie(accessTokenCookie))
-                .andDo(print())
-                .andExpect(status().isOk());
+                .cookie(accessTokenCookie))
+            .andDo(print())
+            .andExpect(status().isOk());
     }
 
     @Test
@@ -145,9 +144,9 @@ public class OAuth2AuthenticationTest {
         // given
         // 인증 정보 생성
         Authentication auth = new UsernamePasswordAuthenticationToken(
-                testMember,
-                null,
-                Collections.singletonList(new SimpleGrantedAuthority("ROLE_MEMBER"))
+            testMember,
+            null,
+            Collections.singletonList(new SimpleGrantedAuthority("ROLE_MEMBER"))
         );
 
         // when
@@ -184,6 +183,6 @@ public class OAuth2AuthenticationTest {
 
         // when & then
         assertThat(oAuthRepository.findByProviderAndOauthIdWithMember(invalidProvider, oauthId))
-                .isEmpty();
+            .isEmpty();
     }
 }
