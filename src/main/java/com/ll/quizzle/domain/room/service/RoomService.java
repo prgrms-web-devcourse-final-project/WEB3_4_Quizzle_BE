@@ -350,8 +350,6 @@ public class RoomService {
         validateGameStart(room, memberId);
         String roomStateKey = validateGameState(room);
 
-
-
         try {
             processGameStart(room, memberId, initialPlayerCount, roomStateKey);
             QuizGenerationRequest quizRequest = new QuizGenerationRequest(
@@ -365,13 +363,11 @@ public class RoomService {
 
             QuizResponse quizResponse = gptQuizService.generateQuiz(quizRequest);
             String quizId = quizResponse.quizId();
-            log.debug("퀴즈 생성 완료 - quizId: {}", quizId);
 
             for (Long playerId : room.getPlayers()) {
                 quizParticipantService.registerParticipant(quizId, playerId);
             }
 
-            log.debug("모든 플레이어 퀴즈 등록 완료 - quizId: {}", quizId);
             TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
                 @Override
                 public void afterCommit() {
