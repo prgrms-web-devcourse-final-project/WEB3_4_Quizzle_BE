@@ -81,4 +81,15 @@ public class WebSocketRoomController {
         String username = Objects.requireNonNull(headerAccessor.getUser()).getName();
         log.debug("로비 접속자 목록 요청: {}, 사용자: {}", message, username);
     }
+
+    @MessageMapping("/room/status/{roomId}")
+    public void handleRoomStatusRequest(
+            @DestinationVariable String roomId,
+            @Payload String message,
+            SimpMessageHeaderAccessor headerAccessor
+    ) {
+        String username = Objects.requireNonNull(headerAccessor.getUser()).getName();
+        log.debug("방 상태 요청 메시지 수신: {}, 방: {}, 사용자: {}", message, roomId, username);
+        roomService.send("/topic/room/" + roomId + "/status", message);
+    }
 } 
