@@ -3,6 +3,10 @@ package com.ll.quizzle.domain.room.service;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import com.ll.quizzle.domain.quiz.dto.request.QuizGenerationRequest;
+import com.ll.quizzle.domain.quiz.dto.response.QuizResponse;
+import com.ll.quizzle.domain.quiz.service.GPTQuizService;
+import com.ll.quizzle.domain.quiz.service.QuizParticipantService;
 import com.ll.quizzle.domain.room.dto.request.RoomUpdateRequest;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
@@ -53,6 +57,8 @@ public class RoomService {
     private final RedisTemplate<String, String> redisTemplate;
     private final WebSocketRoomMessageService roomMessageService;
     private final MessageServiceFactory messageServiceFactory;
+    private final GPTQuizService  gptQuizService;
+    private final  QuizParticipantService quizParticipantService;
 
     @Transactional(isolation = Isolation.SERIALIZABLE)
     public RoomResponse createRoom(Long ownerId, RoomCreateRequest request) {
@@ -340,19 +346,39 @@ public class RoomService {
         int initialPlayerCount = room.getPlayers().size();
         log.debug("게임 시작 요청 - 방ID: {}, 방장ID: {}, 초기 플레이어 수: {}", room.getId(), memberId, initialPlayerCount);
 
-        validateGameStart(room, memberId);
 
+        validateGameStart(room, memberId);
         String roomStateKey = validateGameState(room);
+
+
 
         try {
             processGameStart(room, memberId, initialPlayerCount, roomStateKey);
+            QuizGenerationRequest quizRequest = new QuizGenerationRequest(
+                    room.getMainCategory(),
+                    room.getSubCategory(),
+                    room.getAnswerType(),
+                    room.getProblemCount(),
+                    room.getDifficulty(),
+                    room.getId().toString()
+            );
 
+            QuizResponse quizResponse = gptQuizService.generateQuiz(quizRequest);
+            String quizId = quizResponse.quizId();
+            log.debug("퀴즈 생성 완료 - quizId: {}", quizId);
+
+            for (Long playerId : room.getPlayers()) {
+                quizParticipantService.registerParticipant(quizId, playerId);
+            }
+
+            log.debug("모든 플레이어 퀴즈 등록 완료 - quizId: {}", quizId);
             TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
                 @Override
                 public void afterCommit() {
                     roomMessageService.sendGameStart(room);
                 }
             });
+
         } catch (Exception e) {
             redisTemplate.opsForValue().set(roomStateKey, "WAITING");
             log.error("게임 시작 중 오류 발생 - 방ID: {}, 오류: {}", room.getId(), e.getMessage());
