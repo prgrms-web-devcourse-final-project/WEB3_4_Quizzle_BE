@@ -42,6 +42,18 @@ public class WebSocketRoomController {
         roomService.send("/topic/room/" + roomId, message);
     }
 
+    @MessageMapping("/room/{roomId}/status")
+    public void handleRoomStatusMessage(
+            @DestinationVariable String roomId,
+            @Payload String message,
+            SimpMessageHeaderAccessor headerAccessor
+    ) {
+        String username = Objects.requireNonNull(headerAccessor.getUser()).getName();
+        log.debug("방 상태 업데이트 메시지 수신: {}, 방: {}, 사용자: {}", message, roomId, username);
+        
+        roomService.send("/topic/room/" + roomId + "/status", message);
+    }
+
     @MessageMapping("/game/{roomId}")
     public void handleGameMessage(
             @DestinationVariable String roomId,
