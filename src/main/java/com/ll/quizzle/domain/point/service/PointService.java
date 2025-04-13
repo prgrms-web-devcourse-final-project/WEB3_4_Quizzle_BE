@@ -74,4 +74,16 @@ public class PointService {
 			usePoint(member, -amount, reason);
 		}
 	}
+
+	public void applyPointPolicy(Member member, int customAmount, PointReason reason) {
+		if (customAmount == 0) {
+			throw POINT_POLICY_NOT_FOUND.throwServiceException();
+		}
+
+		if (customAmount > 0) {
+			gainPoint(member, customAmount, reason);
+		} else {
+			usePoint(member, -customAmount, reason);
+		}
+	}
 }

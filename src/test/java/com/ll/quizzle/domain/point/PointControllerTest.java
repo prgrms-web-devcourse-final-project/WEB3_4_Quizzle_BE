@@ -15,6 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.ll.quizzle.domain.avatar.entity.Avatar;
 import com.ll.quizzle.domain.avatar.repository.AvatarRepository;
+import com.ll.quizzle.domain.avatar.repository.OwnedAvatarRepository;
 import com.ll.quizzle.domain.member.entity.Member;
 import com.ll.quizzle.domain.member.repository.MemberRepository;
 import com.ll.quizzle.domain.member.service.AuthTokenService;
@@ -46,27 +47,28 @@ class PointControllerTest {
 	@Autowired
 	private OAuthRepository oAuthRepository;
 
+	@Autowired
+	private AvatarRepository avatarRepository;
+
+	@Autowired
+	private OwnedAvatarRepository ownedAvatarRepository;
+
 	private Member member;
 	private Member other;
 	private Cookie accessTokenCookie;
 
-	@Autowired
-	private AvatarRepository avatarRepository;
-
 	@BeforeEach
 	void setUp() {
-
-		Avatar defaultAvatar = avatarRepository.findByFileName("새콩이")
-			.orElseThrow(AVATAR_NOT_FOUND::throwServiceException);
-		// 테스트 유저 생성
+		// 테스트 유저 생성 (기본 아바타 장착 및 소유 포함)
 		member = TestMemberFactory.createOAuthMember(
 			"테스트유저", "test@email.com", "google", "1234",
-			memberRepository, oAuthRepository, defaultAvatar
+			memberRepository, oAuthRepository, avatarRepository, ownedAvatarRepository
 		);
 
+		// 다른 유저도 동일하게 처리
 		other = TestMemberFactory.createOAuthMember(
 			"다른유저", "other@email.com", "google", "5678",
-			memberRepository, oAuthRepository, defaultAvatar
+			memberRepository, oAuthRepository, avatarRepository, ownedAvatarRepository
 		);
 
 		// 포인트 내역 생성
@@ -77,6 +79,7 @@ class PointControllerTest {
 		GeneratedToken token = authTokenService.generateToken(member.getEmail(), member.getRole().name());
 		accessTokenCookie = new Cookie("access_token", token.accessToken());
 	}
+
 
 	@Test
 	@DisplayName("포인트 내역 전체 조회 성공")

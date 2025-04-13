@@ -1,10 +1,7 @@
 package com.ll.quizzle.global.exceptions.handler;
 
-import com.ll.quizzle.global.exceptions.ErrorCode;
-import com.ll.quizzle.global.exceptions.ServiceException;
-import com.ll.quizzle.global.response.RsData;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import java.time.format.DateTimeParseException;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -13,9 +10,15 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
-import java.time.format.DateTimeParseException;
+import com.ll.quizzle.global.exceptions.ErrorCode;
+import com.ll.quizzle.global.exceptions.ServiceException;
+import com.ll.quizzle.global.response.RsData;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @ControllerAdvice
@@ -23,6 +26,7 @@ import java.time.format.DateTimeParseException;
 public class GlobalExceptionHandler {
 
     @ExceptionHandler(ServiceException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ResponseEntity<RsData<?>> handle(ServiceException ex) {
         log.error("ServiceException: {}", ex.getMessage());
         
@@ -32,6 +36,22 @@ public class GlobalExceptionHandler {
         return ResponseEntity
                 .status(status)
                 .body(new RsData<>(status, message, null));
+    }
+    
+    @ExceptionHandler(IllegalStateException.class)
+    public ResponseEntity<RsData<?>> handleIllegalStateException(IllegalStateException ex) {
+        log.error("IllegalStateException: {}", ex.getMessage());
+        
+        if (ex.getMessage() != null && ex.getMessage().contains("Session was invalidated")) {
+            log.warn("세션 무효화 오류 발생 - 클라이언트에게 401 응답 전송");
+            return ResponseEntity
+                    .status(HttpStatus.UNAUTHORIZED)
+                    .body(new RsData<>(HttpStatus.UNAUTHORIZED, "세션이 만료되었습니다. 다시 로그인해주세요.", null));
+        }
+        
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(new RsData<>(HttpStatus.BAD_REQUEST, ex.getMessage(), null));
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)

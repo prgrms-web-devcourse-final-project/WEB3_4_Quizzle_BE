@@ -92,6 +92,7 @@ public enum ErrorCode {
 	NICKNAME_LENGTH_INVALID(HttpStatus.BAD_REQUEST, "닉네임은 2자 이상 20자 이하이어야 합니다."),
 	NICKNAME_FORMAT_INVALID(HttpStatus.BAD_REQUEST, "닉네임은 영문, 숫자, 한글만 사용할 수 있습니다."),
 	NICKNAME_ALREADY_EXISTS(HttpStatus.BAD_REQUEST, "이미 존재하는 닉네임입니다."),
+	NICKNAME_GUEST_PREFIX_FORBIDDEN(HttpStatus.BAD_REQUEST, "'GUEST'로 시작하는 닉네임은 사용할 수 없습니다."),
 
     // friend
     FRIEND_ALREADY_EXISTS(HttpStatus.BAD_REQUEST, "이미 친구 관계입니다."),
@@ -114,7 +115,7 @@ public enum ErrorCode {
 	ROOM_MAIN_CATEGORY_REQUIRED(HttpStatus.BAD_REQUEST, "대주제는 필수입니다."),
 	ROOM_SUB_CATEGORY_REQUIRED(HttpStatus.BAD_REQUEST, "소주제는 필수입니다."),
 	ROOM_ANSWER_TYPE_REQUIRED(HttpStatus.BAD_REQUEST, "정답 유형은 필수입니다."),
-	ROOM_PROBLEM_COUNT_INVALID(HttpStatus.BAD_REQUEST, "문제 수는 10개에서 50개 사이여야 합니다."),
+	ROOM_PROBLEM_COUNT_INVALID(HttpStatus.BAD_REQUEST, "문제 수는 5개에서 20개 사이여야 합니다."),
 	ROOM_PRIVATE_PASSWORD_REQUIRED(HttpStatus.BAD_REQUEST, "비공개 방의 경우 비밀번호는 필수입니다."),
 	ROOM_PASSWORD_INVALID(HttpStatus.BAD_REQUEST, "방 비밀번호는 4자리 숫자(0000~9999)여야 합니다."),
 	MIN_PLAYER_COUNT_NOT_MET(HttpStatus.BAD_REQUEST, "방에 플레이어가 없어 게임을 시작할 수 없습니다."),

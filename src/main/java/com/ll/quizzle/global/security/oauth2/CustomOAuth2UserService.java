@@ -9,9 +9,12 @@ import org.springframework.security.oauth2.client.userinfo.OAuth2UserRequest;
 import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.ll.quizzle.domain.avatar.entity.Avatar;
+import com.ll.quizzle.domain.avatar.entity.OwnedAvatar;
 import com.ll.quizzle.domain.avatar.repository.AvatarRepository;
+import com.ll.quizzle.domain.avatar.repository.OwnedAvatarRepository;
 import com.ll.quizzle.domain.member.entity.Member;
 import com.ll.quizzle.domain.member.repository.MemberRepository;
 import com.ll.quizzle.domain.member.service.MemberService;
@@ -31,6 +34,7 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
     private final OAuthRepository oAuthRepository;
     private final MemberRepository memberRepository;
     private final AvatarRepository avatarRepository;
+    private final OwnedAvatarRepository ownedAvatarRepository;
 
     @Override
     public OAuth2User loadUser(OAuth2UserRequest userRequest) throws OAuth2AuthenticationException {
@@ -48,6 +52,7 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
         }
     }
 
+
     private OAuth2User processOAuth2User(OAuth2UserRequest userRequest, OAuth2User oauth2User) {
         String registrationId = userRequest.getClientRegistration().getRegistrationId();
 
@@ -57,10 +62,10 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
 
         switch (registrationId) {
             case "kakao" -> {
-                Map<String, Object> kakaoAccount = (Map<String, Object>) oauth2User.getAttributes().get("kakao_account");
-                Map<String, Object> profile = (Map<String, Object>) kakaoAccount.get("profile");
-                email = (String) kakaoAccount.get("email");
-                name = (String) profile.get("nickname");
+                Map<String, Object> kakaoAccount = (Map<String, Object>)oauth2User.getAttributes().get("kakao_account");
+                Map<String, Object> profile = (Map<String, Object>)kakaoAccount.get("profile");
+                email = (String)kakaoAccount.get("email");
+                name = (String)profile.get("nickname");
                 oauthId = String.valueOf(oauth2User.getAttributes().get("id"));
                 log.debug("카카오 로그인 정보 - email: {}, name: {}, id: {}", email, name, oauthId);
             }
@@ -85,19 +90,27 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
         if (existingMember.isPresent()) {
             member = existingMember.get();
         } else {
-            // 기본 아바타 조회
+
             Avatar defaultAvatar = avatarRepository.findByFileName("새콩이")
                 .orElseThrow(ErrorCode.AVATAR_NOT_FOUND::throwServiceException);
 
-            // 새로운 사용자 생성 (기본 아바타 포함)
             member = Member.create(
                 "GUEST-" + UUID.randomUUID().toString().substring(0, 6),
                 email,
                 defaultAvatar
             );
+
             memberRepository.save(member);
 
+            boolean alreadyOwned = member.hasAvatar(defaultAvatar);
+            if (!alreadyOwned) {
+                OwnedAvatar ownedAvatar = OwnedAvatar.create(member, defaultAvatar);
+                member.addOwnedAvatar(ownedAvatar);
+                ownedAvatarRepository.save(ownedAvatar);
+            }
+
             oAuthRepository.save(OAuth.create(member, registrationId, oauthId));
+
         }
 
         return new SecurityUser(

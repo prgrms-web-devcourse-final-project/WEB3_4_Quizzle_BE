@@ -5,21 +5,29 @@ import static com.ll.quizzle.global.exceptions.ErrorCode.*;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.ll.quizzle.domain.avatar.entity.Avatar;
+import com.ll.quizzle.domain.avatar.entity.OwnedAvatar;
 import com.ll.quizzle.domain.avatar.repository.AvatarRepository;
+import com.ll.quizzle.domain.avatar.repository.OwnedAvatarRepository;
+import com.ll.quizzle.domain.avatar.type.AvatarTemplate;
 import com.ll.quizzle.domain.member.dto.response.MemberProfileEditResponse;
+import com.ll.quizzle.domain.member.dto.response.MemberRankingResponse;
+import com.ll.quizzle.domain.member.dto.response.UserProfileResponse;
 import com.ll.quizzle.domain.member.entity.Member;
 import com.ll.quizzle.domain.member.repository.MemberRepository;
 import com.ll.quizzle.domain.point.service.PointService;
 import com.ll.quizzle.domain.point.type.PointReason;
+import com.ll.quizzle.global.exceptions.ErrorCode;
 import com.ll.quizzle.global.jwt.dto.GeneratedToken;
 import com.ll.quizzle.global.jwt.dto.JwtProperties;
 import com.ll.quizzle.global.request.Rq;
@@ -38,6 +46,7 @@ import lombok.RequiredArgsConstructor;
 public class MemberService {
 	private final MemberRepository memberRepository;
 	private final AvatarRepository avatarRepository;
+	private final OwnedAvatarRepository ownedAvatarRepository;
 	private final PointService pointService;
 	private final OAuthRepository oAuthRepository;
 	private final RefreshTokenService refreshTokenService;
@@ -62,6 +71,14 @@ public class MemberService {
 	public Optional<Member> findByEmail(String email) {
 		return memberRepository.findByEmail(email);
 	}
+
+	@Transactional(readOnly = true)
+	public List<UserProfileResponse> searchUserProfilesByNickname(String nickname) {
+		return memberRepository.findByNicknameContainingIgnoreCase(nickname).stream()
+			.map(UserProfileResponse::of)
+			.toList();
+	}
+
 
 	public String generateRefreshToken(String email) {
 		return refreshTokenService.generateRefreshToken(email);
@@ -99,13 +116,17 @@ public class MemberService {
 
 	@Transactional
 	public void oAuth2Login(Member member, HttpServletResponse response) {
-		// 기본 아바타 없으면 할당
 		if (member.getAvatar() == null) {
-
-			Avatar defaultAvatar = avatarRepository.findAll().stream()
-				.filter(a -> a.getFileName().trim().equalsIgnoreCase("새콩이"))
-				.findFirst()
+			Avatar defaultAvatar = avatarRepository.findByFileName(AvatarTemplate.DEFAULT.fileName)
 				.orElseThrow(AVATAR_NOT_FOUND::throwServiceException);
+
+			boolean alreadyOwned = member.hasAvatar(defaultAvatar);
+
+			if (!alreadyOwned) {
+				OwnedAvatar ownedAvatar = OwnedAvatar.create(member, defaultAvatar);
+				member.addOwnedAvatar(ownedAvatar);
+				ownedAvatarRepository.save(ownedAvatar);
+			}
 
 			member.changeAvatar(defaultAvatar);
 			memberRepository.save(member);
@@ -119,8 +140,8 @@ public class MemberService {
 		addAuthCookies(response, tokens, member);
 	}
 
+
 	private void addAuthCookies(HttpServletResponse response, GeneratedToken tokens, Member member) {
-		// Access Token 쿠키
 		CookieUtil.addCookie(
 			response,
 			"access_token",
@@ -130,7 +151,6 @@ public class MemberService {
 			true
 		);
 
-		// Refresh Token 쿠키
 		CookieUtil.addCookie(
 			response,
 			"refresh_token",
@@ -140,7 +160,6 @@ public class MemberService {
 			true
 		);
 
-		// Role 쿠키
 		Map<String, Object> roleData = new HashMap<>();
 		roleData.put("role", member.getUserRole());
 
@@ -169,7 +188,6 @@ public class MemberService {
 			}
 		}
 
-		// 액세스 토큰이 만료되었다면 리프레시 토큰으로 처리
 		if (accessToken == null && refreshToken != null) {
 			RsData<String> refreshResult = refreshAccessToken(refreshToken);
 			if (refreshResult.isSuccess()) {
@@ -183,7 +201,6 @@ public class MemberService {
 
 		String email = authTokenService.getEmail(accessToken);
 
-		// Redis에서 토큰 무효화
 		redisTemplate.opsForValue().set(
 			LOGOUT_PREFIX + accessToken,
 			email,
@@ -191,7 +208,6 @@ public class MemberService {
 			TimeUnit.MILLISECONDS
 		);
 
-		// Refresh 토큰 삭제
 		refreshTokenService.removeRefreshToken(email);
 
 		CookieUtil.deleteCookie(request, response, "access_token");
@@ -204,9 +220,17 @@ public class MemberService {
 	public MemberProfileEditResponse editNickname(Long memberId, String newNickname) {
 		Member member = rq.assertIsOwner(memberId);
 
-		validateNickname(newNickname);
+		if (memberRepository.existsByNickname(newNickname)) {
+			ErrorCode.NICKNAME_ALREADY_EXISTS.throwServiceException();
+		}
+
+		boolean isFirstNicknameSet = member.getNickname().startsWith("GUEST-");
+
+		if (!isFirstNicknameSet) {
+			pointService.applyPointPolicy(member, PointReason.NICKNAME_CHANGE);
+		}
+
 		member.changeNickname(newNickname);
-		pointService.applyPointPolicy(member, PointReason.NICKNAME_CHANGE);
 		memberRepository.save(member);
 		return MemberProfileEditResponse.from(member);
 	}
@@ -218,7 +242,7 @@ public class MemberService {
 		Avatar avatar = avatarRepository.findById(avatarId)
 			.orElseThrow(AVATAR_NOT_FOUND::throwServiceException);
 
-		if (!avatar.isOwned() || !avatar.getMember().getId().equals(memberId)) {
+		if (!member.hasAvatar(avatar)) {
 			throw AVATAR_NOT_OWNED.throwServiceException();
 		}
 
@@ -230,18 +254,17 @@ public class MemberService {
 		memberRepository.save(member);
 	}
 
-	public void validateNickname(String nickname) {
-		if (nickname == null || nickname.trim().isEmpty()) {
-			NICKNAME_INVALID.throwServiceException();
-		}
-		if (nickname.length() < 2 || nickname.length() > 20) {
-			NICKNAME_LENGTH_INVALID.throwServiceException();
-		}
-		if (!nickname.matches("^[a-zA-Z0-9가-힣]+$")) {
-			NICKNAME_FORMAT_INVALID.throwServiceException();
-		}
-		if (memberRepository.existsByNickname(nickname)) {
-			NICKNAME_ALREADY_EXISTS.throwServiceException();
-		}
+
+	@Transactional(readOnly = true)
+	public List<Member> getRankingByExp() {
+		return memberRepository.findAllByOrderByExpDesc();
+	}
+
+	@Transactional(readOnly = true)
+	public List<MemberRankingResponse> getMemberRankings() {
+		List<Member> rankedMembers = getRankingByExp();
+		return rankedMembers.stream()
+			.map(MemberRankingResponse::of)
+			.collect(Collectors.toList());
 	}
 }
