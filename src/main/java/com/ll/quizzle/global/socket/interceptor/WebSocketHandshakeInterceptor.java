@@ -1,15 +1,8 @@
 package com.ll.quizzle.global.socket.interceptor;
 
-import com.ll.quizzle.domain.member.entity.Member;
-import com.ll.quizzle.domain.member.service.MemberService;
-import com.ll.quizzle.global.exceptions.ErrorCode;
-import com.ll.quizzle.global.socket.security.WebSocketSecurityService;
-import com.ll.quizzle.standard.util.CookieUtil;
-import jakarta.servlet.http.Cookie;
-import jakarta.servlet.http.HttpServletRequest;
-import lombok.NonNull;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import java.util.Map;
+import java.util.Optional;
+
 import org.springframework.http.server.ServerHttpRequest;
 import org.springframework.http.server.ServerHttpResponse;
 import org.springframework.http.server.ServletServerHttpRequest;
@@ -17,10 +10,21 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.socket.WebSocketHandler;
 import org.springframework.web.socket.server.HandshakeInterceptor;
 
-import java.util.Map;
-import java.util.Optional;
+import com.ll.quizzle.domain.member.entity.Member;
+import com.ll.quizzle.domain.member.service.MemberService;
+import com.ll.quizzle.global.exceptions.ErrorCode;
+import static com.ll.quizzle.global.exceptions.ErrorCode.MEMBER_NOT_FOUND;
+import static com.ll.quizzle.global.exceptions.ErrorCode.WEBSOCKET_ACCESS_TOKEN_NOT_FOUND;
+import static com.ll.quizzle.global.exceptions.ErrorCode.WEBSOCKET_INVALID_REQUEST_TYPE;
+import static com.ll.quizzle.global.exceptions.ErrorCode.WEBSOCKET_TOKEN_VALIDATION_FAILED;
+import com.ll.quizzle.global.socket.security.WebSocketSecurityService;
+import com.ll.quizzle.standard.util.CookieUtil;
 
-import static com.ll.quizzle.global.exceptions.ErrorCode.*;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
+import lombok.NonNull;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 
 @Slf4j
@@ -42,20 +46,25 @@ public class WebSocketHandshakeInterceptor implements HandshakeInterceptor {
 
         HttpServletRequest httpServletRequest = servletRequest.getServletRequest();
         
-        if (httpServletRequest.getCookies() == null) {
-            log.debug("WebSocket 연결 시도 - 쿠키 없음");
-            setErrorResponse(response, WEBSOCKET_COOKIE_NOT_FOUND);
-            return false;
+        String accessToken = httpServletRequest.getParameter("access_token");
+        
+        if (accessToken == null || accessToken.isEmpty()) {
+            if (httpServletRequest.getCookies() == null) {
+                log.debug("WebSocket 연결 시도 - 쿠키 및 URL 파라미터에 토큰 없음");
+                setErrorResponse(response, WEBSOCKET_ACCESS_TOKEN_NOT_FOUND);
+                return false;
+            }
+            
+            Optional<Cookie> accessTokenCookie = CookieUtil.getCookie(httpServletRequest, "access_token");
+            if (accessTokenCookie.isEmpty()) {
+                log.debug("WebSocket 연결 시도 - 액세스 토큰 없음");
+                setErrorResponse(response, WEBSOCKET_ACCESS_TOKEN_NOT_FOUND);
+                return false;
+            }
+            
+            accessToken = accessTokenCookie.get().getValue();
         }
         
-        Optional<Cookie> accessTokenCookie = CookieUtil.getCookie(httpServletRequest, "access_token");
-        if (accessTokenCookie.isEmpty()) {
-            log.debug("WebSocket 연결 시도 - 액세스 토큰 없음");
-            setErrorResponse(response, WEBSOCKET_ACCESS_TOKEN_NOT_FOUND);
-            return false;
-        }
-        
-        String accessToken = accessTokenCookie.get().getValue();
         log.debug("WebSocket 연결 시도 - 액세스 토큰 발견");
 
         try {
@@ -69,7 +78,17 @@ public class WebSocketHandshakeInterceptor implements HandshakeInterceptor {
             attributes.put("memberId", member.getId());
             attributes.put("accessToken", accessToken);
             attributes.put("tokenExpiryTime", tokenExpiryTime);
-            attributes.put("sessionId", httpServletRequest.getSession().getId());
+            
+            String sessionId = null;
+            jakarta.servlet.http.HttpSession session = httpServletRequest.getSession(false);
+            if (session != null) {
+                sessionId = session.getId();
+                log.debug("WebSocket 연결 시도 - 기존 세션 사용: {}", sessionId);
+            } else {
+                sessionId = "token-" + email + "-" + System.currentTimeMillis();
+                log.debug("WebSocket 연결 시도 - 세션 없음, 토큰 기반 식별자 생성: {}", sessionId);
+            }
+            attributes.put("sessionId", sessionId);
             
             String sessionData = email + ":" + member.getId() + ":" + tokenExpiryTime;
             String signature = securityService.generateSignature(sessionData);

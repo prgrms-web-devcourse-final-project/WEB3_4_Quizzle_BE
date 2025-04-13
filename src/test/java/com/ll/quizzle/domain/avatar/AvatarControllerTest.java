@@ -15,7 +15,10 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.ll.quizzle.domain.avatar.entity.Avatar;
+import com.ll.quizzle.domain.avatar.entity.OwnedAvatar;
 import com.ll.quizzle.domain.avatar.repository.AvatarRepository;
+import com.ll.quizzle.domain.avatar.repository.OwnedAvatarRepository;
+import com.ll.quizzle.domain.avatar.service.AvatarService;
 import com.ll.quizzle.domain.member.entity.Member;
 import com.ll.quizzle.domain.member.repository.MemberRepository;
 import com.ll.quizzle.domain.member.service.AuthTokenService;
@@ -40,6 +43,12 @@ class AvatarControllerTest {
 	private AvatarRepository avatarRepository;
 
 	@Autowired
+	private OwnedAvatarRepository ownedAvatarRepository;
+
+	@Autowired
+	private AvatarService avatarService;
+
+	@Autowired
 	private OAuthRepository oAuthRepository;
 
 	@Autowired
@@ -48,17 +57,19 @@ class AvatarControllerTest {
 	private Member member;
 	private Cookie accessTokenCookie;
 	private Avatar availableAvatar;
+	private Avatar defaultAvatar;
+
 
 	@BeforeEach
 	void setUp() {
-		Avatar defaultAvatar = avatarRepository.findByFileName("새콩이")
+		defaultAvatar = avatarRepository.findByFileName("새콩이")
 			.orElseThrow(AVATAR_NOT_FOUND::throwServiceException);
 
 		member = TestMemberFactory.createOAuthMember(
 			"구매자", "buyer@email.com", "google", "1234",
-			memberRepository, oAuthRepository, defaultAvatar
+			memberRepository, oAuthRepository, avatarRepository, ownedAvatarRepository
 		);
-		member.increasePoint(500);
+		member.increasePoint(1000);
 		memberRepository.save(member);
 
 		availableAvatar = avatarRepository.findByFileName("안경쓴 새콩이")
@@ -80,16 +91,19 @@ class AvatarControllerTest {
 	@Test
 	@DisplayName("이미 소유한 아바타 구매 시도 시 실패")
 	void purchaseAvatar_alreadyOwned() throws Exception {
-		// 첫 구매
-		availableAvatar.purchase(member);
-		avatarRepository.save(availableAvatar);
+		OwnedAvatar owned = OwnedAvatar.create(member, availableAvatar);
+		member.addOwnedAvatar(owned);
+		ownedAvatarRepository.save(owned);
+		memberRepository.save(member);
 
+		// 동일 아바타 재구매 시도 → 실패 예상
 		mockMvc.perform(post("/api/v1/members/" + member.getId() + "/avatars/" + availableAvatar.getId())
 				.contentType(MediaType.APPLICATION_JSON)
 				.cookie(accessTokenCookie))
 			.andExpect(status().isBadRequest())
 			.andExpect(jsonPath("$.msg").value("이미 소유한 아바타입니다."));
 	}
+
 
 	@Test
 	@DisplayName("보유 포인트가 부족한 경우 실패")
@@ -107,17 +121,24 @@ class AvatarControllerTest {
 	@Test
 	@DisplayName("소유한 아바타 목록 조회 성공")
 	void getOwnedAvatars_success() throws Exception {
-		// 미리 구매한 아바타 등록
-		availableAvatar.purchase(member);
-		avatarRepository.save(availableAvatar);
+
+		OwnedAvatar owned = OwnedAvatar.create(member, availableAvatar);
+		member.addOwnedAvatar(owned);
+		ownedAvatarRepository.save(owned);
+		memberRepository.save(member);
 
 		mockMvc.perform(get("/api/v1/members/" + member.getId() + "/avatars/owned")
 				.contentType(MediaType.APPLICATION_JSON)
 				.cookie(accessTokenCookie))
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$.data").isArray())
-			.andExpect(jsonPath("$.data.length()").value(2));
+			.andExpect(jsonPath("$.data.length()").value(2))
+			.andExpect(jsonPath("$.data[*].id").value(org.hamcrest.Matchers.containsInAnyOrder(
+				defaultAvatar.getId().intValue(), availableAvatar.getId().intValue()
+			)));
 	}
+
+
 
 	@Test
 	@DisplayName("구매 가능한 아바타 목록 조회 성공")

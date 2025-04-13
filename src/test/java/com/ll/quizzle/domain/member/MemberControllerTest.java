@@ -1,7 +1,7 @@
 package com.ll.quizzle.domain.member;
 
-import com.ll.quizzle.domain.avatar.entity.Avatar;
 import com.ll.quizzle.domain.avatar.repository.AvatarRepository;
+import com.ll.quizzle.domain.avatar.repository.OwnedAvatarRepository;
 import com.ll.quizzle.domain.member.entity.Member;
 import com.ll.quizzle.domain.member.repository.MemberRepository;
 import com.ll.quizzle.domain.member.service.AuthTokenService;
@@ -27,7 +27,6 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.context.WebApplicationContext;
 
-import static com.ll.quizzle.global.exceptions.ErrorCode.AVATAR_NOT_FOUND;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -40,6 +39,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @Transactional
 @DirtiesContext
 class MemberControllerTest {
+
     @Autowired
     private MockMvc mockMvc;
 
@@ -62,6 +62,9 @@ class MemberControllerTest {
     private AvatarRepository avatarRepository;
 
     @Autowired
+    private OwnedAvatarRepository ownedAvatarRepository;
+
+    @Autowired
     private MemberService memberService;
 
     @Mock
@@ -72,32 +75,34 @@ class MemberControllerTest {
 
     @BeforeEach
     void setUp() {
-
-        Avatar defaultAvatar = avatarRepository.findByFileName("새콩이")
-            .orElseThrow(AVATAR_NOT_FOUND::throwServiceException);
-        // 테스트 유저 생성
+        // ✅ 기본 아바타 포함 테스트 멤버 생성
         member = TestMemberFactory.createOAuthMember(
-                "테스트유저", "test@email.com", "google", "1234",
-                memberRepository, oAuthRepository, defaultAvatar
+            "테스트유저",
+            "test@email.com",
+            "google",
+            "1234",
+            memberRepository,
+            oAuthRepository,
+            avatarRepository,
+            ownedAvatarRepository
         );
 
+        // ✅ Security MockMvc + 필터 설정
         mockMvc = MockMvcBuilders
-                .webAppContextSetup(context)
-                .addFilter(jwtAuthFilter)
-                .apply(springSecurity())
-                .alwaysDo(print())
-                .build();
+            .webAppContextSetup(context)
+            .addFilter(jwtAuthFilter)
+            .apply(springSecurity())
+            .alwaysDo(print())
+            .build();
 
-        memberRepository.save(member);
-
-        // 토큰 생성
+        // ✅ 토큰 생성
         generatedTokens = authTokenService.generateToken(
-                member.getEmail(),
-                member.getRole().toString()
+            member.getEmail(),
+            member.getRole().toString()
         );
 
+        // ✅ Rq Mock 주입
         ReflectionTestUtils.setField(memberService, "rq", rq);
-
         when(rq.getActor()).thenReturn(member);
 
         SecurityContextHolder.clearContext();
@@ -107,16 +112,16 @@ class MemberControllerTest {
     @DisplayName("프로필 정보 조회 (인증 필요 없음)")
     void testGetProfile() throws Exception {
         mockMvc.perform(get("/api/v1/members/{memberId}", member.getId()))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.id").value(member.getId()))
-                .andExpect(jsonPath("$.data.nickname").value(member.getNickname()));
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.data.id").value(member.getId()))
+            .andExpect(jsonPath("$.data.nickname").value(member.getNickname()));
     }
 
     @Test
     @DisplayName("프로필 정보 조회 실패 - 없는 회원 (99999999)")
     void testGetProfileWithNoMember() throws Exception {
         mockMvc.perform(get("/api/v1/members/99999999"))
-                .andExpect(status().isNotFound());
+            .andExpect(status().isNotFound());
     }
 
     @Test
@@ -127,9 +132,9 @@ class MemberControllerTest {
         accessTokenCookie.setHttpOnly(true);
 
         mockMvc.perform(get("/api/v1/members/me")
-                        .cookie(accessTokenCookie))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.id").value(member.getId()))
-                .andExpect(jsonPath("$.data.nickname").value(member.getNickname()));
+                .cookie(accessTokenCookie))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.data.id").value(member.getId()))
+            .andExpect(jsonPath("$.data.nickname").value(member.getNickname()));
     }
 }
