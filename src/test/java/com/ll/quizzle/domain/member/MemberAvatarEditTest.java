@@ -14,7 +14,9 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.ll.quizzle.domain.avatar.entity.Avatar;
+import com.ll.quizzle.domain.avatar.entity.OwnedAvatar;
 import com.ll.quizzle.domain.avatar.repository.AvatarRepository;
+import com.ll.quizzle.domain.avatar.repository.OwnedAvatarRepository;
 import com.ll.quizzle.domain.member.entity.Member;
 import com.ll.quizzle.domain.member.repository.MemberRepository;
 import com.ll.quizzle.domain.member.service.AuthTokenService;
@@ -39,6 +41,9 @@ class MemberAvatarEditTest {
 	private AvatarRepository avatarRepository;
 
 	@Autowired
+	private OwnedAvatarRepository ownedAvatarRepository;
+
+	@Autowired
 	private OAuthRepository oAuthRepository;
 
 	@Autowired
@@ -51,30 +56,30 @@ class MemberAvatarEditTest {
 
 	@BeforeEach
 	void setUp() {
-		Avatar defaultAvatar = avatarRepository.findByFileName("새콩이")
-			.orElseThrow(AVATAR_NOT_FOUND::throwServiceException);
-
+		// Member 생성 및 기본 아바타 소유 처리
 		member = TestMemberFactory.createOAuthMember(
 			"바이어", "buyer@email.com", "google", "7777",
-			memberRepository, oAuthRepository, defaultAvatar
+			memberRepository, oAuthRepository, avatarRepository, ownedAvatarRepository
 		);
 
-		ownedAvatar = Avatar.builder()
-			.fileName("소유한 아바타")
-			.url("https://url.com/owned.png")
-			.price(0)
-			.member(member)
-			.status(com.ll.quizzle.domain.avatar.type.AvatarStatus.OWNED)
-			.build();
-		avatarRepository.save(ownedAvatar);
+		ownedAvatar = avatarRepository.save(
+			Avatar.builder()
+				.fileName("소유한 아바타")
+				.url("https://url.com/owned.png")
+				.price(0)
+				.build()
+		);
 
-		notOwnedAvatar = Avatar.builder()
-			.fileName("소유하지 않은 아바타")
-			.url("https://url.com/notowned.png")
-			.price(100)
-			.status(com.ll.quizzle.domain.avatar.type.AvatarStatus.AVAILABLE)
-			.build();
-		avatarRepository.save(notOwnedAvatar);
+		member.addOwnedAvatar(OwnedAvatar.create(member, ownedAvatar));
+		ownedAvatarRepository.save(OwnedAvatar.create(member, ownedAvatar));
+
+		notOwnedAvatar = avatarRepository.save(
+			Avatar.builder()
+				.fileName("소유하지 않은 아바타")
+				.url("https://url.com/notowned.png")
+				.price(100)
+				.build()
+		);
 
 		GeneratedToken token = authTokenService.generateToken(member.getEmail(), member.getRole().name());
 		accessTokenCookie = new Cookie("access_token", token.accessToken());

@@ -1,7 +1,25 @@
 package com.ll.quizzle.domain.member.service;
 
+import static com.ll.quizzle.global.exceptions.ErrorCode.*;
+
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
+
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import com.ll.quizzle.domain.avatar.entity.Avatar;
+import com.ll.quizzle.domain.avatar.entity.OwnedAvatar;
 import com.ll.quizzle.domain.avatar.repository.AvatarRepository;
+import com.ll.quizzle.domain.avatar.repository.OwnedAvatarRepository;
+import com.ll.quizzle.domain.avatar.type.AvatarTemplate;
 import com.ll.quizzle.domain.member.dto.response.MemberProfileEditResponse;
 import com.ll.quizzle.domain.member.dto.response.MemberRankingResponse;
 import com.ll.quizzle.domain.member.dto.response.UserProfileResponse;
@@ -17,30 +35,18 @@ import com.ll.quizzle.global.response.RsData;
 import com.ll.quizzle.global.security.oauth2.repository.OAuthRepository;
 import com.ll.quizzle.standard.util.CookieUtil;
 import com.ll.quizzle.standard.util.Ut;
+
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
-
-import static com.ll.quizzle.global.exceptions.ErrorCode.*;
 
 @Service
 @RequiredArgsConstructor
 public class MemberService {
 	private final MemberRepository memberRepository;
 	private final AvatarRepository avatarRepository;
+	private final OwnedAvatarRepository ownedAvatarRepository;
 	private final PointService pointService;
 	private final OAuthRepository oAuthRepository;
 	private final RefreshTokenService refreshTokenService;
@@ -72,6 +78,7 @@ public class MemberService {
 			.map(UserProfileResponse::of)
 			.toList();
 	}
+
 
 	public String generateRefreshToken(String email) {
 		return refreshTokenService.generateRefreshToken(email);
@@ -109,36 +116,32 @@ public class MemberService {
 
 	@Transactional
 	public void oAuth2Login(Member member, HttpServletResponse response) {
-		// 기본 아바타가 설정되어 있지 않다면
 		if (member.getAvatar() == null) {
-			Avatar defaultAvatar = avatarRepository.findByFileName("새콩이")
+			Avatar defaultAvatar = avatarRepository.findByFileName(AvatarTemplate.DEFAULT.fileName)
 				.orElseThrow(AVATAR_NOT_FOUND::throwServiceException);
 
-			boolean alreadyOwned = avatarRepository.existsByMemberAndFileName(member, "새콩이");
+			boolean alreadyOwned = member.hasAvatar(defaultAvatar);
 
 			if (!alreadyOwned) {
-				defaultAvatar.purchase(member);
-				avatarRepository.save(defaultAvatar);
+				OwnedAvatar ownedAvatar = OwnedAvatar.create(member, defaultAvatar);
+				member.addOwnedAvatar(ownedAvatar);
+				ownedAvatarRepository.save(ownedAvatar);
 			}
 
-			// 구매(소유) 완료 후, 프로필에 아바타 할당
 			member.changeAvatar(defaultAvatar);
 			memberRepository.save(member);
 		}
 
-		// 로그인 토큰 발급
 		GeneratedToken tokens = authTokenService.generateToken(
 			member.getEmail(),
 			member.getUserRole()
 		);
 
-		// 쿠키 설정
 		addAuthCookies(response, tokens, member);
 	}
 
 
 	private void addAuthCookies(HttpServletResponse response, GeneratedToken tokens, Member member) {
-		// Access Token 쿠키
 		CookieUtil.addCookie(
 			response,
 			"access_token",
@@ -148,7 +151,6 @@ public class MemberService {
 			true
 		);
 
-		// Refresh Token 쿠키
 		CookieUtil.addCookie(
 			response,
 			"refresh_token",
@@ -158,7 +160,6 @@ public class MemberService {
 			true
 		);
 
-		// Role 쿠키
 		Map<String, Object> roleData = new HashMap<>();
 		roleData.put("role", member.getUserRole());
 
@@ -187,7 +188,6 @@ public class MemberService {
 			}
 		}
 
-		// 액세스 토큰이 만료되었다면 리프레시 토큰으로 처리
 		if (accessToken == null && refreshToken != null) {
 			RsData<String> refreshResult = refreshAccessToken(refreshToken);
 			if (refreshResult.isSuccess()) {
@@ -201,7 +201,6 @@ public class MemberService {
 
 		String email = authTokenService.getEmail(accessToken);
 
-		// Redis에서 토큰 무효화
 		redisTemplate.opsForValue().set(
 			LOGOUT_PREFIX + accessToken,
 			email,
@@ -209,14 +208,12 @@ public class MemberService {
 			TimeUnit.MILLISECONDS
 		);
 
-		// Refresh 토큰 삭제
 		refreshTokenService.removeRefreshToken(email);
 
 		CookieUtil.deleteCookie(request, response, "access_token");
 		CookieUtil.deleteCookie(request, response, "refresh_token");
 		CookieUtil.deleteCookie(request, response, "role");
 		CookieUtil.deleteCookie(request, response, "oauth2_auth_request");
-		CookieUtil.deleteCookie(request, response, "JSESSIONID");
 	}
 
 	@Transactional
@@ -245,7 +242,7 @@ public class MemberService {
 		Avatar avatar = avatarRepository.findById(avatarId)
 			.orElseThrow(AVATAR_NOT_FOUND::throwServiceException);
 
-		if (!avatar.isOwned() || !avatar.getMember().getId().equals(memberId)) {
+		if (!member.hasAvatar(avatar)) {
 			throw AVATAR_NOT_OWNED.throwServiceException();
 		}
 
@@ -256,6 +253,7 @@ public class MemberService {
 		member.changeAvatar(avatar);
 		memberRepository.save(member);
 	}
+
 
 	@Transactional(readOnly = true)
 	public List<Member> getRankingByExp() {
@@ -269,5 +267,4 @@ public class MemberService {
 			.map(MemberRankingResponse::of)
 			.collect(Collectors.toList());
 	}
-
 }
