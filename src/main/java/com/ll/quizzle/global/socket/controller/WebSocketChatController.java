@@ -1,5 +1,6 @@
 package com.ll.quizzle.global.socket.controller;
 
+import java.security.Principal;
 import java.util.Objects;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -7,8 +8,10 @@ import org.springframework.messaging.handler.annotation.DestinationVariable;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.messaging.simp.SimpMessageHeaderAccessor;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 
+import com.ll.quizzle.global.security.oauth2.dto.SecurityUser;
 import com.ll.quizzle.global.socket.core.MessageService;
 import com.ll.quizzle.global.socket.core.MessageServiceFactory;
 import com.ll.quizzle.global.socket.dto.response.WebSocketChatMessageResponse;
@@ -28,13 +31,23 @@ public class WebSocketChatController {
     
     @MessageMapping("/lobby/chat")
     public void handleLobbyChatMessage(@Payload String message, SimpMessageHeaderAccessor headerAccessor) {
-        String username = Objects.requireNonNull(headerAccessor.getUser()).getName();
-        log.debug("로비 채팅 메시지 수신: {}, 사용자: {}", message, username);
+        Principal principal = headerAccessor.getUser();
+        String username = Objects.requireNonNull(principal).getName();
+        
+        Long userId = null;
+        if (principal instanceof Authentication) {
+            Object userObj = ((Authentication) principal).getPrincipal();
+            if (userObj instanceof SecurityUser) {
+                userId = ((SecurityUser) userObj).getId();
+            }
+        }
+        
+        log.debug("로비 채팅 메시지 수신: {}, 사용자: {}, ID: {}", message, username, userId);
         
         WebSocketChatMessageResponse response = WebSocketChatMessageResponse.of(
             MessageType.CHAT,
             message,
-            headerAccessor.getUser().getName(),
+            userId,
             username,
             System.currentTimeMillis(),
             "lobby"
@@ -49,13 +62,23 @@ public class WebSocketChatController {
             @Payload String message,
             SimpMessageHeaderAccessor headerAccessor
     ) {
-        String username = Objects.requireNonNull(headerAccessor.getUser()).getName();
-        log.debug("방 채팅 메시지 수신: {}, 방: {}, 사용자: {}", message, roomId, username);
+        Principal principal = headerAccessor.getUser();
+        String username = Objects.requireNonNull(principal).getName();
+        
+        Long userId = null;
+        if (principal instanceof Authentication) {
+            Object userObj = ((Authentication) principal).getPrincipal();
+            if (userObj instanceof SecurityUser) {
+                userId = ((SecurityUser) userObj).getId();
+            }
+        }
+        
+        log.debug("방 채팅 메시지 수신: {}, 방: {}, 사용자: {}, ID: {}", message, roomId, username, userId);
         
         WebSocketChatMessageResponse response = WebSocketChatMessageResponse.of(
             MessageType.CHAT,
             message,
-            headerAccessor.getUser().getName(),
+            userId,
             username,
             System.currentTimeMillis(),
             roomId
@@ -70,13 +93,23 @@ public class WebSocketChatController {
             @Payload String message,
             SimpMessageHeaderAccessor headerAccessor
     ) {
-        String username = Objects.requireNonNull(headerAccessor.getUser()).getName();
-        log.debug("게임 채팅 메시지 수신: {}, 방: {}, 사용자: {}", message, roomId, username);
+        Principal principal = headerAccessor.getUser();
+        String username = Objects.requireNonNull(principal).getName();
+        
+        Long userId = null;
+        if (principal instanceof Authentication) {
+            Object userObj = ((Authentication) principal).getPrincipal();
+            if (userObj instanceof SecurityUser) {
+                userId = ((SecurityUser) userObj).getId();
+            }
+        }
+        
+        log.debug("게임 채팅 메시지 수신: {}, 방: {}, 사용자: {}, ID: {}", message, roomId, username, userId);
         
         WebSocketChatMessageResponse response = WebSocketChatMessageResponse.of(
             MessageType.CHAT,
             message,
-            headerAccessor.getUser().getName(),
+            userId,
             username,
             System.currentTimeMillis(),
             roomId

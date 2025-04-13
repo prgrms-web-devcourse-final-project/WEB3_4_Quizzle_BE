@@ -10,7 +10,7 @@ import com.ll.quizzle.global.socket.type.MessageType;
 public record WebSocketChatMessageResponse(
     MessageType type,
     String content,
-    String senderId,
+    Long senderId,
     String senderName,
     long timestamp,
     String roomId
@@ -19,7 +19,7 @@ public record WebSocketChatMessageResponse(
     public static WebSocketChatMessageResponse of(
             MessageType type,
             String content,
-            String senderId,
+            Long senderId,
             String senderName,
             long timestamp,
             String roomId
