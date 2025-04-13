@@ -1,9 +1,9 @@
 package com.ll.quizzle.domain.room.dto.request;
 
 import com.ll.quizzle.domain.room.type.AnswerType;
+import com.ll.quizzle.domain.room.type.Difficulty;
 import com.ll.quizzle.domain.room.type.MainCategory;
 import com.ll.quizzle.domain.room.type.SubCategory;
-import com.ll.quizzle.domain.room.type.Difficulty;
 import com.ll.quizzle.global.exceptions.ErrorCode;
 
 public record RoomCreateRequest(
@@ -39,7 +39,7 @@ public record RoomCreateRequest(
         if (answerType == null) {
             ErrorCode.ROOM_ANSWER_TYPE_REQUIRED.throwServiceException();
         }
-        if (problemCount < 10 || problemCount > 50) {
+        if (problemCount < 5 || problemCount > 20) {
             ErrorCode.ROOM_PROBLEM_COUNT_INVALID.throwServiceException();
         }
         if (isPrivate && password == null) {
