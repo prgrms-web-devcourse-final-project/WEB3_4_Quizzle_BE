@@ -1,6 +1,5 @@
 package com.ll.quizzle.domain.avatar;
 
-import static com.ll.quizzle.global.exceptions.ErrorCode.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -17,8 +16,8 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.ll.quizzle.domain.avatar.entity.Avatar;
 import com.ll.quizzle.domain.avatar.repository.AvatarRepository;
+import com.ll.quizzle.domain.avatar.repository.OwnedAvatarRepository;
 import com.ll.quizzle.domain.member.entity.Member;
 import com.ll.quizzle.domain.member.repository.MemberRepository;
 import com.ll.quizzle.domain.member.service.AuthTokenService;
@@ -47,6 +46,9 @@ class AdminAvatarControllerTest {
 	private AvatarRepository avatarRepository;
 
 	@Autowired
+	private OwnedAvatarRepository ownedAvatarRepository;
+
+	@Autowired
 	private OAuthRepository oAuthRepository;
 
 	@Autowired
@@ -57,19 +59,16 @@ class AdminAvatarControllerTest {
 
 	@BeforeEach
 	void setUp() {
-		Avatar defaultAvatar = avatarRepository.findByFileName("새콩이")
-			.orElseThrow(AVATAR_NOT_FOUND::throwServiceException);
-
 		Member adminMember = TestMemberFactory.createOAuthMember(
 			"관리자", "admin@email.com", "google", "1234",
-			memberRepository, oAuthRepository, defaultAvatar
+			memberRepository, oAuthRepository, avatarRepository, ownedAvatarRepository
 		);
 		adminMember.changeRole(Role.ADMIN);
 		memberRepository.save(adminMember);
 
 		Member testmember = TestMemberFactory.createOAuthMember(
 			"유저2", "user2@email.com", "google", "2345",
-			memberRepository, oAuthRepository, defaultAvatar
+			memberRepository, oAuthRepository, avatarRepository, ownedAvatarRepository
 		);
 		memberRepository.save(testmember);
 
@@ -79,6 +78,7 @@ class AdminAvatarControllerTest {
 		GeneratedToken token2 = authTokenService.generateToken(testmember.getEmail(), testmember.getRole().name());
 		memberCookie = new Cookie("access_token", token2.accessToken());
 	}
+
 
 	@Test
 	@DisplayName("관리자가 아바타 등록에 성공한다.")

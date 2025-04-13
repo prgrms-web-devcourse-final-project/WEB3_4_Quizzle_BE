@@ -18,28 +18,12 @@ public class Avatar extends BaseEntity {
     private String url;
     private int price;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "member_id")
-    private Member member;
-
-    @Enumerated(EnumType.STRING)
-    private AvatarStatus status;
-
     @Builder
-    public Avatar(String fileName, String url, int price, Member member, AvatarStatus status) {
+    public Avatar(String fileName, String url, int price) {
         this.fileName = fileName;
         this.url = url;
         this.price = price;
-        this.member = member;
-        this.status = status;
     }
 
-    public void purchase(Member member) {
-        this.member = member;
-        this.status = AvatarStatus.OWNED;
-    }
 
-    public boolean isOwned() {
-        return this.status == AvatarStatus.OWNED;
-    }
 }
