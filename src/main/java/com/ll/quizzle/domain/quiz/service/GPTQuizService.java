@@ -43,8 +43,7 @@ public class GPTQuizService {
 
         if (request.roomId() != null && !request.roomId().isEmpty()) {
             String roomId = request.roomId();
-            String broadcastMessage = "[퀴즈 생성] 퀴즈 아이디: " + quizId + " (퀴즈 참여하세요!)";
-            messagingTemplate.convertAndSend("/topic/room/chat/" + roomId, broadcastMessage);
+            messagingTemplate.convertAndSend("/topic/room/chat/" + roomId, response);
         }
 
         return response;
