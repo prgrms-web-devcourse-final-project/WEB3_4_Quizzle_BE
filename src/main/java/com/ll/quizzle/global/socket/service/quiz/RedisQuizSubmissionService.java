@@ -18,12 +18,10 @@ public class RedisQuizSubmissionService {
     @Autowired
     private RedisTemplate<String, Object> redisTemplate;
 
-    // 실제 회원의 닉네임 조회를 위한 MemberService 주입
     @Autowired
     private MemberService memberService;
 
     public WebSocketQuizSubmitResponse submitAnswer(String quizId, String memberId, int questionNumber, String submittedAnswer) {
-        // 정답 검증
         String answerListKey = String.format("quiz:%s:answers", quizId);
         Long totalQuestions = redisTemplate.opsForList().size(answerListKey);
         if (totalQuestions == null || questionNumber > totalQuestions.intValue() || questionNumber <= 0) {

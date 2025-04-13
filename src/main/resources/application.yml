@@ -2,7 +2,7 @@ spring:
   application:
     name: Quizzle
   profiles:
-    active: prod
+    active: dev
     include:
       - secret
   config:
@@ -11,7 +11,7 @@ spring:
     store-type: redis
     redis:
       namespace: "quizzle:session"
-    timeout: 12h
+    timeout: 30m
 
   security:
     oauth2:
