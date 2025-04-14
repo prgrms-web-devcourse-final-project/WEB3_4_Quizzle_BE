@@ -11,24 +11,27 @@ import org.springframework.stereotype.Controller;
 
 import com.ll.quizzle.global.socket.core.MessageService;
 import com.ll.quizzle.global.socket.core.MessageServiceFactory;
+import com.ll.quizzle.domain.room.service.RoomService;
 
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Controller
 public class WebSocketRoomController {
-    private final MessageService roomService;
+    private final MessageService messageService;
+    private final RoomService roomService;
 
     @Autowired
-    public WebSocketRoomController(MessageServiceFactory messageServiceFactory) {
-        this.roomService = messageServiceFactory.getRoomService();
+    public WebSocketRoomController(MessageServiceFactory messageServiceFactory, RoomService roomService) {
+        this.messageService = messageServiceFactory.getRoomService();
+        this.roomService = roomService;
     }
     
     @MessageMapping("/lobby")
     public void handleLobbyMessage(@Payload String message, SimpMessageHeaderAccessor headerAccessor) {
         String username = Objects.requireNonNull(headerAccessor.getUser()).getName();
         log.debug("로비 상태 메시지 수신: {}, 사용자: {}", message, username);
-        roomService.send("/topic/lobby", message);
+        messageService.send("/topic/lobby", message);
     }
 
     @MessageMapping("/room/{roomId}")
@@ -39,7 +42,7 @@ public class WebSocketRoomController {
     ) {
         String username = Objects.requireNonNull(headerAccessor.getUser()).getName();
         log.debug("방 상태 메시지 수신: {}, 방: {}, 사용자: {}", message, roomId, username);
-        roomService.send("/topic/room/" + roomId, message);
+        messageService.send("/topic/room/" + roomId, message);
     }
 
     @MessageMapping("/room/{roomId}/status")
@@ -51,7 +54,14 @@ public class WebSocketRoomController {
         String username = Objects.requireNonNull(headerAccessor.getUser()).getName();
         log.debug("방 상태 업데이트 메시지 수신: {}, 방: {}, 사용자: {}", message, roomId, username);
         
-        roomService.send("/topic/room/" + roomId + "/status", message);
+        try {
+            Long roomIdLong = Long.parseLong(roomId);
+            roomService.broadcastRoomStatus(roomIdLong);
+            log.debug("방 ID {} 상태 정보 업데이트 요청 성공", roomId);
+        } catch (Exception e) {
+            log.error("방 상태 메시지 처리 중 오류 발생: {}", e.getMessage(), e);
+            messageService.send("/topic/room/" + roomId + "/status", message);
+        }
     }
 
     @MessageMapping("/game/{roomId}")
@@ -62,7 +72,7 @@ public class WebSocketRoomController {
     ) {
         String username = Objects.requireNonNull(headerAccessor.getUser()).getName();
         log.debug("게임 상태 메시지 수신: {}, 방: {}, 사용자: {}", message, roomId, username);
-        roomService.send("/topic/game/" + roomId, message);
+        messageService.send("/topic/game/" + roomId, message);
     }
 
     @MessageMapping("/game/start/{roomId}")
@@ -73,23 +83,12 @@ public class WebSocketRoomController {
     ) {
         String username = Objects.requireNonNull(headerAccessor.getUser()).getName();
         log.debug("게임 시작 메시지 수신: {}, 방: {}, 사용자: {}", message, roomId, username);
-        roomService.send("/topic/game/start/" + roomId, message);
+        messageService.send("/topic/game/start/" + roomId, message);
     }
 
     @MessageMapping("/lobby/users")
     public void handleLobbyUsersRequest(@Payload String message, SimpMessageHeaderAccessor headerAccessor) {
         String username = Objects.requireNonNull(headerAccessor.getUser()).getName();
         log.debug("로비 접속자 목록 요청: {}, 사용자: {}", message, username);
-    }
-
-    @MessageMapping("/room/status/{roomId}")
-    public void handleRoomStatusRequest(
-            @DestinationVariable String roomId,
-            @Payload String message,
-            SimpMessageHeaderAccessor headerAccessor
-    ) {
-        String username = Objects.requireNonNull(headerAccessor.getUser()).getName();
-        log.debug("방 상태 요청 메시지 수신: {}, 방: {}, 사용자: {}", message, roomId, username);
-        roomService.send("/topic/room/" + roomId + "/status", message);
     }
 } 
