@@ -45,7 +45,7 @@ quizzle:
     websocket-room:
       provider: stomp
     websocket-chat:
-      provider: redis
+      provider: stomp
 
 app:
   oauth2:
