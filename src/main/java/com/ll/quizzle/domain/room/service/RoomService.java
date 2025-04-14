@@ -23,6 +23,15 @@ import com.ll.quizzle.domain.room.dto.response.RoomResponse;
 import com.ll.quizzle.domain.room.entity.Room;
 import com.ll.quizzle.domain.room.repository.RoomRepository;
 import com.ll.quizzle.domain.room.type.RoomStatus;
+import static com.ll.quizzle.global.exceptions.ErrorCode.GAME_ALREADY_STARTED;
+import static com.ll.quizzle.global.exceptions.ErrorCode.INVALID_PASSWORD;
+import static com.ll.quizzle.global.exceptions.ErrorCode.MEMBER_NOT_FOUND;
+import static com.ll.quizzle.global.exceptions.ErrorCode.MIN_PLAYER_COUNT_NOT_MET;
+import static com.ll.quizzle.global.exceptions.ErrorCode.NOT_ALL_PLAYERS_READY;
+import static com.ll.quizzle.global.exceptions.ErrorCode.NOT_ROOM_OWNER;
+import static com.ll.quizzle.global.exceptions.ErrorCode.ROOM_ENTRY_RESTRICTED;
+import static com.ll.quizzle.global.exceptions.ErrorCode.ROOM_IS_FULL;
+import static com.ll.quizzle.global.exceptions.ErrorCode.ROOM_NOT_FOUND;
 import com.ll.quizzle.global.redis.lock.DistributedLock;
 import com.ll.quizzle.global.redis.lock.DistributedLockService;
 import com.ll.quizzle.global.socket.core.MessageService;
@@ -32,8 +41,6 @@ import com.ll.quizzle.global.socket.type.RoomMessageType;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-
-import static com.ll.quizzle.global.exceptions.ErrorCode.*;
 
 @Slf4j
 @Service
@@ -225,11 +232,12 @@ public class RoomService {
 
     public void broadcastRoomStatus(Long roomId) {
         Room room = findRoomOrThrow(roomId);
+        roomMessageService.sendRoomUpdated(room);
+    }
 
-        if (room != null) {
-            log.debug("방 상태 정보 브로드캐스트: roomId={}", roomId);
-            roomMessageService.sendRoomUpdated(room);
-        }
+    public void refreshPlayersList(Long roomId) {
+        Room room = findRoomOrThrow(roomId);
+        roomMessageService.sendRoomUpdated(room);
     }
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
