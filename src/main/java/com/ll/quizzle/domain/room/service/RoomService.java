@@ -3,7 +3,6 @@ package com.ll.quizzle.domain.room.service;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import com.ll.quizzle.domain.room.dto.request.RoomUpdateRequest;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Isolation;
@@ -15,6 +14,7 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 import com.ll.quizzle.domain.member.entity.Member;
 import com.ll.quizzle.domain.member.repository.MemberRepository;
 import com.ll.quizzle.domain.room.dto.request.RoomCreateRequest;
+import com.ll.quizzle.domain.room.dto.request.RoomUpdateRequest;
 import com.ll.quizzle.domain.room.dto.response.RoomResponse;
 import com.ll.quizzle.domain.room.entity.Room;
 import com.ll.quizzle.domain.room.repository.RoomRepository;
@@ -23,19 +23,17 @@ import static com.ll.quizzle.global.exceptions.ErrorCode.GAME_ALREADY_STARTED;
 import static com.ll.quizzle.global.exceptions.ErrorCode.INVALID_PASSWORD;
 import static com.ll.quizzle.global.exceptions.ErrorCode.MEMBER_NOT_FOUND;
 import static com.ll.quizzle.global.exceptions.ErrorCode.MIN_PLAYER_COUNT_NOT_MET;
+import static com.ll.quizzle.global.exceptions.ErrorCode.NOT_ALL_PLAYERS_READY;
+import static com.ll.quizzle.global.exceptions.ErrorCode.NOT_ROOM_OWNER;
 import static com.ll.quizzle.global.exceptions.ErrorCode.ROOM_ENTRY_RESTRICTED;
 import static com.ll.quizzle.global.exceptions.ErrorCode.ROOM_IS_FULL;
 import static com.ll.quizzle.global.exceptions.ErrorCode.ROOM_NOT_FOUND;
-import static com.ll.quizzle.global.exceptions.ErrorCode.NOT_ROOM_OWNER;
-import static com.ll.quizzle.global.exceptions.ErrorCode.NOT_ALL_PLAYERS_READY;
 import com.ll.quizzle.global.redis.lock.DistributedLock;
 import com.ll.quizzle.global.redis.lock.DistributedLockService;
-import com.ll.quizzle.global.socket.service.WebSocketRoomMessageService;
-import com.ll.quizzle.global.socket.type.RoomMessageType;
 import com.ll.quizzle.global.socket.core.MessageService;
 import com.ll.quizzle.global.socket.core.MessageServiceFactory;
-import com.ll.quizzle.global.exceptions.ServiceException;
-import com.ll.quizzle.global.exceptions.ErrorCode;
+import com.ll.quizzle.global.socket.service.WebSocketRoomMessageService;
+import com.ll.quizzle.global.socket.type.RoomMessageType;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -191,12 +189,22 @@ public class RoomService {
     @Transactional(propagation = Propagation.REQUIRES_NEW, isolation = Isolation.REPEATABLE_READ)
     protected void joinRoomWithLock(Room room, Member member) {
         if (!room.hasPlayer(member.getId())) {
-            room.addPlayer(member.getId());
+            Long roomId = room.getId();
+            Long memberId = member.getId();
+
+            room.addPlayer(memberId);
 
             TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
                 @Override
                 public void afterCommit() {
-                    roomMessageService.sendJoin(room, member);
+                    try {
+                        Room freshRoom = findRoomOrThrow(roomId);
+                        Member freshMember = findMemberOrThrow(memberId);
+                        log.debug("afterCommit: Room ID {} 최신 플레이어 수: {}", roomId, freshRoom.getPlayers().size());
+                        roomMessageService.sendJoin(freshRoom, freshMember);
+                    } catch (Exception e) {
+                        log.error("afterCommit 중 오류 발생 (sendJoin): Room ID={}, Member ID={}, Error: {}", roomId, memberId, e.getMessage());
+                    }
                 }
             });
         }
