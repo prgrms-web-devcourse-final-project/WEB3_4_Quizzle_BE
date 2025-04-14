@@ -269,10 +269,6 @@ public class RoomService {
 
                 if (isOwner) {
                     if (room.getPlayers().isEmpty()) {
-                        if (!room.getPlayers().isEmpty()) {
-                            Long newOwnerId = room.getPlayers().iterator().next();
-                            changeRoomOwner(room, member, newOwnerId);
-                        }
                     } else {
                         Long newOwnerId = room.getPlayers().iterator().next();
                         changeRoomOwner(room, member, newOwnerId);
@@ -492,5 +488,14 @@ public class RoomService {
                 log.debug("로비에 방 업데이트 알림 전송: 방ID={}", updatedRoom.getId());
             }
         });
+    }
+    
+    public void broadcastRoomStatus(Long roomId) {
+        Room room = findRoomOrThrow(roomId);
+        
+        if (room != null) {
+            log.debug("방 상태 정보 브로드캐스트: roomId={}", roomId);
+            roomMessageService.sendRoomUpdated(room);
+        }
     }
 }
