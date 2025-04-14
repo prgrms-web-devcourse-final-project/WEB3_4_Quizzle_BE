@@ -13,21 +13,16 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 
 import com.ll.quizzle.domain.member.entity.Member;
 import com.ll.quizzle.domain.member.repository.MemberRepository;
+import com.ll.quizzle.domain.quiz.dto.request.QuizGenerationRequest;
+import com.ll.quizzle.domain.quiz.dto.response.QuizResponse;
+import com.ll.quizzle.domain.quiz.service.GPTQuizService;
+import com.ll.quizzle.domain.quiz.service.QuizParticipantService;
 import com.ll.quizzle.domain.room.dto.request.RoomCreateRequest;
 import com.ll.quizzle.domain.room.dto.request.RoomUpdateRequest;
 import com.ll.quizzle.domain.room.dto.response.RoomResponse;
 import com.ll.quizzle.domain.room.entity.Room;
 import com.ll.quizzle.domain.room.repository.RoomRepository;
 import com.ll.quizzle.domain.room.type.RoomStatus;
-import static com.ll.quizzle.global.exceptions.ErrorCode.GAME_ALREADY_STARTED;
-import static com.ll.quizzle.global.exceptions.ErrorCode.INVALID_PASSWORD;
-import static com.ll.quizzle.global.exceptions.ErrorCode.MEMBER_NOT_FOUND;
-import static com.ll.quizzle.global.exceptions.ErrorCode.MIN_PLAYER_COUNT_NOT_MET;
-import static com.ll.quizzle.global.exceptions.ErrorCode.NOT_ALL_PLAYERS_READY;
-import static com.ll.quizzle.global.exceptions.ErrorCode.NOT_ROOM_OWNER;
-import static com.ll.quizzle.global.exceptions.ErrorCode.ROOM_ENTRY_RESTRICTED;
-import static com.ll.quizzle.global.exceptions.ErrorCode.ROOM_IS_FULL;
-import static com.ll.quizzle.global.exceptions.ErrorCode.ROOM_NOT_FOUND;
 import com.ll.quizzle.global.redis.lock.DistributedLock;
 import com.ll.quizzle.global.redis.lock.DistributedLockService;
 import com.ll.quizzle.global.socket.core.MessageService;
@@ -37,6 +32,8 @@ import com.ll.quizzle.global.socket.type.RoomMessageType;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+
+import static com.ll.quizzle.global.exceptions.ErrorCode.*;
 
 @Slf4j
 @Service
@@ -51,6 +48,8 @@ public class RoomService {
     private final RedisTemplate<String, String> redisTemplate;
     private final WebSocketRoomMessageService roomMessageService;
     private final MessageServiceFactory messageServiceFactory;
+    private final GPTQuizService  gptQuizService;
+    private final  QuizParticipantService quizParticipantService;
 
     @Transactional(isolation = Isolation.SERIALIZABLE)
     public RoomResponse createRoom(Long ownerId, RoomCreateRequest request) {
@@ -362,12 +361,27 @@ public class RoomService {
         int initialPlayerCount = room.getPlayers().size();
         log.debug("게임 시작 요청 - 방ID: {}, 방장ID: {}, 초기 플레이어 수: {}", room.getId(), memberId, initialPlayerCount);
 
-        validateGameStart(room, memberId);
 
+        validateGameStart(room, memberId);
         String roomStateKey = validateGameState(room);
 
         try {
             processGameStart(room, memberId, initialPlayerCount, roomStateKey);
+            QuizGenerationRequest quizRequest = new QuizGenerationRequest(
+                    room.getMainCategory(),
+                    room.getSubCategory(),
+                    room.getAnswerType(),
+                    room.getProblemCount(),
+                    room.getDifficulty(),
+                    room.getId().toString()
+            );
+
+            QuizResponse quizResponse = gptQuizService.generateQuiz(quizRequest);
+            String quizId = quizResponse.quizId();
+
+            for (Long playerId : room.getPlayers()) {
+                quizParticipantService.registerParticipant(quizId, playerId);
+            }
 
             TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
                 @Override
@@ -375,6 +389,7 @@ public class RoomService {
                     roomMessageService.sendGameStart(room);
                 }
             });
+
         } catch (Exception e) {
             redisTemplate.opsForValue().set(roomStateKey, "WAITING");
             log.error("게임 시작 중 오류 발생 - 방ID: {}, 오류: {}", room.getId(), e.getMessage());

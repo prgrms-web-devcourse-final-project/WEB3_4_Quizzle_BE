@@ -16,6 +16,8 @@ public record QuizGenerationRequest(
         @Min(1)
         @Max(20)
         int problemCount,
-        Difficulty difficulty
+        Difficulty difficulty,
+
+        String roomId
 ) {
 }
