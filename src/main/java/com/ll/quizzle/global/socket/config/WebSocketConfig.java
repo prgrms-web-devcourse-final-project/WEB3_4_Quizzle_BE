@@ -34,6 +34,8 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
     @Override
     public void configureMessageBroker(MessageBrokerRegistry registry) {
+        log.debug("WebSocket 메시지 브로커 설정");
+        
         ThreadPoolTaskScheduler taskScheduler = new ThreadPoolTaskScheduler();
         taskScheduler.setPoolSize(2); // 하트비트용 1개, 토큰 검증용 1개
         taskScheduler.setThreadNamePrefix("ws-scheduler-");
@@ -42,13 +44,18 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
         registry.enableSimpleBroker("/topic", "/queue")
                 .setTaskScheduler(taskScheduler)
                 .setHeartbeatValue(new long[]{25000, 25000});
+        log.debug("메시지 브로커 활성화: /topic, /queue");
 
         registry.setApplicationDestinationPrefixes("/app");
         registry.setUserDestinationPrefix("/user");
+        
+        log.debug("WebSocket 메시지 브로커 설정 완료");
     }
 
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
+        log.debug("WebSocket 엔드포인트 등록: {}", endpoint);
+        
         registry.addEndpoint(endpoint)
                 .setAllowedOriginPatterns(allowedOrigins)
                 .withSockJS()
@@ -57,6 +64,8 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
                 .setDisconnectDelay(30 * 1000)
                 .setHeartbeatTime(25000)
                 .setInterceptors(handshakeInterceptor);
+        
+        log.debug("WebSocket 엔드포인트 등록 완료");
     }
 
     @Override
