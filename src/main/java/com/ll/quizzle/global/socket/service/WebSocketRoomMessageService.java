@@ -109,6 +109,7 @@ public class WebSocketRoomMessageService {
     }
 
     private String buildPlayersListJson(Room room) throws JsonProcessingException {
+        log.debug("buildPlayersListJson 시작: Room ID={}, 현재 플레이어 수={}", room.getId(), room.getPlayers().size());
         List<Map<String, Object>> playersList = new ArrayList<>();
         
         boolean isGameInProgress = RoomStatus.IN_GAME.equals(room.getStatus());
@@ -149,8 +150,9 @@ public class WebSocketRoomMessageService {
                 playersList.add(playerInfo);
             }
         }
-        
-        return objectMapper.writeValueAsString(playersList);
+        String jsonResult = objectMapper.writeValueAsString(playersList);
+        log.debug("buildPlayersListJson 완료: Room ID={}, 생성된 JSON={}", room.getId(), jsonResult);
+        return jsonResult;
     }
 
 
