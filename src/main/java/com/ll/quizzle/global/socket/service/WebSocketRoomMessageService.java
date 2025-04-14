@@ -1,25 +1,27 @@
 package com.ll.quizzle.global.socket.service;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.stereotype.Component;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ll.quizzle.domain.member.entity.Member;
 import com.ll.quizzle.domain.member.repository.MemberRepository;
 import com.ll.quizzle.domain.room.entity.Room;
+import com.ll.quizzle.domain.room.type.RoomStatus;
+import com.ll.quizzle.global.exceptions.ErrorCode;
 import com.ll.quizzle.global.socket.core.MessageService;
 import com.ll.quizzle.global.socket.core.MessageServiceFactory;
 import com.ll.quizzle.global.socket.dto.response.WebSocketRoomMessageResponse;
 import com.ll.quizzle.global.socket.type.RoomMessageType;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.stereotype.Component;
-import com.ll.quizzle.domain.room.type.RoomStatus;
-import com.ll.quizzle.global.exceptions.ErrorCode;
-
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
 /**
  * 방 관련 WebSocket 메시지 전송을 처리하는 클래스입니다.
@@ -126,32 +128,55 @@ public class WebSocketRoomMessageService {
             log.debug("진행 중인 게임 확인: 룸={}, 퀴즈ID={}, 현재라운드={}", room.getId(), quizId, currentRound);
         }
         
+        // 플레이어 ID 목록을 로깅
+        log.debug("플레이어 ID 목록: {}", room.getPlayers());
+        
+        if (room.getPlayers().isEmpty()) {
+            log.warn("Room ID={} 플레이어 목록이 비어 있습니다.", room.getId());
+            return "[]";
+        }
+        
         for (Long playerId : room.getPlayers()) {
-            Member playerMember = memberRepository.findById(playerId).orElse(null);
-            if (playerMember != null) {
-                Map<String, Object> playerInfo = new HashMap<>();
-                playerInfo.put("id", playerMember.getId().toString());
-                playerInfo.put("name", playerMember.getNickname());
-                playerInfo.put("isReady", room.getReadyPlayers().contains(playerId));
-                playerInfo.put("isOwner", room.isOwner(playerId));
-                
-                if (isGameInProgress && currentRound != null) {
-                    String userId = playerMember.getId().toString();
-                    String submissionKey = String.format("quiz:%s:user:%s:submissions", quizId, userId);
-                    Long submissionsCount = redisTemplate.opsForList().size(submissionKey);
+            log.debug("플레이어 처리: ID={}", playerId);
+            
+            try {
+                Member playerMember = memberRepository.findById(playerId).orElse(null);
+                if (playerMember != null) {
+                    Map<String, Object> playerInfo = new HashMap<>();
+                    playerInfo.put("id", playerMember.getId().toString());
+                    playerInfo.put("name", playerMember.getNickname());
+                    playerInfo.put("isReady", room.getReadyPlayers().contains(playerId));
+                    playerInfo.put("isOwner", room.isOwner(playerId));
                     
-                    boolean hasSubmitted = submissionsCount != null && submissionsCount >= currentRound;
-                    playerInfo.put("isSubmitted", hasSubmitted);
+                    // 추가 정보 - 아바타 URL 등
+                    playerInfo.put("nickname", playerMember.getNickname()); // 추가 속성
                     
-                    log.debug("플레이어 제출 여부: 사용자={}, 현재라운드={}, 제출여부={}", userId, currentRound, hasSubmitted);
+                    if (isGameInProgress && currentRound != null) {
+                        String userId = playerMember.getId().toString();
+                        String submissionKey = String.format("quiz:%s:user:%s:submissions", quizId, userId);
+                        Long submissionsCount = redisTemplate.opsForList().size(submissionKey);
+                        
+                        boolean hasSubmitted = submissionsCount != null && submissionsCount >= currentRound;
+                        playerInfo.put("isSubmitted", hasSubmitted);
+                        
+                        log.debug("플레이어 제출 여부: 사용자={}, 현재라운드={}, 제출여부={}", userId, currentRound, hasSubmitted);
+                    } else {
+                        playerInfo.put("isSubmitted", false);
+                    }
+                    playersList.add(playerInfo);
+                    
+                    log.debug("플레이어 정보 추가: ID={}, 닉네임={}", playerId, playerMember.getNickname());
                 } else {
-                    playerInfo.put("isSubmitted", false);
+                    log.warn("해당 ID의 멤버를 찾을 수 없습니다: {}", playerId);
                 }
-                playersList.add(playerInfo);
+            } catch (Exception e) {
+                log.error("플레이어 정보 처리 중 오류 발생: 플레이어ID={}, 오류={}", playerId, e.getMessage(), e);
             }
         }
+        
         String jsonResult = objectMapper.writeValueAsString(playersList);
-        log.debug("buildPlayersListJson 완료: Room ID={}, 생성된 JSON={}", room.getId(), jsonResult);
+        log.debug("buildPlayersListJson 완료: Room ID={}, 생성된 JSON={}, 플레이어 수={}", 
+                room.getId(), jsonResult, playersList.size());
         return jsonResult;
     }
 

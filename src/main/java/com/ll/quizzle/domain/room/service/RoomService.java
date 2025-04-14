@@ -200,10 +200,19 @@ public class RoomService {
                     try {
                         Room freshRoom = findRoomOrThrow(roomId);
                         Member freshMember = findMemberOrThrow(memberId);
-                        log.debug("afterCommit: Room ID {} 최신 플레이어 수: {}", roomId, freshRoom.getPlayers().size());
+                        
+                        log.debug("afterCommit: Room ID {} 최신 플레이어 수: {}, 플레이어 목록: {}", 
+                                roomId, freshRoom.getPlayers().size(), freshRoom.getPlayers());
+                                
                         roomMessageService.sendJoin(freshRoom, freshMember);
+                        
+                        roomMessageService.sendRoomUpdated(freshRoom);
+                        
+                        MessageService roomService = messageServiceFactory.getRoomService();
+                        roomService.send("/topic/lobby", "ROOM_UPDATED:" + roomId);
                     } catch (Exception e) {
-                        log.error("afterCommit 중 오류 발생 (sendJoin): Room ID={}, Member ID={}, Error: {}", roomId, memberId, e.getMessage());
+                        log.error("afterCommit 중 오류 발생 (sendJoin): Room ID={}, Member ID={}, Error: {}", 
+                                roomId, memberId, e.getMessage(), e);
                     }
                 }
             });
