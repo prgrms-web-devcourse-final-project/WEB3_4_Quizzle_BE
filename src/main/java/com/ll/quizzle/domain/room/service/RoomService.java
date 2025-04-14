@@ -207,6 +207,15 @@ public class RoomService {
         redisTemplate.opsForValue().set(roomGameStateKey, "ENDED");
     }
 
+    public void broadcastRoomStatus(Long roomId) {
+        Room room = findRoomOrThrow(roomId);
+
+        if (room != null) {
+            log.debug("방 상태 정보 브로드캐스트: roomId={}", roomId);
+            roomMessageService.sendRoomUpdated(room);
+        }
+    }
+
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void deleteRoom(Room room) {
         String roomStateKey = "room:state:" + room.getId();
@@ -249,7 +258,7 @@ public class RoomService {
             roomRepository.delete(room);
             String roomStateKey = "room:state:" + room.getId();
             redisTemplate.opsForValue().set(roomStateKey, "DELETED");
-            
+
             TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
                 @Override
                 public void afterCommit() {
@@ -448,7 +457,7 @@ public class RoomService {
     private void updateRoomProperties(Room room, RoomUpdateRequest request) {
         String password = request.isPrivate() ? request.password() : null;
         Boolean isPrivate = request.isPrivate();
-        
+
         room.updateRoom(
             request.title(),
             request.capacity() > 0 ? request.capacity() : null,
@@ -488,14 +497,5 @@ public class RoomService {
                 log.debug("로비에 방 업데이트 알림 전송: 방ID={}", updatedRoom.getId());
             }
         });
-    }
-    
-    public void broadcastRoomStatus(Long roomId) {
-        Room room = findRoomOrThrow(roomId);
-        
-        if (room != null) {
-            log.debug("방 상태 정보 브로드캐스트: roomId={}", roomId);
-            roomMessageService.sendRoomUpdated(room);
-        }
     }
 }
