@@ -108,4 +108,33 @@ public class WebSocketRoomController {
         String username = Objects.requireNonNull(headerAccessor.getUser()).getName();
         log.debug("로비 접속자 목록 요청: {}, 사용자: {}", message, username);
     }
+
+    @MessageMapping("/room/{roomId}/owner/change")
+    public void handleOwnerChange(
+            @DestinationVariable String roomId,
+            @Payload String message,
+            SimpMessageHeaderAccessor headerAccessor
+    ) {
+        String username = Objects.requireNonNull(headerAccessor.getUser()).getName();
+        log.debug("방장 변경 메시지 수신: {}, 방: {}, 사용자: {}", message, roomId, username);
+        
+        try {
+            if (message.contains("newOwnerId") && message.contains("newOwnerNickname")) {
+                Long roomIdLong = Long.parseLong(roomId);
+                
+                String newOwnerIdStr = message.replaceAll(".*\"newOwnerId\"\\s*:\\s*(\\d+).*", "$1");
+                Long newOwnerId = Long.parseLong(newOwnerIdStr);
+                
+                roomService.handleOwnerChange(roomIdLong, newOwnerId);
+                
+                messageService.send("/topic/room/" + roomId + "/owner/change", message);
+                
+                log.debug("방 ID {} 방장 변경 완료: 새 방장 ID={}", roomId, newOwnerId);
+            } else {
+                messageService.send("/topic/room/" + roomId + "/owner/change", message);
+            }
+        } catch (Exception e) {
+            log.error("방장 변경 메시지 처리 중 오류 발생: {}", e.getMessage(), e);
+        }
+    }
 }
