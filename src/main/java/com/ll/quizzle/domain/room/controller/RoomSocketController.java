@@ -1,13 +1,10 @@
 package com.ll.quizzle.domain.room.controller;
 
-import com.ll.quizzle.domain.quiz.dto.request.QuizGenerationRequest;
-import com.ll.quizzle.domain.quiz.dto.response.QuizResponse;
-import com.ll.quizzle.domain.quiz.service.GPTQuizService;
-import com.ll.quizzle.domain.room.dto.response.RoomResponse;
-import com.ll.quizzle.domain.room.service.RoomService;
-import com.ll.quizzle.domain.room.type.AnswerType;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import java.time.Duration;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.messaging.handler.annotation.DestinationVariable;
 import org.springframework.messaging.handler.annotation.MessageMapping;
@@ -16,10 +13,15 @@ import org.springframework.messaging.simp.SimpMessageHeaderAccessor;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Controller;
 
-import java.time.Duration;
-import java.util.Map;
-import java.util.concurrent.CompletableFuture;
-import java.util.HashMap;
+import com.ll.quizzle.domain.quiz.dto.request.QuizGenerationRequest;
+import com.ll.quizzle.domain.quiz.dto.response.QuizResponse;
+import com.ll.quizzle.domain.quiz.service.GPTQuizService;
+import com.ll.quizzle.domain.room.dto.response.RoomResponse;
+import com.ll.quizzle.domain.room.service.RoomService;
+import com.ll.quizzle.domain.room.type.AnswerType;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @Controller
 @RequiredArgsConstructor
@@ -92,6 +94,7 @@ public class RoomSocketController {
                     
                     Map<String, Object> completedMessage = new HashMap<>();
                     completedMessage.put("status", "COMPLETED");
+                    completedMessage.put("quizId", quizResponse.quizId());
                     completedMessage.put("message", "문제 생성이 완료되었습니다. 게임을 시작합니다.");
                     completedMessage.put("progress", 100);
                     messagingTemplate.convertAndSend("/topic/room/" + roomId + "/quiz/generation", completedMessage);
@@ -220,7 +223,7 @@ public class RoomSocketController {
             messagingTemplate.convertAndSend("/topic/room/" + roomId + "/game/status", gameStartMessage);
             
             try {
-                Thread.sleep(1500); // 1.5초 대기로 증가
+                Thread.sleep(1500);
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
             }
@@ -327,6 +330,69 @@ public class RoomSocketController {
             log.error("문제 정보 전송 중 오류 발생: {}", e.getMessage(), e);
             Map<String, Object> errorMessage = new HashMap<>();
             errorMessage.put("message", "문제 정보 전송 중 오류가 발생했습니다: " + e.getMessage());
+            messagingTemplate.convertAndSend("/topic/room/" + roomId + "/error", errorMessage);
+        }
+    }
+
+    @MessageMapping("/room/{roomId}/broadcastGameStart")
+    public void broadcastGameStart(@DestinationVariable String roomId,
+                           @Payload Map<String, Object> payload) {
+        try {
+            log.debug("게임 시작 브로드캐스트 요청 - 방 ID: {}, 페이로드: {}", roomId, payload);
+            
+            String quizId = (String) payload.get("quizId");
+            
+            if (quizId == null) {
+                log.error("게임 시작 브로드캐스트 실패 - 퀴즈 ID가 없습니다.");
+                String roomQuizKey = String.format("room:%s:quizId", roomId);
+                quizId = redisTemplate.opsForValue().get(roomQuizKey);
+                
+                if (quizId == null) {
+                    Map<String, Object> errorMessage = new HashMap<>();
+                    errorMessage.put("message", "게임 시작에 필요한 퀴즈 정보를 찾을 수 없습니다.");
+                    messagingTemplate.convertAndSend("/topic/room/" + roomId + "/error", errorMessage);
+                    return;
+                }
+            }
+            
+            String gameStatusKey = String.format("room:%s:gameStatus", roomId);
+            redisTemplate.opsForValue().set(gameStatusKey, "STARTED", Duration.ofMinutes(30));
+            
+            log.info("게임 시작 브로드캐스트 - 방 ID: {}, 퀴즈 ID: {}", roomId, quizId);
+            
+            Map<String, Object> gameStartMessage = new HashMap<>();
+            gameStartMessage.put("gameStatus", "IN_PROGRESS");
+            gameStartMessage.put("quizId", quizId);
+            gameStartMessage.put("timestamp", System.currentTimeMillis());
+            
+            messagingTemplate.convertAndSend("/topic/room/" + roomId + "/status", gameStartMessage);
+            
+            messagingTemplate.convertAndSend("/topic/room/" + roomId + "/game/status", gameStartMessage);
+            
+            messagingTemplate.convertAndSend("/topic/room/" + roomId + "/game/start", gameStartMessage);
+            
+            messagingTemplate.convertAndSend("/topic/room/" + roomId, gameStartMessage);
+            
+            log.info("게임 시작 메시지 브로드캐스트 완료 - 방 ID: {}", roomId);
+            
+            Map<String, Object> systemMessage = new HashMap<>();
+            systemMessage.put("type", "SYSTEM");
+            systemMessage.put("content", "게임이 시작되었습니다!");
+            systemMessage.put("timestamp", System.currentTimeMillis());
+            messagingTemplate.convertAndSend("/topic/room/chat/" + roomId, systemMessage);
+            
+            try {
+                Thread.sleep(500);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+            
+            messagingTemplate.convertAndSend("/topic/room/" + roomId + "/status", gameStartMessage);
+            
+        } catch (Exception e) {
+            log.error("게임 시작 브로드캐스트 처리 중 오류 발생: {}", e.getMessage(), e);
+            Map<String, Object> errorMessage = new HashMap<>();
+            errorMessage.put("message", "게임 시작 브로드캐스트 중 오류가 발생했습니다: " + e.getMessage());
             messagingTemplate.convertAndSend("/topic/room/" + roomId + "/error", errorMessage);
         }
     }
