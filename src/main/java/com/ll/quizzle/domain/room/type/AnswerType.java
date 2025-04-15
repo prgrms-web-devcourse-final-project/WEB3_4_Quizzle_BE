@@ -6,8 +6,7 @@ import lombok.RequiredArgsConstructor;
 @Getter
 @RequiredArgsConstructor
 public enum AnswerType {
-    MULTIPLE_CHOICE("객관식"),
-    TRUE_FALSE("O/X");
+    MULTIPLE_CHOICE("객관식");
 
     private final String description;
 }
