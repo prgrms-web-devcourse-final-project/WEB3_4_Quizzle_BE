@@ -1,3 +1,4 @@
+# 첫 번째 스테이지: 빌드 스테이지
 FROM gradle:jdk-21-and-23-graal-jammy AS builder
 
 # 작업 디렉토리 설정
@@ -20,13 +21,13 @@ RUN ./gradlew dependencies --no-daemon
 COPY src src
 
 # 애플리케이션 빌드
-RUN ./gradlew build -x test --no-daemon
+RUN ./gradlew build --no-daemon
 
 # 이후 명령어가 편하도록 불필요한 파일 삭제
 RUN rm -rf /app/build/libs/*-plain.jar
 
 # 두 번째 스테이지: 실행 스테이지
-FROM container-registry.oracle.com/graalvm/jdk:23
+FROM eclipse-temurin:23-jdk-alpine
 
 # 작업 디렉토리 설정
 WORKDIR /app
@@ -34,5 +35,8 @@ WORKDIR /app
 # 첫 번째 스테이지에서 빌드된 JAR 파일 복사
 COPY --from=builder /app/build/libs/*.jar app.jar
 
+# JVM 최적화 옵션
+ENV JAVA_OPTS="-XX:+UseContainerSupport -XX:MaxRAMPercentage=70 -Djava.security.egd=file:/dev/./urandom"
+
 # 실행할 JAR 파일 지정
-ENTRYPOINT ["java", "-jar", "-Dspring.profiles.active=prod", "app.jar"]
+ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar -Dspring.profiles.active=prod app.jar"]
