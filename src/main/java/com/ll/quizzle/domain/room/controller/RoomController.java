@@ -66,7 +66,6 @@ public class RoomController {
             @PathVariable Long roomId,
             @RequestParam(required = false) String password
     ) {
-        log.info("[API] joinRoom 호출됨: roomId={}, memberId={}", roomId, rq.getActor().getId());
         roomService.joinRoom(roomId, rq.getActor().getId(), password);
     }
     
@@ -77,6 +76,16 @@ public class RoomController {
             @PathVariable Long roomId
     ) {
         roomService.leaveRoom(roomId, rq.getActor().getId());
+    }
+    
+    @PostMapping("/{roomId}/leave-with-id")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    @Operation(summary = "방 퇴장 (ID 파라미터)", description = "현재 입장해 있는 방에서 퇴장합니다. 특히 브라우저 종료나 새로고침 시 userId 파라미터로 사용자 ID를 받아 처리합니다.")
+    public void leaveRoomWithParam(
+            @PathVariable Long roomId,
+            @RequestParam Long userId
+    ) {
+        roomService.leaveRoom(roomId, userId);
     }
     
     @PostMapping("/{roomId}/ready")
