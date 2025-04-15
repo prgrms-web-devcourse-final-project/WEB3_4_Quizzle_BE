@@ -40,13 +40,15 @@ public class RedisQuizSubmissionService {
         boolean isCorrect = correctAnswer.equals(submittedAnswer.trim().toLowerCase());
 
         // 현재 활성화된 문제 번호 검증
-        String currentQuestionKey = String.format("quiz:%s:currentQuestion", quizId);
+        String currentQuestionKey = String.format("quiz:%s:currentRound", quizId);
         Integer currentQuestion = (Integer) redisTemplate.opsForValue().get(currentQuestionKey);
         if (currentQuestion == null) {
-            currentQuestion = 1;
+            currentQuestion = 0;
             redisTemplate.opsForValue().set(currentQuestionKey, currentQuestion, QUIZ_TTL);
         }
-        if (questionNumber != currentQuestion) {
+
+        // 클라이언트에서 보내는 questionNumber는 1부터 시작하지만 서버에서는 0부터 시작하므로 -1 조정
+        if (questionNumber - 1 != currentQuestion) {
             throw new IllegalStateException("현재 활성화된 문제에 대해서만 답안을 제출할 수 있습니다.");
         }
 

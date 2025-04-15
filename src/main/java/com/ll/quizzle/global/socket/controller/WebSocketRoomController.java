@@ -9,9 +9,9 @@ import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.messaging.simp.SimpMessageHeaderAccessor;
 import org.springframework.stereotype.Controller;
 
+import com.ll.quizzle.domain.room.service.RoomService;
 import com.ll.quizzle.global.socket.core.MessageService;
 import com.ll.quizzle.global.socket.core.MessageServiceFactory;
-import com.ll.quizzle.domain.room.service.RoomService;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -64,6 +64,23 @@ public class WebSocketRoomController {
         }
     }
 
+    @MessageMapping("/room/{roomId}/players/refresh")
+    public void handleRefreshPlayers(
+            @DestinationVariable String roomId,
+            SimpMessageHeaderAccessor headerAccessor
+    ) {
+        String username = Objects.requireNonNull(headerAccessor.getUser()).getName();
+        log.debug("플레이어 목록 갱신 요청: 방 ID {}, 요청자: {}", roomId, username);
+
+        try {
+            Long roomIdLong = Long.parseLong(roomId);
+            roomService.refreshPlayersList(roomIdLong);
+            log.debug("방 ID {} 플레이어 목록 갱신 요청 성공", roomId);
+        } catch (Exception e) {
+            log.error("플레이어 목록 갱신 중 오류 발생: {}", e.getMessage(), e);
+        }
+    }
+
     @MessageMapping("/game/{roomId}")
     public void handleGameMessage(
             @DestinationVariable String roomId,
@@ -91,4 +108,4 @@ public class WebSocketRoomController {
         String username = Objects.requireNonNull(headerAccessor.getUser()).getName();
         log.debug("로비 접속자 목록 요청: {}, 사용자: {}", message, username);
     }
-} 
+}
