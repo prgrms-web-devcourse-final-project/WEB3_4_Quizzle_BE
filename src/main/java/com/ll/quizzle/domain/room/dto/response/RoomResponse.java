@@ -20,6 +20,7 @@ public record RoomResponse(
     MainCategory mainCategory,
     SubCategory subCategory,
     String password,
+    int problemCount,
     boolean isPrivate,
     Set<Long> players,
     Set<Long> readyPlayers
@@ -37,6 +38,7 @@ public record RoomResponse(
             room.getMainCategory(),
             room.getSubCategory(),
             room.getPasswordHash(),
+            room.getProblemCount(),
             room.isPrivate(),
             room.getPlayers(),
             room.getReadyPlayers()
