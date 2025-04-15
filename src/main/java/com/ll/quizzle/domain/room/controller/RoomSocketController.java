@@ -69,7 +69,7 @@ public class RoomSocketController {
                             roomResponse.mainCategory(),
                             roomResponse.subCategory(),
                             AnswerType.MULTIPLE_CHOICE,
-                            5,
+                            roomResponse.problemCount(),
                             roomResponse.difficulty(),
                             roomId
                     );
