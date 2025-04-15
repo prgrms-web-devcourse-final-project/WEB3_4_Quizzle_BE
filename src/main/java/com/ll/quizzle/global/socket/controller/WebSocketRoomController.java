@@ -203,6 +203,42 @@ public class WebSocketRoomController {
         messageService.send("/topic/game/" + roomId + "/player-choice", message);
     }
 
+    @MessageMapping("/room/{roomId}/scores/update")
+    public void handleScoreUpdate(
+            @DestinationVariable String roomId,
+            @Payload String message,
+            SimpMessageHeaderAccessor headerAccessor
+    ) {
+        String username = Objects.requireNonNull(headerAccessor.getUser()).getName();
+        log.debug("점수 업데이트 메시지 수신: {}, 방: {}, 사용자: {}", message, roomId, username);
+        
+        messageService.send("/topic/room/" + roomId + "/scores/update", message);
+    }
+    
+    @MessageMapping("/room/{roomId}/timer/start")
+    public void handleTimerStart(
+            @DestinationVariable String roomId,
+            @Payload String message,
+            SimpMessageHeaderAccessor headerAccessor
+    ) {
+        String username = Objects.requireNonNull(headerAccessor.getUser()).getName();
+        log.debug("타이머 시작 메시지 수신: {}, 방: {}, 사용자: {}", message, roomId, username);
+        
+        messageService.send("/topic/room/" + roomId + "/timer/start", message);
+    }
+    
+    @MessageMapping("/room/{roomId}/timer/expired")
+    public void handleTimerExpired(
+            @DestinationVariable String roomId,
+            @Payload String message,
+            SimpMessageHeaderAccessor headerAccessor
+    ) {
+        String username = Objects.requireNonNull(headerAccessor.getUser()).getName();
+        log.debug("타이머 만료 메시지 수신: {}, 방: {}, 사용자: {}", message, roomId, username);
+        
+        messageService.send("/topic/room/" + roomId + "/timer/expired", message);
+    }
+
     @MessageMapping("/room/{roomId}/leave")
     public void handlePlayerLeave(
             @DestinationVariable String roomId,
