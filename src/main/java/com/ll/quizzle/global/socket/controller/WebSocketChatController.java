@@ -41,12 +41,20 @@ public class WebSocketChatController {
                 userId = ((SecurityUser) userObj).getId();
             }
         }
+        MessageType messageType = MessageType.CHAT;
+        String messageContent = message;
         
-        log.debug("로비 채팅 메시지 수신: {}, 사용자: {}, ID: {}", message, username, userId);
+        if (message != null && message.startsWith("!SYSTEM ")) {
+            messageType = MessageType.SYSTEM;
+            messageContent = message.substring(8);
+            log.debug("시스템 메시지 감지: {}", messageContent);
+        }
+        
+        log.debug("로비 채팅 메시지 수신: {}, 사용자: {}, ID: {}, 타입: {}", messageContent, username, userId, messageType);
         
         WebSocketChatMessageResponse response = WebSocketChatMessageResponse.of(
-            MessageType.CHAT,
-            message,
+            messageType,
+            messageContent,
             userId,
             username,
             System.currentTimeMillis(),
@@ -73,11 +81,20 @@ public class WebSocketChatController {
             }
         }
         
-        log.debug("방 채팅 메시지 수신: {}, 방: {}, 사용자: {}, ID: {}", message, roomId, username, userId);
+        MessageType messageType = MessageType.CHAT;
+        String messageContent = message;
+        
+        if (message != null && message.startsWith("!SYSTEM ")) {
+            messageType = MessageType.SYSTEM;
+            messageContent = message.substring(8);
+            log.debug("시스템 메시지 감지: {}, 방: {}", messageContent, roomId);
+        }
+        
+        log.debug("방 채팅 메시지 수신: {}, 방: {}, 사용자: {}, ID: {}, 타입: {}", messageContent, roomId, username, userId, messageType);
         
         WebSocketChatMessageResponse response = WebSocketChatMessageResponse.of(
-            MessageType.CHAT,
-            message,
+            messageType,
+            messageContent,
             userId,
             username,
             System.currentTimeMillis(),
@@ -104,11 +121,20 @@ public class WebSocketChatController {
             }
         }
         
-        log.debug("게임 채팅 메시지 수신: {}, 방: {}, 사용자: {}, ID: {}", message, roomId, username, userId);
+        MessageType messageType = MessageType.CHAT;
+        String messageContent = message;
+        
+        if (message != null && message.startsWith("!SYSTEM ")) {
+            messageType = MessageType.SYSTEM;
+            messageContent = message.substring(8);
+            log.debug("시스템 메시지 감지: {}, 게임방: {}", messageContent, roomId);
+        }
+        
+        log.debug("게임 채팅 메시지 수신: {}, 방: {}, 사용자: {}, ID: {}, 타입: {}", messageContent, roomId, username, userId, messageType);
         
         WebSocketChatMessageResponse response = WebSocketChatMessageResponse.of(
-            MessageType.CHAT,
-            message,
+            messageType,
+            messageContent,
             userId,
             username,
             System.currentTimeMillis(),
