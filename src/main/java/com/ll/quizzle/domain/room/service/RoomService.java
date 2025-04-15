@@ -157,6 +157,27 @@ public class RoomService {
 
     @DistributedLock(key = "'room:' + #roomId", leaseTime = 10000)
     @Transactional(isolation = Isolation.REPEATABLE_READ)
+    public void updateRoomStatus(Long roomId, RoomStatus status) {
+        Room room = findRoomOrThrow(roomId);
+        
+        if (room.getStatus() == status) {
+            log.debug("방 ID {} 상태 변경 무시 - 이미 {}상태임", roomId, status);
+            return;
+        }
+        
+        if (status == RoomStatus.IN_GAME) {
+            room.startGame(null);
+        } else if (status == RoomStatus.WAITING) {
+            room.endGame();
+        }
+        
+        log.debug("방 ID {} 상태 변경 완료: {} -> {}", roomId, room.getStatus(), status);
+        
+        broadcastRoomStatus(roomId);
+    }
+
+    @DistributedLock(key = "'room:' + #roomId", leaseTime = 10000)
+    @Transactional(isolation = Isolation.REPEATABLE_READ)
     public void handleOwnerChange(Long roomId, Long newOwnerId) {
         Room room = findRoomOrThrow(roomId);
         
@@ -281,7 +302,7 @@ public class RoomService {
     }
 
     @Transactional(isolation = Isolation.REPEATABLE_READ)
-    private void changeRoomOwner(Room room, Member currentOwner, Long newOwnerId) {
+    protected void changeRoomOwner(Room room, Member currentOwner, Long newOwnerId) {
         Member newOwner = findMemberOrThrow(newOwnerId);
         room.changeOwner(newOwner);
 
