@@ -9,7 +9,9 @@ import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.messaging.simp.SimpMessageHeaderAccessor;
 import org.springframework.stereotype.Controller;
 
+import com.ll.quizzle.domain.room.dto.response.RoomResponse;
 import com.ll.quizzle.domain.room.service.RoomService;
+import com.ll.quizzle.domain.room.type.RoomStatus;
 import com.ll.quizzle.global.socket.core.MessageService;
 import com.ll.quizzle.global.socket.core.MessageServiceFactory;
 
@@ -135,6 +137,57 @@ public class WebSocketRoomController {
             }
         } catch (Exception e) {
             log.error("방장 변경 메시지 처리 중 오류 발생: {}", e.getMessage(), e);
+        }
+    }
+
+    @MessageMapping("/room/{roomId}/status/update")
+    public void handleRoomStatusUpdate(
+            @DestinationVariable String roomId,
+            @Payload String message,
+            SimpMessageHeaderAccessor headerAccessor
+    ) {
+        String username = Objects.requireNonNull(headerAccessor.getUser()).getName();
+        log.debug("방 상태 변경 메시지 수신: {}, 방: {}, 사용자: {}", message, roomId, username);
+        
+        try {
+            Long roomIdLong = Long.parseLong(roomId);
+            
+            if (message.contains("IN_GAME") || message.contains("GAME_START")) {
+                RoomResponse roomResponse = roomService.getRoom(roomIdLong);
+                
+                if (roomResponse.status() != RoomStatus.IN_GAME) {
+                    roomService.updateRoomStatus(roomIdLong, RoomStatus.IN_GAME);
+                    log.debug("방 ID {} 상태를 게임 중으로 변경", roomId);
+                }
+            }
+            
+            messageService.send("/topic/room/" + roomId + "/status", message);
+            
+            messageService.send("/topic/lobby", "ROOM_UPDATED:" + roomId);
+            
+            log.debug("방 ID {} 상태 업데이트 완료", roomId);
+        } catch (Exception e) {
+            log.error("방 상태 변경 처리 중 오류 발생: {}", e.getMessage(), e);
+        }
+    }
+    
+    @MessageMapping("/lobby/users/update")
+    public void handleLobbyUsersUpdate(
+            @Payload String message,
+            SimpMessageHeaderAccessor headerAccessor
+    ) {
+        String username = Objects.requireNonNull(headerAccessor.getUser()).getName();
+        log.debug("로비 사용자 상태 업데이트 메시지 수신: {}, 사용자: {}", message, username);
+        
+        try {
+            messageService.send("/topic/lobby/users", message);
+            messageService.send("/topic/lobby/status", message);
+            
+            messageService.send("/topic/lobby/broadcast", message);
+            
+            log.debug("로비 사용자 목록 업데이트 완료");
+        } catch (Exception e) {
+            log.error("로비 사용자 상태 업데이트 처리 중 오류 발생: {}", e.getMessage(), e);
         }
     }
 }
