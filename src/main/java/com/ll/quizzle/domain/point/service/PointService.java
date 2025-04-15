@@ -45,7 +45,6 @@ public class PointService {
 		return new PageDto<>(page.map(PointHistoryResponse::from));
 	}
 
-
 	// 포인트 사용
 	public void usePoint(Member member, int amount, PointReason reason) {
 		member.decreasePoint(amount);
@@ -68,10 +67,10 @@ public class PointService {
 			throw POINT_POLICY_NOT_FOUND.throwServiceException();
 		}
 
-		if (amount > 0) {
-			gainPoint(member, amount, reason);
+		if (amount < 0) {
+			usePoint(member, Math.abs(amount), reason);
 		} else {
-			usePoint(member, -amount, reason);
+			gainPoint(member, amount, reason);
 		}
 	}
 
@@ -80,10 +79,11 @@ public class PointService {
 			throw POINT_POLICY_NOT_FOUND.throwServiceException();
 		}
 
-		if (customAmount > 0) {
-			gainPoint(member, customAmount, reason);
+		if (customAmount < 0) {
+			usePoint(member, Math.abs(customAmount), reason);
 		} else {
-			usePoint(member, -customAmount, reason);
+			gainPoint(member, customAmount, reason);
 		}
 	}
+
 }
