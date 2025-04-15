@@ -202,4 +202,38 @@ public class WebSocketRoomController {
         
         messageService.send("/topic/game/" + roomId + "/player-choice", message);
     }
+
+    @MessageMapping("/room/{roomId}/leave")
+    public void handlePlayerLeave(
+            @DestinationVariable String roomId,
+            @Payload String message,
+            SimpMessageHeaderAccessor headerAccessor
+    ) {
+        String username = Objects.requireNonNull(headerAccessor.getUser()).getName();
+        log.debug("사용자 방 퇴장 메시지 수신: {}, 방: {}, 사용자: {}", message, roomId, username);
+        
+        try {
+            Long roomIdLong = Long.parseLong(roomId);
+            
+            messageService.send("/topic/room/" + roomId + "/leave", message);
+            
+            String playerIdStr = message.replaceAll(".*\"playerId\"\\s*:\\s*(\\d+).*", "$1");
+            Long playerId = Long.parseLong(playerIdStr);
+            
+            roomService.leaveRoom(roomIdLong, playerId);
+            
+            roomService.refreshPlayersList(roomIdLong);
+            
+            RoomResponse updatedRoom = roomService.getRoom(roomIdLong);
+            int remainingPlayers = updatedRoom.currentPlayers();
+            
+            if (remainingPlayers == 0) {
+                log.debug("방 ID {} 인원이 0명이 되어 자동 삭제합니다.", roomId);
+                
+                messageService.send("/topic/lobby", "ROOM_DELETED:" + roomId);
+            }
+        } catch (Exception e) {
+            log.error("방 퇴장 처리 중 오류 발생: {}", e.getMessage(), e);
+        }
+    }
 }
