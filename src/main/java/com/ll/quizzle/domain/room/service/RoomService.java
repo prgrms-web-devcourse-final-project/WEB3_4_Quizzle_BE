@@ -155,6 +155,32 @@ public class RoomService {
         return RoomResponse.from(room);
     }
 
+    @DistributedLock(key = "'room:' + #roomId", leaseTime = 10000)
+    @Transactional(isolation = Isolation.REPEATABLE_READ)
+    public void handleOwnerChange(Long roomId, Long newOwnerId) {
+        Room room = findRoomOrThrow(roomId);
+        
+        if (!room.getPlayers().contains(newOwnerId)) {
+            log.error("방장 변경 실패 - 존재하지 않는 플레이어: roomId={}, newOwnerId={}", roomId, newOwnerId);
+            throw MEMBER_NOT_FOUND.throwServiceException();
+        }
+        
+        if (room.isOwner(newOwnerId)) {
+            log.debug("방장 변경 중단 - 이미 방장인 플레이어: roomId={}, ownerId={}", roomId, newOwnerId);
+            return;
+        }
+        
+        Member oldOwner = findMemberOrThrow(room.getOwner().getId());
+        
+        Member newOwner = findMemberOrThrow(newOwnerId);
+        room.changeOwner(newOwner);
+        
+        roomMessageService.sendOwnerChanged(room, oldOwner, newOwner);
+        
+        log.debug("방장 변경 완료: roomId={}, 이전 방장={}, 새 방장={}", 
+                  roomId, oldOwner.getNickname(), newOwner.getNickname());
+    }
+
     @DistributedLock(key = "'room:' + #owner.id", leaseTime = 10000)
     @Transactional(propagation = Propagation.REQUIRES_NEW, isolation = Isolation.SERIALIZABLE)
     protected RoomResponse createRoomWithLock(Member owner, RoomCreateRequest request) {
@@ -254,6 +280,7 @@ public class RoomService {
         scheduleRoomDeletedNotification(room.getId());
     }
 
+    @Transactional(isolation = Isolation.REPEATABLE_READ)
     private void changeRoomOwner(Room room, Member currentOwner, Long newOwnerId) {
         Member newOwner = findMemberOrThrow(newOwnerId);
         room.changeOwner(newOwner);
