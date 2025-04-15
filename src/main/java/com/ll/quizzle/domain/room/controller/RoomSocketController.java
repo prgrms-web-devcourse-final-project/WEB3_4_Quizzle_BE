@@ -261,6 +261,12 @@ public class RoomSocketController {
             Integer questionIndex = (Integer) payload.get("questionIndex");
             
             if (questionIndex == null) {
+                questionIndex = (Integer) payload.get("currentQuestionIndex");
+            }
+            
+            Integer nextQuestionIndex = (Integer) payload.get("nextQuestionIndex");
+            
+            if (questionIndex == null) {
                 log.error("다음 문제 요청 실패 - 문제 인덱스가 없습니다. 방 ID: {}", roomId);
                 Map<String, Object> errorMessage = new HashMap<>();
                 errorMessage.put("message", "다음 문제를 가져오는데 필요한 정보가 부족합니다.");
@@ -268,19 +274,21 @@ public class RoomSocketController {
                 return;
             }
             
+            int newQuestionIndex = (nextQuestionIndex != null) ? nextQuestionIndex : questionIndex + 1;
+            log.info("다음 문제 인덱스 계산: 현재={}, 다음={} - 방 ID: {}", questionIndex, newQuestionIndex, roomId);
+            
             String roomQuizKey = String.format("room:%s:quizId", roomId);
             String quizId = redisTemplate.opsForValue().get(roomQuizKey);
             
-            if (quizId == null) {
-                log.error("다음 문제 요청 실패 - 퀴즈 ID를 찾을 수 없습니다. 방 ID: {}", roomId);
+            if (quizId == null || quizId.isEmpty()) {
+                log.error("퀴즈 ID를 찾을 수 없습니다. 방 ID: {}", roomId);
                 Map<String, Object> errorMessage = new HashMap<>();
-                errorMessage.put("message", "게임에 필요한 퀴즈 정보를 찾을 수 없습니다.");
+                errorMessage.put("message", "퀴즈 정보를 찾을 수 없습니다.");
                 messagingTemplate.convertAndSend("/topic/room/" + roomId + "/error", errorMessage);
                 return;
             }
             
-            int nextQuestionIndex = questionIndex + 1;
-            sendQuizQuestion(roomId, quizId, nextQuestionIndex);
+            sendQuizQuestion(roomId, quizId, newQuestionIndex);
             
         } catch (Exception e) {
             log.error("다음 문제 처리 중 오류 발생: {}", e.getMessage(), e);
@@ -294,37 +302,65 @@ public class RoomSocketController {
     private void sendQuizQuestion(String roomId, String quizId, int questionIndex) {
         try {
             String questionListKey = String.format("quiz:%s:questions", quizId);
+            
+            Long listSize = redisTemplate.opsForList().size(questionListKey);
+            log.debug("Redis 문제 리스트 크기: {} (키: {})", listSize, questionListKey);
+            
             Object questionObj = redisTemplate.opsForList().index(questionListKey, questionIndex);
+            boolean useTemporaryQuestion = false;
             
             if (questionObj == null) {
+                log.warn("Redis에서 문제를 찾을 수 없습니다. 인덱스: {}, 키: {}, 리스트 크기: {}", 
+                       questionIndex, questionListKey, listSize);
+                
                 if (questionIndex >= 5) {
+                    log.info("모든 문제가 끝났습니다. 게임 종료 메시지 전송 - 방 ID: {}", roomId);
                     Map<String, Object> gameEndMessage = new HashMap<>();
                     gameEndMessage.put("status", "FINISHED");
                     gameEndMessage.put("message", "모든 문제가 끝났습니다!");
                     gameEndMessage.put("timestamp", System.currentTimeMillis());
                     messagingTemplate.convertAndSend("/topic/room/" + roomId + "/game/status", gameEndMessage);
-                } else {
-                    Map<String, Object> errorMessage = new HashMap<>();
-                    errorMessage.put("message", "문제 정보를 찾을 수 없습니다.");
-                    messagingTemplate.convertAndSend("/topic/room/" + roomId + "/error", errorMessage);
+                    return;
                 }
-                return;
+                
+                log.warn("문제 {}에 대한 데이터가 없어 임시 문제를 생성합니다. - 방 ID: {}", questionIndex + 1, roomId);
+                useTemporaryQuestion = true;
             }
-            
+
             String answerListKey = String.format("quiz:%s:answers", quizId);
-            Object answerObj = redisTemplate.opsForList().index(answerListKey, questionIndex);
-            String correctAnswer = answerObj != null ? answerObj.toString().split(":")[1] : null;
+            String correctAnswer = "b";
+            
+            if (!useTemporaryQuestion) {
+                Object answerObj = redisTemplate.opsForList().index(answerListKey, questionIndex);
+                if (answerObj != null) {
+                    correctAnswer = answerObj.toString().split(":")[1];
+                } else {
+                    log.warn("정답 데이터를 찾을 수 없습니다. 인덱스: {}, 키: {}", questionIndex, answerListKey);
+                }
+            }
             
             Map<String, Object> questionData = new HashMap<>();
             questionData.put("questionIndex", questionIndex);
-            questionData.put("questionText", questionObj.toString());
+            
+            if (useTemporaryQuestion) {
+                String dummyQuestion = String.format("%d: 임시 문제입니다\\na) 선택지1\\nb) 선택지2\\nc) 선택지3\\nd) 선택지4\\n",
+                                                questionIndex + 1);
+                questionData.put("questionText", dummyQuestion);
+            } else {
+                questionData.put("questionText", questionObj.toString());
+            }
+            
             questionData.put("correctAnswer", correctAnswer);
             questionData.put("timestamp", System.currentTimeMillis());
+            
+            boolean isLastQuestion = questionIndex >= 4 || (listSize != null && questionIndex >= listSize - 1);
+            questionData.put("isLastQuestion", isLastQuestion);
             
             String currentRoundKey = String.format("quiz:%s:currentRound", quizId);
             redisTemplate.opsForValue().set(currentRoundKey, String.valueOf(questionIndex), Duration.ofMinutes(30));
             
             messagingTemplate.convertAndSend("/topic/room/" + roomId + "/question", questionData);
+            log.info("문제 #{} 전송 완료 - 방 ID: {}", questionIndex + 1, roomId);
             
         } catch (Exception e) {
             log.error("문제 정보 전송 중 오류 발생: {}", e.getMessage(), e);
@@ -393,6 +429,53 @@ public class RoomSocketController {
             log.error("게임 시작 브로드캐스트 처리 중 오류 발생: {}", e.getMessage(), e);
             Map<String, Object> errorMessage = new HashMap<>();
             errorMessage.put("message", "게임 시작 브로드캐스트 중 오류가 발생했습니다: " + e.getMessage());
+            messagingTemplate.convertAndSend("/topic/room/" + roomId + "/error", errorMessage);
+        }
+    }
+
+    @MessageMapping("/room/{roomId}/question/request")
+    public void handleQuestionRequest(@DestinationVariable String roomId,
+                                 @Payload Map<String, Object> payload,
+                                 SimpMessageHeaderAccessor headerAccessor) {
+        log.debug("문제 데이터 요청 - 방 ID: {}, 페이로드: {}", roomId, payload);
+        
+        try {
+            String quizId = (String) payload.get("quizId");
+            
+            if (quizId == null) {
+                String roomQuizKey = String.format("room:%s:quizId", roomId);
+                quizId = redisTemplate.opsForValue().get(roomQuizKey);
+                
+                if (quizId == null) {
+                    log.error("문제 데이터 요청 실패 - 퀴즈 ID를 찾을 수 없습니다. 방 ID: {}", roomId);
+                    Map<String, Object> errorMessage = new HashMap<>();
+                    errorMessage.put("message", "문제 정보를 찾을 수 없습니다.");
+                    messagingTemplate.convertAndSend("/topic/room/" + roomId + "/error", errorMessage);
+                    return;
+                }
+            }
+            
+            String currentRoundKey = String.format("quiz:%s:currentRound", quizId);
+            String currentRoundStr = redisTemplate.opsForValue().get(currentRoundKey);
+            int currentRound = 0;
+            
+            if (currentRoundStr != null) {
+                try {
+                    currentRound = Integer.parseInt(currentRoundStr);
+                } catch (NumberFormatException e) {
+                    log.warn("현재 라운드 파싱 오류, 0으로 초기화합니다: {}", currentRoundStr);
+                }
+            } else {
+                redisTemplate.opsForValue().set(currentRoundKey, "0", Duration.ofMinutes(30));
+            }
+            
+            sendQuizQuestion(roomId, quizId, currentRound);
+            log.info("문제 데이터 요청 처리 완료 - 방 ID: {}, 퀴즈 ID: {}, 문제 번호: {}", roomId, quizId, currentRound);
+            
+        } catch (Exception e) {
+            log.error("문제 데이터 요청 처리 중 오류 발생: {}", e.getMessage(), e);
+            Map<String, Object> errorMessage = new HashMap<>();
+            errorMessage.put("message", "문제 데이터 요청 처리 중 오류가 발생했습니다: " + e.getMessage());
             messagingTemplate.convertAndSend("/topic/room/" + roomId + "/error", errorMessage);
         }
     }
