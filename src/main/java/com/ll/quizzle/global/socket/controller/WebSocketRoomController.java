@@ -213,6 +213,22 @@ public class WebSocketRoomController {
         log.debug("점수 업데이트 메시지 수신: {}, 방: {}, 사용자: {}", message, roomId, username);
         
         messageService.send("/topic/room/" + roomId + "/scores/update", message);
+        
+        messageService.send("/topic/room/" + roomId + "/scores/broadcast", message);
+    }
+    
+    @MessageMapping("/room/{roomId}/scores/sync")
+    public void handleScoreSync(
+            @DestinationVariable String roomId,
+            @Payload String message,
+            SimpMessageHeaderAccessor headerAccessor
+    ) {
+        String username = Objects.requireNonNull(headerAccessor.getUser()).getName();
+        log.debug("점수 동기화 요청 수신: {}, 방: {}, 사용자: {}", message, roomId, username);
+        
+        messageService.send("/topic/room/" + roomId + "/scores/sync", message);
+        
+        messageService.send("/topic/room/" + roomId + "/scores/update", message);
     }
     
     @MessageMapping("/room/{roomId}/timer/start")
