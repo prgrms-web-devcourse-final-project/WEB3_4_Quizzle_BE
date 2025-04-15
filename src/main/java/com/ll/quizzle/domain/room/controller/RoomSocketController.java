@@ -306,6 +306,17 @@ public class RoomSocketController {
             Long listSize = redisTemplate.opsForList().size(questionListKey);
             log.debug("Redis 문제 리스트 크기: {} (키: {})", listSize, questionListKey);
             
+            if (listSize == null || listSize == 0 || questionIndex >= listSize) {
+                log.info("문제 인덱스({})가 리스트 크기({})를 벗어납니다. 게임 종료 메시지 전송 - 방 ID: {}", 
+                       questionIndex, listSize, roomId);
+                Map<String, Object> gameEndMessage = new HashMap<>();
+                gameEndMessage.put("status", "FINISHED");
+                gameEndMessage.put("message", "모든 문제가 끝났습니다!");
+                gameEndMessage.put("timestamp", System.currentTimeMillis());
+                messagingTemplate.convertAndSend("/topic/room/" + roomId + "/game/status", gameEndMessage);
+                return;
+            }
+            
             Object questionObj = redisTemplate.opsForList().index(questionListKey, questionIndex);
             boolean useTemporaryQuestion = false;
             
@@ -313,17 +324,6 @@ public class RoomSocketController {
                 log.warn("Redis에서 문제를 찾을 수 없습니다. 인덱스: {}, 키: {}, 리스트 크기: {}", 
                        questionIndex, questionListKey, listSize);
                 
-                if (questionIndex >= 5) {
-                    log.info("모든 문제가 끝났습니다. 게임 종료 메시지 전송 - 방 ID: {}", roomId);
-                    Map<String, Object> gameEndMessage = new HashMap<>();
-                    gameEndMessage.put("status", "FINISHED");
-                    gameEndMessage.put("message", "모든 문제가 끝났습니다!");
-                    gameEndMessage.put("timestamp", System.currentTimeMillis());
-                    messagingTemplate.convertAndSend("/topic/room/" + roomId + "/game/status", gameEndMessage);
-                    return;
-                }
-                
-                log.warn("문제 {}에 대한 데이터가 없어 임시 문제를 생성합니다. - 방 ID: {}", questionIndex + 1, roomId);
                 useTemporaryQuestion = true;
             }
 
@@ -353,14 +353,17 @@ public class RoomSocketController {
             questionData.put("correctAnswer", correctAnswer);
             questionData.put("timestamp", System.currentTimeMillis());
             
-            boolean isLastQuestion = questionIndex >= 4 || (listSize != null && questionIndex >= listSize - 1);
+            boolean isLastQuestion = (questionIndex >= listSize - 1);
+            log.debug("문제 #{} 마지막 문제 여부: {} (인덱스: {}, 리스트 크기: {})", 
+                    questionIndex + 1, isLastQuestion, questionIndex, listSize);
             questionData.put("isLastQuestion", isLastQuestion);
             
             String currentRoundKey = String.format("quiz:%s:currentRound", quizId);
             redisTemplate.opsForValue().set(currentRoundKey, String.valueOf(questionIndex), Duration.ofMinutes(30));
             
             messagingTemplate.convertAndSend("/topic/room/" + roomId + "/question", questionData);
-            log.info("문제 #{} 전송 완료 - 방 ID: {}", questionIndex + 1, roomId);
+            log.info("문제 #{} 전송 완료 - 방 ID: {}, 마지막 문제 여부: {}", 
+                   questionIndex + 1, roomId, isLastQuestion);
             
         } catch (Exception e) {
             log.error("문제 정보 전송 중 오류 발생: {}", e.getMessage(), e);
