@@ -190,4 +190,16 @@ public class WebSocketRoomController {
             log.error("로비 사용자 상태 업데이트 처리 중 오류 발생: {}", e.getMessage(), e);
         }
     }
+
+    @MessageMapping("/game/{roomId}/player-choice")
+    public void handlePlayerChoice(
+            @DestinationVariable String roomId,
+            @Payload String message,
+            SimpMessageHeaderAccessor headerAccessor
+    ) {
+        String username = Objects.requireNonNull(headerAccessor.getUser()).getName();
+        log.debug("사용자 선택 메시지 수신: {}, 방: {}, 사용자: {}", message, roomId, username);
+        
+        messageService.send("/topic/game/" + roomId + "/player-choice", message);
+    }
 }
