@@ -325,8 +325,8 @@ public class RoomService {
             handleGameEnd(room, roomGameStateKey);
         }
 
-        if (isOwner && room.getPlayers().isEmpty()) {
-            log.debug("방장이 나가고 방에 더 이상 플레이어가 없어 방을 즉시 삭제합니다. 방ID: {}", room.getId());
+        if (room.getPlayers().isEmpty()) {
+            log.debug("방에 더 이상 플레이어가 없어 방을 즉시 삭제합니다. 방ID: {}", room.getId());
             roomRepository.delete(room);
             String roomStateKey = "room:state:" + room.getId();
             redisTemplate.opsForValue().set(roomStateKey, "DELETED");
@@ -371,17 +371,15 @@ public class RoomService {
         TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
             @Override
             public void afterCommit() {
-                if (isOwner) {
-                    if (room.getPlayers().isEmpty()) {
-                        deleteRoom(room);
-                    } else {
-                        Long newOwnerId = room.getPlayers().iterator().next();
-                        Member newOwner = findMemberOrThrow(newOwnerId);
+                if (room.getPlayers().isEmpty()) {
+                    deleteRoom(room);
+                } else if (isOwner) {
+                    Long newOwnerId = room.getPlayers().iterator().next();
+                    Member newOwner = findMemberOrThrow(newOwnerId);
 
-                        room.changeOwner(newOwner);
+                    room.changeOwner(newOwner);
 
-                        roomMessageService.sendOwnerChanged(room, member, newOwner);
-                    }
+                    roomMessageService.sendOwnerChanged(room, member, newOwner);
                 } else {
                     roomMessageService.sendLeave(room, member);
                 }
@@ -585,5 +583,12 @@ public class RoomService {
                 log.debug("로비에 방 업데이트 알림 전송: 방ID={}", updatedRoom.getId());
             }
         });
+    }
+
+    @DistributedLock(key = "'room:' + #roomId", leaseTime = 10000)
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void deleteRoomById(Long roomId) {
+        Room room = findRoomOrThrow(roomId);
+        deleteRoom(room);
     }
 }
