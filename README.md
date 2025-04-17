@@ -42,7 +42,7 @@
 - ✅ **게임 결과 리포트**
 - ✅ **경험치/레벨 시스템**
 
---
+---
 
 ## 📌 ERD
 ![ERD](https://github.com/user-attachments/assets/a6c4d070-3617-4332-8912-5c680f767c7a)
@@ -52,25 +52,23 @@
 
 ---
 
-## 💾 발표 자료
-- [결과보고서_10팀(AI 퀴즈 게임 플랫폼 Quizzle).pdf](https://github.com/user-attachments/files/19770113/_10.AI.Quizzle.pdf)
-- https://youtu.be/VlVQMjY-zoY
-
----
-
-## 🧪 시연 영상
-
-- https://youtu.be/PAbJh_QYOyo
+## 💾 문서
+- 📽️ [발표 영상](https://youtu.be/VlVQMjY-zoY)
+- ▶️ [시연 영상](https://youtu.be/PAbJh_QYOyo)
+- 📕 [발표 PPT](https://github.com/user-attachments/files/19770113/_10.AI.Quizzle.pdf)
+- 📘 [팀 Notion](https://www.notion.so/Team10-1bb4873f28dd8015a0f8e7a26451ddfe?pvs=4)
 
 ---
 
 ## 👥 팀 소개
 
-| 역할 | 이름 |
-|------|------|
-| PO | 권기용 |
-| 팀장 | 이상억 |
-| 팀원 | 노옥선, 박영준, 백성현 |
+| 이름 | 역할 | 담당 업무 | GitHub |
+|------|------|-----------|--------|
+| 권기용 | PO | 프로젝트 리딩, 브랜치 관리(GitHub Flow), PR 관리, 포인트 및 아바타 기능 | [kwonkiyong0059](https://github.com/kwonkiyong0059) |
+| 이상억 | 팀장 | GPT API 기반 퀴즈 생성 등 게임 관련 핵심 기능 | [jurio5](https://github.com/jurio5) |
+| 노옥선 | 팀원 | 관리자 기능 구현, 발표용 PPT 제작 | [Okman-0920](https://github.com/Okman-0920) |
+| 박영준 | 팀원 | 웹소켓 통신, 인프라(AWS, 무중단 CI/CD), 프론트(UI/UX) 작업 | [jurio5](https://github.com/jurio5) |
+| 백성현 | 팀원 | 소셜 로그인 및 인증/인가, 사용자 기능 | [bsh52](https://github.com/bsh52) |
 
 ---
 
@@ -81,9 +79,6 @@
 
 ## 📝 회고 및 느낀 점
 
-- 실시간 통신, OAuth2, GPT API, Docker, CI/CD 등  
-  **실무 중심의 기술 스택을 통합 경험**
-- 분산 락과 트랜잭션 관리, 성능 안정화 등  
-  **대규모 트래픽을 고려한 설계 적용**
-- PR 기반 협업 및 코드 리뷰를 통해  
-  **팀워크와 협업 역량 향상**
+- 실시간 통신, OAuth2, GPT API, Docker, CI/CD 등 **실무 중심의 기술 스택을 통합 경험**
+- 분산 락과 트랜잭션 관리, 성능 안정화 등 **대규모 트래픽을 고려한 설계 적용**
+- PR 기반 협업 및 코드 리뷰를 통해 **팀워크와 협업 역량 향상**
