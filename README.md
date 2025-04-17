@@ -4,6 +4,11 @@
 
 ---
 
+## 🚀 배포 링크
+- 👉 [Quizzle](https://secret-fe.vercel.app)
+
+---
+
 ## 🏁 프로젝트 개요
 
 - **Quizzle**은 GPT API를 활용한 **자동 퀴즈 생성**과  
@@ -42,14 +47,15 @@
 ## 📌 ERD
 ![ERD](https://github.com/user-attachments/assets/a6c4d070-3617-4332-8912-5c680f767c7a)
 
-
 ## 📌 시스템 아키텍처
 ![아키텍처 다이어그램](https://github.com/user-attachments/assets/c81cb60c-c027-4db7-8834-5ce44fffc331)
 
 ---
+
 ## 💾 발표 자료
 - [결과보고서_10팀(AI 퀴즈 게임 플랫폼 Quizzle).pdf](https://github.com/user-attachments/files/19770113/_10.AI.Quizzle.pdf)
 - https://youtu.be/VlVQMjY-zoY
+
 ---
 
 ## 🧪 시연 영상
@@ -72,6 +78,7 @@
 - https://github.com/jurio5/secret_fe
 
 ---
+
 ## 📝 회고 및 느낀 점
 
 - 실시간 통신, OAuth2, GPT API, Docker, CI/CD 등  
